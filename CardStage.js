@@ -4,8 +4,14 @@ class CardStage extends Stage {
 
 		this.hand = null;
 		this.deck = new Deck(this);
-		this.spot = new Spot(this);
-		this.draggedCard = null
+		
+		this.spots = new Array();
+		this.spots[0] = new Spot(this, 500, 100);
+		this.spots[1] = new Spot(this, 750, 100);
+		this.spots[2] = new Spot(this, 500, 400);
+		this.spots[3] = new Spot(this, 750, 400);
+		
+		this.draggedCard = null;
 	}
 
 	onDivObserved() {
@@ -24,13 +30,10 @@ class CardStage extends Stage {
 		//console.log("MouseX: "+this.cursorX)
 		//console.log("MouseY: "+this.cursorY)
 		this.updateHandMode();
+	}
 
-		if(this.draggedCard) {
-			if(this.spot.checkOverlap(this.draggedCard))
-				this.spot.highlight(true);
-			else
-				this.spot.highlight(false);
-		}
+	checkSpotOverlap() {
+
 	}
 
 	updateHandMode() {

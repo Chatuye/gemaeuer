@@ -1,3 +1,8 @@
+@font-face {
+    font-family: 'Roboto';
+    src: url('./fonts/Roboto-Regular.ttf');
+}
+
 body {
 	margin: 0px;
 	background-color: #000000;
@@ -13,34 +18,24 @@ div {
 	-moz-user-select: none;
 	-ms-user-select: none;
 	-o-user-select: none;
+	
 	user-select: none;
 	
 	margin: 0px;
 }
 
-div.Debug {
-	background: rgba(0, 0, 0, 1);
-	color: rgba(255, 255, 255, 1);
-}
-
 div.Stage {
 	position : absolute;
 	z-index: 0;
-/*	
-	top: 2em;
-	bottom: 2em;
-	left: 2em;
-	right: 2em;
-	
-	width: auto;
-	height: auto;
-*/
+
 	overflow:hidden;
 
-	background: rgba(29, 6, 50, 1);
+	background: linear-gradient(#242424, #040404);
+
+/*	background: rgba(29, 6, 50, 1);
 	background: rgba(92, 19, 159, 255);
 	background: rgba(255, 255, 255, 255);
-	background: rgba(0, 0, 0, 255);
+	background: rgba(0, 0, 0, 255);*/
 }
 
 div.Card {
@@ -78,75 +73,10 @@ img.Unit {
 	outline: 1px solid transparent; /* to prevent a bug in chrome that leaves behind junk pixels, due to border radius*/
 }
 
-div.Deck {
-	position:absolute;
-	z-index: 1;
-}
-
-img.Deck {
-	width:100%;
-	height:100%;
-}
-
 div.Spot {
 	position:absolute;
 	z-index: 1;
 
 	background: rgba(0, 0, 0, 0.0);
 	background: rgba(255, 255, 255, 0.0);
-}
-
-
-div.SpotLight {
-	position:absolute;
-	z-index: 0;
-
-	left: 30%;
-	top: 20%;
-
-	width: 0px;
-	height: 0px;
-	border-radius: 50%;
-
-	background: rgba(255, 255, 255, 0.0);
-
-	background: #D6AFF3;
-	background: #FFFFFF;
-
-	box-shadow:
-		0 0 60px 30px #fff,
-		0 0 100px 60px #f0f,
-		0 0 140px 90px #0ff;
-
-	box-shadow:
-		0 0 20px 20px #fff,
-		0 0 40px 40px #f0f,
-		0 0 60px 60px #0ff;
-	
-	box-shadow:
-		0 0 120px 60px #fff,
-		0 0 200px 120px #f0f,
-		0 0 280px 180px #0ff;
-}
-
-div.PlayerSide {
-	position: absolute;
-	z-index: 0;
-	width: 50%;
-	height: 100%;
-	left: 0%;
-	top: 0%;
-
-	background: rgba(0, 0, 0, 1.0);
-}
-
-div.OpponentSide {
-	position: absolute;
-	z-index: 0;
-	width: 50%;
-	height: 100%;
-	right: 0%;
-	top: 0%;
-
-	background: rgba(0, 0, 0, 1.0);
 }

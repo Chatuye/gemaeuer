@@ -1,86 +1,117 @@
 class Hand {
-	constructor() {
+	constructor(stage) {
+		this.relCardOffsetLowered = 0.5;
+		this.relCardOffsetRaised = 0.05;
+		this.addRelCardOffsetRaisedPerCard = 0.02;
+
+		this.stage = stage;
+		this.stageCoordinate = new StageCoordinate(stage, this.positionCards.bind(this))
 		this.cards = new Array();
-		this.raised = false;
-		this.cardAnchor = new Coordinate(0,0);
+		//this.availableZIndexes = new Array();
+		this.mode = "lowered";
+		this.interactionYCalculated = false
+		this.interactionY = 0;
+		this.interactionYRaised = 0;
+		this.interactionYLowered = 0;
+	}
+	
+	onStageResize() {
+		this.stageCoordinate.updateScaledValues(Math.round(this.stage.clientRect.width / 2), (this.stage.clientRect.height - 0));
+
+		if(this.cards.length == 0) {
+			this.calculateInteractionY(0);
+		} else {
+			this.calculateInteractionY(this.cards[0].stageDimensions.stageHeight)
+		}
 	}
 
-	updateDimensions() {
-		this.interactionHeightRaise = stage.clientRect.height - card.height;
-		this.interactionHeightLower = stage.clientRect.height - Math.round(1.4*card.height);
+	positionCards() {
+		if(this.cards.length > 0) {
+			let l = this.cards.length;
+			if(this.stage.draggedCard)
+				if(this.stage.draggedCard.hand==this) l--;
+			let middle = 0;
+			if ((l % 2) == 1)
+				middle = Math.floor(l / 2); 
+			else
+				middle = l / 2 - 0.5;
 
-		this.cardAnchor.x = Math.round(stage.clientRect.width / 2);
-		this.cardAnchor.y = stage.clientRect.height;
-
-		//console.log("1: "+this.cardAnchor.x);
+			for(var i=0; i<this.cards.length; i++)
+				if(this.stage.draggedCard != this.cards[i])
+					this.positionCard(this.cards[i], i, middle);
+		}	
 	}
 
-	addCard(card) {		
-		if(card.handPos==-1) {
-			card.handPos = this.cards.length;
+	positionCard(card, pos, middle) {
+		let fromCenter = pos - middle;
+
+		card.div.style.zIndex = this.stage.maxUsedZIndex+pos+1;
+
+		//Rotate card
+		card.div.style.transform = "none";
+		let angle = fromCenter * 0.05;
+		card.div.style.transformOrigin = "50% 100%";
+		card.div.style.transform = "rotate(" + angle + "rad)";
+
+		//Position card
+		let anchorX = Math.round(card.stageDimensions.stageWidth / 2);
+		let anchorY = card.stageDimensions.stageHeight;
+		let newX = (this.stageCoordinate.stageX - anchorX) + (fromCenter * Math.floor(card.stageDimensions.stageWidth / 1.9));
+		let newY = (this.stageCoordinate.stageY - anchorY) + Math.abs(0.8 * fromCenter * (Math.sin(angle) * (card.stageDimensions.stageWidth / 2)));
+
+		switch (this.mode) {
+			case "lowered":
+				newY += Math.round(card.stageDimensions.stageHeight*this.relCardOffsetLowered);
+				break;
+			case "raised":
+				newY -= Math.round(card.stageDimensions.stageHeight*(this.relCardOffsetRaised+(this.addRelCardOffsetRaisedPerCard*this.cards.length)));
+				break;
+			default:
+				console.log("Unknown hand mode.");
 		}
 
-		this.cards.splice(card.handPos, 0, card);
-		for (let i = 0; i < this.cards.length; i++) {
-			this.cards[i].handPos = i;
-			if(this.cards[i]==card) 
-				this.cards[i].transitionAction = "add";
-			else if(this.cards[i].transitionAction == "none")
-				this.cards[i].transitionAction = "organize";
-		}
-		this.organizeCards();
+
+		card.stageCoordinate.updateScaledValues(newX, newY);
 	}
 
+	addCard(card) {
+		this.calculateInteractionY(card.stageDimensions.stageHeight);
+		card.hand = this;
+		this.cards.push(card);
+
+		
+		this.positionCards();
+	}
 	removeCard(card) {
-		this.cards.splice(card.handPos, 1);
-		for (let i = 0; i < this.cards.length; i++) {
-			this.cards[i].handPos = i;
-		}
+		card.hand = null;
+		var i = this.cards.indexOf(card);
+		this.cards.splice(i, 1);
+	}
 
-		for (let i = 0; i < this.cards.length; i++) {
-			if(this.cards[i].transitionAction == "none")
-				this.cards[i].transitionAction = "organize";
-		}
-		this.organizeCards();
+	calculateInteractionY(height) {
+		this.interactionYLowered = this.stage.clientRect.height - Math.round(height*this.relCardOffsetLowered);
+		this.interactionYRaised = this.stage.clientRect.height - height - Math.round(height*(this.relCardOffsetRaised+(this.addRelCardOffsetRaisedPerCard*this.cards.length)))-4;
+		if(this.mode == "lowered")
+			this.interactionY = this.interactionYLowered;
+		else if(this.mode == "raised") this.interactionY = this.interactionYRaised;
+		else console.log("Error.");
+
+		if(height > 0)this.interactionYCalculated = true; else this.interactionYCalculated = false;
 	}
 
 	raise() {
-		if (!this.raised) {
-			this.raised = true;
-
-			for (let i = 0; i < this.cards.length; i++) {
-				if(this.cards[i].transitionAction == "none")
-					this.cards[i].transitionAction = "raise";
-			}
-			this.organizeCards();
+		if (this.mode == "lowered") {
+			this.mode = "raised";
+			this.interactionY = this.interactionYRaised;
+			this.positionCards();
 		}
 	}
 
 	lower() {
-		if (this.raised) {
-			this.raised = false;
-			
-			for (let i = 0; i < this.cards.length; i++) {
-				if(this.cards[i].transitionAction == "none")
-					this.cards[i].transitionAction = "lower";
-			}
-			this.organizeCards();
-		}
-	}
-
-	organizeCards() {
-		if(this.cards.length>0) {
-			let yOffset = 0;
-			if (this.raised)
-				yOffset = (-1)*Math.floor(this.cards[0].div.clientHeight / 3);
-			else
-				yOffset = Math.floor(this.cards[0].div.clientHeight / 2);
-
-			for (let i = 0; i < this.cards.length; i++) {
-				this.cards[i].div.style.zIndex=2+i;
-				//alert(this.cards[i].div.style.zIndex);
-				this.cards[i].moveToHand(new Coordinate(this.cardAnchor.x, this.cardAnchor.y+yOffset), i, this.cards.length);
-			}
+		if (this.mode == "raised") {
+			this.mode = "lowered";
+			this.interactionY = this.interactionYLowered;
+			this.positionCards();
 		}
 	}
 }

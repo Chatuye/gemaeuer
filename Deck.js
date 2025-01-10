@@ -2,7 +2,7 @@ class Deck extends StageObject {
 	constructor(stage) {
 		super(stage, "cardBack");
 
-		this.stageCoordinate.updateBaseValues(200,10);
+		this.coordinate.updateBaseValues(200,10);
 
 		this.div.addEventListener("click", this.onClick.bind(this));
 	}
@@ -12,6 +12,6 @@ class Deck extends StageObject {
 	}
 
 	drawCard(hand) {
-		let card = new Card(this.stage, this.stageCoordinate, this.stage.hand);
+		let card = new Card(this.stage, this.coordinate, this.stage.hand);
 	}
 }

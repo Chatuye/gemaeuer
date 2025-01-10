@@ -22,13 +22,15 @@ div {
 	user-select: none;
 	
 	margin: 0px;
+
+	overflow:hidden;
 }
 
 div.Stage {
 	position : absolute;
 	z-index: 0;
 
-	overflow:hidden;
+
 
 	background: linear-gradient(#242424, #040404);
 

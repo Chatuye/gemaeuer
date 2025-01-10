@@ -11,12 +11,9 @@ var draggedObject = null;
 var tob = null;
 
 function onBodyLoad() {
-	//myCardString = "";
 	mainBody = document.getElementById("mainBody");
 
 	stage = new CardStage(mainBody);
-
-	tob = new TangibleObject(stage, "genericTOB");
 }
 
 function onBodyResize() {

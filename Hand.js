@@ -5,7 +5,7 @@ class Hand {
 		this.addRelCardOffsetRaisedPerCard = 0.02;
 
 		this.stage = stage;
-		this.stageCoordinate = new StageCoordinate(stage, this.positionCards.bind(this))
+		this.coordinate = new StageCoordinate(stage, this.positionCards.bind(this))
 		this.cards = new Array();
 		//this.availableZIndexes = new Array();
 		this.mode = "lowered";
@@ -16,12 +16,12 @@ class Hand {
 	}
 	
 	onStageResize() {
-		this.stageCoordinate.updateScaledValues(Math.round(this.stage.clientRect.width / 2), (this.stage.clientRect.height - 0));
+		this.coordinate.updateStageValues(Math.round(this.stage.clientRect.width / 2), (this.stage.clientRect.height - 0));
 
 		if(this.cards.length == 0) {
 			this.calculateInteractionY(0);
 		} else {
-			this.calculateInteractionY(this.cards[0].stageDimensions.stageHeight)
+			this.calculateInteractionY(this.cards[0].dimensions.stageHeight)
 		}
 	}
 
@@ -54,28 +54,28 @@ class Hand {
 		card.div.style.transform = "rotate(" + angle + "rad)";
 
 		//Position card
-		let anchorX = Math.round(card.stageDimensions.stageWidth / 2);
-		let anchorY = card.stageDimensions.stageHeight;
-		let newX = (this.stageCoordinate.stageX - anchorX) + (fromCenter * Math.floor(card.stageDimensions.stageWidth / 1.9));
-		let newY = (this.stageCoordinate.stageY - anchorY) + Math.abs(0.8 * fromCenter * (Math.sin(angle) * (card.stageDimensions.stageWidth / 2)));
+		let anchorX = Math.round(card.dimensions.stageWidth / 2);
+		let anchorY = card.dimensions.stageHeight;
+		let newX = (this.coordinate.stageX - anchorX) + (fromCenter * Math.floor(card.dimensions.stageWidth / 1.9));
+		let newY = (this.coordinate.stageY - anchorY) + Math.abs(0.8 * fromCenter * (Math.sin(angle) * (card.dimensions.stageWidth / 2)));
 
 		switch (this.mode) {
 			case "lowered":
-				newY += Math.round(card.stageDimensions.stageHeight*this.relCardOffsetLowered);
+				newY += Math.round(card.dimensions.stageHeight*this.relCardOffsetLowered);
 				break;
 			case "raised":
-				newY -= Math.round(card.stageDimensions.stageHeight*(this.relCardOffsetRaised+(this.addRelCardOffsetRaisedPerCard*this.cards.length)));
+				newY -= Math.round(card.dimensions.stageHeight*(this.relCardOffsetRaised+(this.addRelCardOffsetRaisedPerCard*this.cards.length)));
 				break;
 			default:
 				console.log("Unknown hand mode.");
 		}
 
 
-		card.stageCoordinate.updateScaledValues(newX, newY);
+		card.coordinate.updateStageValues(newX, newY);
 	}
 
 	addCard(card) {
-		this.calculateInteractionY(card.stageDimensions.stageHeight);
+		this.calculateInteractionY(card.dimensions.stageHeight);
 		card.hand = this;
 		this.cards.push(card);
 

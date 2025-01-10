@@ -12,12 +12,11 @@ class StageDimensions {
     updateBaseValues(w, h) {
         this.baseWidth = w;
         this.baseHeight = h;
-        this.calculateScaledValues();
-
+        this.calculateStageValues();
         this.callback();
     }
 
-    updateScaledValues(w, h) {
+    updateStageValues(w, h) {
         this.stageWidth = w;
         this.stageHeight = h;
         this.calculateBaseValues();
@@ -30,13 +29,13 @@ class StageDimensions {
         this.baseHeight = Math.round(this.stageHeight / this.stage.scale);
     }
 
-    calculateScaledValues() {
+    calculateStageValues() {
         this.stageWidth = Math.round(this.baseWidth * this.stage.scale);
         this.stageHeight = Math.round(this.baseHeight * this.stage.scale);
     }
 
     onStageResize() {
-        this.calculateScaledValues();
+        this.calculateStageValues();
         this.callback();
     }
 }

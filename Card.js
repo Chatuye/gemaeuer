@@ -5,16 +5,16 @@ class Card extends TangibleObject {
 		this.hand = hand;
 		this.overlappingSpot = null;
 		
-		this.stageCoordinate.updateBaseValues(spawnStageCoordinate.baseX, spawnStageCoordinate.baseY);
+		this.coordinate.updateBaseValues(spawnStageCoordinate.baseX, spawnStageCoordinate.baseY);
 	}
 
 	onLoad() {
 		super.onLoad();
 		if(!this.stage.hand.interactionYCalculated) {
-			this.stage.hand.calculateInteractionY(this.stageDimensions.stageHeight);
+			this.stage.hand.calculateInteractionY(this.dimensions.stageHeight);
 		}
 
-		this.stageObjectSVG.getElementById("title").firstChild.innerHTML = "Card no. "+(this.stage.stageObjects.length);
+		this.stageObjectSVG.getElementById("title").firstChild.innerHTML = "Card no. "+(this.stage.childDivs.length);
 		if(this.hand) this.hand.addCard(this);
 	}
 	
@@ -33,7 +33,7 @@ class Card extends TangibleObject {
 		if(this.overlappingSpot) {
 			if(this.hand) this.hand.removeCard(this);
 			this.overlappingSpot.highlight(false);
-			this.stageCoordinate.updateScaledValues(this.overlappingSpot.stageCoordinate.stageX, this.overlappingSpot.stageCoordinate.stageY)
+			this.coordinate.updateStageValues(this.overlappingSpot.coordinate.stageX, this.overlappingSpot.coordinate.stageY)
 		} else if((!this.hand)&&(this.stage.hand.mode == "raised")) {
 			this.stage.hand.addCard(this)
 		} else if((this.hand)&&(this.stage.hand.mode == "lowered")) {

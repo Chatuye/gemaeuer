@@ -12,12 +12,12 @@ class StageCoordinate {
     updateBaseValues(x, y) {
         this.baseX = x;
         this.baseY = y;
-        this.calculateScaledValues();
+        this.calculateStageValues();
 
         this.callback();
     }
 
-    updateScaledValues(x, y) {
+    updateStageValues(x, y) {
         this.stageX = x;
         this.stageY = y;
         this.calculateBaseValues();
@@ -30,13 +30,13 @@ class StageCoordinate {
         this.baseY = Math.round(this.stageY / this.stage.scaleY);
     }
 
-    calculateScaledValues() {
+    calculateStageValues() {
         this.stageX = Math.round(this.baseX * this.stage.scaleX);
         this.stageY = Math.round(this.baseY * this.stage.scaleY);
     }
 
     onStageResize() {
-        this.calculateScaledValues();
+        this.calculateStageValues();
         this.callback();
     }
 }

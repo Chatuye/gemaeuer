@@ -20,7 +20,7 @@ class Stage {
 		this.cursorX = 0;
 		this.cursorY = 0;
 
-		this.stageObjects = new Array();
+		this.childDivs = new Array();
 		this.maxUsedZIndex = -1;
 
 		this.div.addEventListener("contextmenu", this.onContextMenu.bind(this));
@@ -42,10 +42,10 @@ class Stage {
 		this.onResize();
 	}
 
-	registerStageObject(sO) {
+	registerChildDiv(cD) {
 		this.maxUsedZIndex++;
-		sO.zIndex = this.maxUsedZIndex;
-		this.stageObjects.push(sO);
+		cD.zIndex = this.maxUsedZIndex;
+		this.childDivs.push(cD);
 	}
 
 	getTopZIndex() {
@@ -69,7 +69,7 @@ class Stage {
 		this.div.style.left = Math.round((mainBody.getBoundingClientRect().width-this.clientRect.width)/2)+"px";
 
 		this.calculateScale();
-		this.updateStageObjects();
+		this.updateChildDivs();
 	}
 
 	calculateScale() {
@@ -79,15 +79,15 @@ class Stage {
 		this.scale = Math.min(this.scaleX, this.scaleY);
 	}
 	
-	updateStageObjects() {
-		this.stageObjects.forEach((stageObject) => stageObject.onStageResize());
+	updateChildDivs() {
+		this.childDivs.forEach((stageDiv) => stageDiv.onParentResize());
 	}
 
 	moveObjectToTopZIndex(sO) {
-		this.stageObjects.forEach(function(stageObject) {
-			if(stageObject.zIndex > sO.zIndex) {
-				stageObject.zIndex -= 1;
-				stageObject.div.style.zIndex = stageObject.zIndex;
+		this.childDivs.forEach(function(stageDiv) {
+			if(stageDiv.zIndex > sO.zIndex) {
+				stageDiv.zIndex -= 1;
+				stageDiv.div.style.zIndex = stageDiv.zIndex;
 			}
 		});
 		sO.zIndex = this.maxUsedZIndex;

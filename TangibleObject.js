@@ -21,7 +21,7 @@ class TangibleObject extends StageObject {
 		this.dd_cursorX = e.clientX;
 		this.dd_cursorY = e.clientY;
 
-		this.stageCoordinate.updateScaledValues((this.stageCoordinate.stageX - dd_posX), (this.stageCoordinate.stageY - dd_posY));
+		this.coordinate.updateStageValues((this.coordinate.stageX - dd_posX), (this.coordinate.stageY - dd_posY));
 	}
 
 	onMouseUp(e) {

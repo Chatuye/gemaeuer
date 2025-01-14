@@ -1,14 +1,14 @@
 class ZoomDiv extends StageDiv {
-	constructor(zoomableDiv, x, y, w, h) {
+	constructor(zoomableDiv, x, y) {
 		super(zoomableDiv.stage, zoomableDiv);
 
 		this.x = x;
 		this.y = y;
-		this.width = w;
-		this.height = h;
+		this.width = 0;
+		this.height = 0;
 
 		this.div.style.position = "absolute";
-		this.div.style.backgroundColor = "#00FF00";
+//		this.div.style.backgroundColor = "#00FF00";
 	}
 
 	assignCD() {
@@ -17,6 +17,7 @@ class ZoomDiv extends StageDiv {
 
     onLoad() {
 		this.state = "onStage";
+		this.onReRender();
     }
 
 	onCoordinateChange() {
@@ -30,7 +31,9 @@ class ZoomDiv extends StageDiv {
 	}
 
 	onReRender() {
-		this.onCoordinateChange();
-		this.onDimensionsChange();
+		if(this.state == "onStage") {
+			this.onCoordinateChange();
+			this.onDimensionsChange();
+		}
 	}
 }

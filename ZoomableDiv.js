@@ -1,13 +1,15 @@
 class ZoomableDiv extends StageDiv{
 	constructor(stage, x, y, w, h) {
 		super(stage, stage);
-		
+
 		this.div.style.backgroundColor = "#FF0000";
 
 		this.childDivs = new Array();
 		
-		let zoomDiv1 = new ZoomDiv(this, 0, 0, 100, 100);
-		let zoomDiv2 = new ZoomDiv(this, 100, 100, 100, 100);
+		let zoomDiv1 = new ZoomObject(this, "tile-front", "tile-back", "back", 0, 0);
+		let zoomDiv2 = new ZoomObject(this, "tile-front", "tile-back", "front", 100, 100);
+		let zoomDiv3 = new ZoomObject(this, "tile-front", "tile-back", "back", 0, 100);
+		let zoomDiv4 = new ZoomObject(this, "tile-front", "tile-back", "front", 100, 0);
 
 		this.viewPort = new ViewPort(0, 0, 200, 200);
 		this.viewPortScale = 0;
@@ -36,13 +38,7 @@ class ZoomableDiv extends StageDiv{
 	pan(dX, dY) {
 		dX = dX/this.viewPortScale;
 		dY = dY/this.viewPortScale;
-/*
-		console.log("this.viewPortScale: "+this.viewPortScale);
-		console.log("dX: "+dX);
-		console.log("dY: "+dY);
-		console.log("x1: "+this.viewPort.x1+" y1: "+this.viewPort.y1);
-		console.log("x2: "+this.viewPort.x2+" y2: "+this.viewPort.y2);
-*/
+
 		this.viewPort.x1 = this.viewPort.x1-dX;
 		this.viewPort.y1 = this.viewPort.y1-dY;
 		this.viewPort.x2 = this.viewPort.x2-dX;

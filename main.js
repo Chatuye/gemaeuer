@@ -1,29 +1,22 @@
 var mainBody = null;
-var cards = new Array();
 var stage = null;
-var spots = null;
-
-var UIresizing = false;
-
-var draggedCard = null;
-var draggedObject = null;
-
-var tob = null;
+var mainViewPort = null;
 
 function onBodyLoad() {
 	mainBody = document.getElementById("mainBody");
 
-	stage = new CardStage(mainBody);
+	mainViewPort = new ViewPort(null, "relative", 2.0, 2.0);
+	stage = new Stage(mainBody, "relative", 0.05, 0.05, "relative", 0.9, 0.9, "relative", 1.0, 1.0);
 }
 
 function onBodyResize() {
-	UIresizing = true;
+	mainViewPort.width = mainBody.getBoundingClientRect().width;
+	mainViewPort.height = mainBody.getBoundingClientRect().height;
 	
-	stage.onResize();
-	
-	UIresizing = false;
+	stage.onParentChange();
 }
 
-function logVar(s, v) {
-	console.log(s+": "+v);
-}
+function randomHexColorCode() {
+	let n = (Math.random() * 0xfffff * 1000000).toString(16);
+	return '#' + n.slice(0, 6);
+};

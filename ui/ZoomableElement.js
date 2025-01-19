@@ -17,7 +17,7 @@ class ZoomableElement {
         this.width = w;
         this.height = h;
 
-        this.div = document.createElement('div');
+        this.div = document.createElement("div");
         this.div.style.position = "absolute";
 		this.div.style.backgroundColor = randomHexColorCode();
         this.parentObserver = new MutationObserver(this.onParentMutation.bind(this));

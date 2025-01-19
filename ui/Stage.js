@@ -25,7 +25,7 @@ class Stage extends ZoomableElement {
 
         let x = cursorOnVP.x;
         let y = cursorOnVP.y;
-        this.registerChild(new FlippableElement(this, "absolute", x, y, "absolute", 200, 200, "back"));
+        this.registerChild(new FlippableElement(this, "absolute", x, y, "absolute", 200, 200, "tile-front", "tile-back", "back"));
     }
     onContextMenu(e) {
         e.stopPropagation();

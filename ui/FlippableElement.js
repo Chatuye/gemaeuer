@@ -1,5 +1,5 @@
 class FlippableElement extends ZoomableElement {
-	constructor(parent, positionType, x, y, dimensionsType, w, h, facing) {
+	constructor(parent, positionType, x, y, dimensionsType, w, h, frontSVG, backSVG, facing) {
         super(parent, positionType, x, y, dimensionsType, w, h);
     
 		this.facing = "front";
@@ -13,12 +13,13 @@ class FlippableElement extends ZoomableElement {
         this.wrapperBack.className = "Back";
 
 		let mySVGParentFront = document.createElement("div");
-		mySVGParentFront.innerHTML = svgData["tile-front"];
+		mySVGParentFront.innerHTML = svgData[frontSVG];
 		this.stageObjectSVGFront = mySVGParentFront.firstElementChild;
 		this.wrapperFront.appendChild(this.stageObjectSVGFront);
+        this.stageObjectSVGFront.getElementById("text").firstChild.innerHTML = Math.floor((Math.random()*9))+1;
 		
 		let mySVGParentBack = document.createElement("div");
-		mySVGParentBack.innerHTML = svgData["tile-back"];
+		mySVGParentBack.innerHTML = svgData[backSVG];
 		this.stageObjectSVGBack = mySVGParentBack.firstElementChild;
 		this.wrapperBack.appendChild(this.stageObjectSVGBack);
 

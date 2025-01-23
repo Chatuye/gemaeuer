@@ -1,7 +1,13 @@
 class FlippableElement extends ZoomableElement {
-	constructor(parent, positionType, x, y, dimensionsType, w, h, frontSVG, backSVG, facing) {
-        super(parent, positionType, x, y, dimensionsType, w, h);
+	constructor(parent, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, w, h, svgKeyFront, svgKeyBack, facing) {
+		let mySVGFront = svgLoader.clone(svgKeyFront);
+		let mySVGBack = svgLoader.clone(svgKeyBack);
+
+		super(parent, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, w, h, "keepAspectRatio", mySVGFront.getAttribute("width"), mySVGFront.getAttribute("height"));
     
+		this.svgFront = mySVGFront;
+		this.svgBack = mySVGBack;
+
 		this.facing = "front";
 
         this.div.className = "Flippable";
@@ -12,16 +18,8 @@ class FlippableElement extends ZoomableElement {
 		this.wrapperBack = document.createElement("div");
         this.wrapperBack.className = "Back";
 
-		let mySVGParentFront = document.createElement("div");
-		mySVGParentFront.innerHTML = svgData[frontSVG];
-		this.stageObjectSVGFront = mySVGParentFront.firstElementChild;
-		this.wrapperFront.appendChild(this.stageObjectSVGFront);
-        this.stageObjectSVGFront.getElementById("text").firstChild.innerHTML = Math.floor((Math.random()*9))+1;
-		
-		let mySVGParentBack = document.createElement("div");
-		mySVGParentBack.innerHTML = svgData[backSVG];
-		this.stageObjectSVGBack = mySVGParentBack.firstElementChild;
-		this.wrapperBack.appendChild(this.stageObjectSVGBack);
+		this.wrapperFront.appendChild(this.svgFront);
+		this.wrapperBack.appendChild(this.svgBack);
 
 		if(facing == "back") this.flip(0);
     }
@@ -57,20 +55,15 @@ class FlippableElement extends ZoomableElement {
 		this.wrapper.appendChild(this.wrapperFront);
 		this.wrapper.appendChild(this.wrapperBack);
 
-		this.width = this.stageObjectSVGFront.getAttribute("width");
-        this.height = this.stageObjectSVGFront.getAttribute("height");
-
-        this.resizeDiv();
-
-        this.stageObjectSVGFront.setAttribute("width", "100%");
-        this.stageObjectSVGFront.setAttribute("height", "100%");
-        this.stageObjectSVGBack.setAttribute("width", "100%");
-        this.stageObjectSVGBack.setAttribute("height", "100%");
-
-        this.div.addEventListener("click", this.onClick.bind(this));
+        this.svgFront.setAttribute("width", "100%");
+        this.svgFront.setAttribute("height", "100%");
+        this.svgBack.setAttribute("width", "100%");
+        this.svgBack.setAttribute("height", "100%");
     }
+	onMouseUp(e) {
+		if(!this.pickedUp)
+			this.flip(800);
 
-	onClick() {
-		this.flip(800);
+		super.onMouseUp(e);
 	}
 }

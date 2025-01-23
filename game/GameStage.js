@@ -3,7 +3,6 @@ class GameStage extends Stage {
         super(parent, positionType, x, y, dimensionsType, w, h, viewPortType, vW, vH);
 
         this.div.addEventListener("contextmenu", this.onContextMenu.bind(this), { passive: false });
-        this.div.addEventListener("dblclick", this.onDoubleClick.bind(this), { passive: false });
     }
 
 

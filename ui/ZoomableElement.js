@@ -61,6 +61,7 @@ class ZoomableElement {
 
     onDoubleClick(e) {
         e.stopPropagation();
+        e.preventDefault();
     }
     onMouseDown(e) {
         e.stopPropagation();

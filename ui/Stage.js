@@ -1,6 +1,6 @@
 class Stage extends ZoomableElement {
 	constructor(parent, positionType, x, y, dimensionsType, w, h, viewPortType, vW, vH) {
-        super(parent, positionType, x, y, dimensionsType, w, h);
+        super(parent, "zoom", positionType, x, y, "zoom", dimensionsType, w, h);
 
 
 
@@ -10,36 +10,10 @@ class Stage extends ZoomableElement {
         this.children = new Array();
 
         this.div.addEventListener("wheel", this.onWheel.bind(this), { passive: false });
-        this.div.addEventListener("contextmenu", this.onContextMenu.bind(this), { passive: false });
-        this.div.addEventListener("dblclick", this.onDoubleClick.bind(this), { passive: false });
     }
 
 
 
-    onDoubleClick(e) {
-        e.stopPropagation();
-        e.preventDefault();
-
-        let cursorOnDiv = this.convertScreenPosToDivPos(e.clientX, e.clientY);
-        let cursorOnVP = this.convertDivPosToViewPortPos(cursorOnDiv.x, cursorOnDiv.y);
-
-        let x = cursorOnVP.x;
-        let y = cursorOnVP.y;
-        this.registerChild(new ZoomableElement(this, "absolute", x, y, "absolute", 100, 100));
-    }
-    onContextMenu(e) {
-        e.stopPropagation();
-        e.preventDefault();
-		
-        let cursorOnDiv = this.convertScreenPosToDivPos(e.clientX, e.clientY);
-        let cursorOnVP = this.convertDivPosToViewPortPos(cursorOnDiv.x, cursorOnDiv.y);
-
-        let x = cursorOnVP.x;
-        let y = cursorOnVP.y;
-
-        let q = this.viewPort.getScreenWidth()/this.viewPort.getScreenHeight();
-        this.registerChild(new Stage(this, "absolute", x, y, "absolute", 400*q, 400, "absolute", 800*q, 800));
-    }
     onWheel(e) {
         e.stopPropagation();
         e.preventDefault();
@@ -84,11 +58,13 @@ class Stage extends ZoomableElement {
     zoom(z, x, y) {
 		let cursorOnDiv = this.convertScreenPosToDivPos(x, y);
 
-        let relX = cursorOnDiv.x/this.getScreenWidth();
-        let relY = cursorOnDiv.y/this.getScreenHeight();
+        let d = this.getScreenDimensions();
+        let relX = cursorOnDiv.x/d.width;
+        let relY = cursorOnDiv.y/d.height;
 
 		let zoomInc = Math.round((z/100)*this.zoomPerTick);
-        let q = this.viewPort.getWidth()/this.viewPort.getHeight();
+        let vD = this.viewPort.getDimensions()
+        let q = vD.width/vD.height;
 
         let zoomIncX = zoomInc*q;
 		let zoomIncY = zoomInc;

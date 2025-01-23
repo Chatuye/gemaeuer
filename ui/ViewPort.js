@@ -23,8 +23,9 @@ class ViewPort {
             w = this.width + dW;
             h = this.height + dH;
         } else if (this.type == "relative") {
-            w = (this.getWidth() + dW)/this.getScreenWidth();
-            h = (this.getHeight() + dH)/this.getScreenHeight();
+            let d = this.getDimensions()
+            w = (d.width + dW)/d.screenDimensions.width;
+            h = (d.height + dH)/d.screenDimensions.height;
         }
 
         if((w > 0) && (h > 0)) {
@@ -36,41 +37,35 @@ class ViewPort {
         }
     }
 
-    getWidth() {
+    getDimensions() {
         let w = this.width;
-        if(this.type == "relative")
-            w *= this.getScreenWidth();
-        return w;
-    }
-
-    getHeight() {
         let h = this.height;
-        if(this.type == "relative")
-            h *= this.getScreenHeight();
-        return h;
+        let sD = this.getScreenDimensions();;
+        if(this.type == "relative") {
+            w *= sD.width;
+            h *= sD.height;
+        }
+        return {width: w, height: h, screenDimensions: sD};
     }
 
-    getScreenWidth() {
+    getScreenDimensions() {
         let w = 0;
-        if(this.parent == null)
+        let h = 0;
+        if(this.parent == null) {
             w = mainBody.getBoundingClientRect().width;
-        else
-            w = this.parent.getScreenWidth();
-        return w;
-    }
-
-    getScreenHeight() {
-        let w = 0;
-        if(this.parent == null)
-            w = mainBody.getBoundingClientRect().width;
-        else
-            w = this.parent.getScreenHeight();
-        return w;
+            h = mainBody.getBoundingClientRect().height;
+        } else {
+            let d = this.parent.getScreenDimensions();
+            w = d.width;
+            h = d.height;
+        }
+        return {width: w, height: h};
     }
 
     calculateScale(callback) {
-        this.scaleX = this.getScreenWidth()/this.getWidth();
-        this.scaleY = this.getScreenHeight()/this.getHeight();
+        let d = this.getDimensions();
+        this.scaleX = d.screenDimensions.width/d.width;
+        this.scaleY = d.screenDimensions.height/d.height;
 
         if(callback) callback();
     }

@@ -1,6 +1,6 @@
 class Stage extends ZoomableElement {
 	constructor(parent, positionType, x, y, dimensionsType, w, h, viewPortType, vW, vH) {
-        super(parent, "zoom", positionType, x, y, "zoom", dimensionsType, w, h);
+        super(parent, "zoom", positionType, x, y, "zoom", dimensionsType, w, h, "dynamic", 0, 0);
 
 
 
@@ -75,7 +75,6 @@ class Stage extends ZoomableElement {
     
     
     getScreenDimensionsOfChild(b, t, w, h, cB) {
-        console.log(b+" "+t+" "+w+" "+h+" "+cB);
         let width = w * this.viewPort.getScaleX();
         let height = h * this.viewPort.getScaleY();
         if(cB == "keepAspectRatio") {
@@ -92,7 +91,6 @@ class Stage extends ZoomableElement {
             width = w * this.getScreenDimensions().width;
             height = h * this.getScreenDimensions().height;
         }
-        console.log("Child: "+height);
         return {width: width, height: height};
     }
 }

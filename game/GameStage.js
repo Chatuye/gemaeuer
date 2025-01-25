@@ -3,9 +3,24 @@ class GameStage extends Stage {
         super(parent, positionType, x, y, dimensionsType, w, h, viewPortType, vW, vH);
 
         this.hand = null;
+        
+        this.uiScale = this.getUIScale();
+        let uiScale = Math.min(this.uiScale.scaleX, this.uiScale.scaleY);
+        this.viewPort.width = 1/uiScale;
+        this.viewPort.height = 1/uiScale;
+        this.viewPort.calculateScale();
 
         this.div.addEventListener("contextmenu", this.onContextMenu.bind(this), { passive: false });
         this.div.addEventListener("mousemove", this.onMouseMove.bind(this));
+    }
+
+    adjustViewPort() {
+        let oldUIScale = Math.min(this.uiScale.scaleX, this.uiScale.scaleY);
+        this.uiScale = this.getUIScale();
+        let uiScale = Math.min(this.uiScale.scaleX, this.uiScale.scaleY);
+        this.viewPort.width *= oldUIScale/uiScale;
+        this.viewPort.height *= oldUIScale/uiScale;
+        this.viewPort.calculateScale();
     }
 
     onMouseMove(e) {
@@ -48,9 +63,10 @@ class GameStage extends Stage {
     }
 
     onParentChange() {
-        super.onParentChange();
-
+        this.adjustViewPort()
         if(this.hand) this.hand.onParentChange();
+
+        super.onParentChange();        
     }
 
 }

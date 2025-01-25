@@ -29,6 +29,10 @@ class ZoomableElement {
         this.contentBehaviour = contentBehaviour;
         this.contentWidth = cW;
         this.contentHeight = cH;
+        if(contentBehaviour == "dynamic") {
+            this.contentWidth = this.width;
+            this.contentHeight = this.height;
+        }
         this.contentAspectRatio = this.contentWidth/this.contentHeight;
         if(this.contentBehaviour == "keepAspectRatio")
            this.setScreenDimensionsToParentScale();
@@ -147,9 +151,9 @@ class ZoomableElement {
     }
 
     setScreenDimensionsToParentScale() {
-        let sD = this.getScreenDimensions();
-        this.width = sD.width;
-        this.height = sD.height;
+//        let sD = this.getScreenDimensions();
+//        this.width = sD.width;
+//        this.height = sD.height;
     }
 
     onParentChange() {
@@ -184,8 +188,13 @@ class ZoomableElement {
         let h = 0;
         
         if(this.dimensionsType == "absolute") {
-            w = this.width;
-            h = this.height;
+            w = this.contentWidth;
+            h = this.contentHeight;
+            if(this.contentBehaviour == "keepAspectRatio") {
+                let sD = this.getScreenDimensions();
+                w = sD.width;
+                h = sD.height;
+            }
             if(this.dimensionsBehaviour == "zoom") {
                 w *= this.parent.viewPort.getScaleX();
                 h *= this.parent.viewPort.getScaleY()
@@ -200,31 +209,15 @@ class ZoomableElement {
     }
 
 
-/*
-    getScreenDimensions() {
-        let width = this.width * this.parent.viewPort.getScaleX();
-        let height = this.height * this.parent.viewPort.getScaleY();
-        if(this.dimensionsType == "relative") {
-            width = this.width * this.parent.getScreenDimensions().width;
-            height = this.height * this.parent.getScreenDimensions().height;
-            if(this.contentBehaviour == "keepAspectRatio") {
-                if(width > (height * this.contentAspectRatio)) {
-                    width = height * this.contentAspectRatio;
-                } else {
-                    height = width / this.contentAspectRatio;
-                }
-            }
-        }
-        return {width: width, height: height};
-    }*/
+    
     getUIScale() {
         let sX = this.getScreenDimensions().width / UIDefinitions.baseWidth;
         let sY = this.getScreenDimensions().height / UIDefinitions.baseHeight;
         return {scaleX: sX, scaleY: sY}
     }
     getScreenDimensions() {
-        let width = this.width * this.parent.viewPort.getScaleX();
-        let height = this.height * this.parent.viewPort.getScaleY();
+        let width = this.contentWidth * this.parent.viewPort.getScaleX();
+        let height = this.contentHeight * this.parent.viewPort.getScaleY();
         if(this.contentBehaviour == "keepAspectRatio") {
             let parentUIScale = this.parent.getUIScale();
             parentUIScale = Math.min(parentUIScale.scaleX, parentUIScale.scaleY);

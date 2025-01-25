@@ -31,7 +31,9 @@ class Card extends FlippableElement {
         this.contentBehaviour = "keepAspectRatio";
 
 
+        //console.log("Width: "+this.width)
         this.setScreenDimensionsToParentScale();
+        //console.log("Width: "+this.width)
         this.resizeDiv();
         this.x = cursorOnParent.x - (this.getScreenDimensions().width * relX);
         this.y = cursorOnParent.y - (this.getScreenDimensions().height * relY);
@@ -48,7 +50,7 @@ class Card extends FlippableElement {
             this.contentBehaviour = "keepAspectRatio";
 
             this.parent.hand.addCard(this);
-            this.setScreenDimensionsToParentScale();
+//            this.setScreenDimensionsToParentScale();
             this.resizeDiv();            
         } else {
             let cursorOnDiv = this.convertScreenPosToDivPos(this.cursorX, this.cursorY);
@@ -60,6 +62,8 @@ class Card extends FlippableElement {
             this.dimensionsBehaviour = "zoom";
             this.dimensionsType = "absolute";
             this.contentBehaviour = "fixed";
+            //this.width = this.contentWidth;
+            //this.height = this.contentHeight;
 
             let cursorOnParent = this.parent.convertScreenPosToDivPos(this.cursorX-(this.getScreenDimensions().width*relX), this.cursorY-(this.getScreenDimensions().height*relY));
             let cursorOnParentVP = this.parent.convertDivPosToViewPortPos(cursorOnParent.x, cursorOnParent.y);

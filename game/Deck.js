@@ -1,7 +1,7 @@
 class Deck extends ZoomableElement {
     constructor(parent, x, y) {
         let mySVG = svgLoader.clone("cardBack");
-        super(parent, "fixed", "absolute", x, y, "fixed", "relative", 0.33, 0.33, "keepAspectRatio", mySVG.getAttribute("width"), mySVG.getAttribute("height"));
+        super(parent, "fixed", "absolute", x, y, "fixed", "absolute", 100, 100, "keepAspectRatio", mySVG.getAttribute("width"), mySVG.getAttribute("height"));
         this.svg = mySVG;
 
         this.div.style.backgroundColor = "rgba(0, 0, 0, 0.0)";

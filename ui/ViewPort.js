@@ -51,9 +51,9 @@ class ViewPort {
     getScreenDimensions() {
         let w = 0;
         let h = 0;
-        if(this.parent == null) {
-            w = mainBody.getBoundingClientRect().width;
-            h = mainBody.getBoundingClientRect().height;
+        if(this.parent instanceof HTMLElement) {
+            w = this.parent.getBoundingClientRect().width;
+            h = this.parent.getBoundingClientRect().height;
         } else {
             let d = this.parent.getScreenDimensions();
             w = d.width;

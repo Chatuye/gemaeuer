@@ -14,6 +14,11 @@ class SVGLoader {
         let mySVGParent = document.createElement("div");
 		mySVGParent.innerHTML = svgData[key];
 		this.svgs[key] = mySVGParent.firstElementChild;
+
+        if(key == cardDimensions.svg) {
+            cardDimensions.svgWidth = this.svgs[key].getAttribute("width");
+            cardDimensions.svgHeight = this.svgs[key].getAttribute("height");
+        }
     }
 
     clone(key) {

@@ -71,4 +71,28 @@ class Stage extends ZoomableElement {
 
         this.viewPort.zoom(zoomIncX*relX, zoomIncY*relY, zoomIncX, zoomIncY, this.updateChildren.bind(this));
     }
+
+    
+    
+    getScreenDimensionsOfChild(b, t, w, h, cB) {
+        console.log(b+" "+t+" "+w+" "+h+" "+cB);
+        let width = w * this.viewPort.getScaleX();
+        let height = h * this.viewPort.getScaleY();
+        if(cB == "keepAspectRatio") {
+            let parentUIScale = this.getUIScale();
+            parentUIScale = Math.min(parentUIScale.scaleX, parentUIScale.scaleY);
+            width = w * parentUIScale;
+            height = h * parentUIScale;
+            if(b == "zoom") {
+                width *= this.viewPort.getScaleX();
+                height *= this.viewPort.getScaleY();
+            }
+        }
+        if(t == "relative") {
+            width = w * this.getScreenDimensions().width;
+            height = h * this.getScreenDimensions().height;
+        }
+        console.log("Child: "+height);
+        return {width: width, height: height};
+    }
 }

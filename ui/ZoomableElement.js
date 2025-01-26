@@ -136,14 +136,19 @@ class ZoomableElement {
         this.pickedUp = true;
 		this.div.style.setProperty("-webkit-filter", "drop-shadow(0px 0px 4px rgba(0, 0, 0, 1.0)) drop-shadow(0px 0px 24px rgba(255, 255, 255, 0.33)");
     
-        this.parent.zManager.remove(this.zLayer, this);
-        this.parent.zManager.set(3, this);
+        if(this.parent.zManager) {
+            this.parent.zManager.remove(this.zLayer, this);
+            this.parent.zManager.set(3, this);
+        }
     }
     drop() {
         this.pickedUp = false;
 		this.setDefaultStyle();
-        this.parent.zManager.remove(3, this);
-        this.parent.zManager.set(this.zLayer, this);
+        
+        if(this.parent.zManager) {
+            this.parent.zManager.remove(3, this);
+            this.parent.zManager.set(this.zLayer, this);
+        }
     }
     setDefaultStyle() {
 		this.div.style.setProperty("-webkit-filter", "drop-shadow(0px 0px 0px rgba(0, 0, 0, 1.0))");

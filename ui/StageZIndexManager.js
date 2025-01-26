@@ -1,7 +1,5 @@
 class StageZIndexManager {
 	constructor() {
-//        console.log("StageZIndexManager");
-
         this.maxLayerSize = 100000;
         this.layers = new Array(); 
     }

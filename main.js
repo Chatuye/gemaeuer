@@ -1,31 +1,27 @@
+var svgLoader = null;
 var mainBody = null;
 var stage = null;
-var mainViewPort = null;
-var svgLoader = null;
-var hand = null;
+
 
 function onBodyLoad() {
 	svgLoader = new SVGLoader();
 	svgLoader.loadAll(onSVGsLoaded);
 }
 
+
 function onSVGsLoaded() {
 	mainBody = document.getElementById("mainBody");
 
-	mainViewPort = new ViewPort(null, "relative", 2.0, 2.0);
-	//stage = new GameStage(mainBody, "relative", 0.05, 0.05, "relative", 0.9, 0.9, "relative", 1.0, 1.0);
-	stage = new GameStage(mainBody, "absolute", 10, 10, "relative", 0.9, 0.9, "relative", 1.0, 1.0);
+	stage = new GameStage(mainBody, "fixed", "absolute", 10, 10, "fixed", "relative", 0.9, 0.9, false, "relative", 1.0, 1.0, true);
 	stage.div.className = "Stage";
-
-	hand = new Hand(stage);
 	
-	let deck = new Deck(stage, 0, 0);
-	stage.registerChild(deck);
+	stage.hand = new Hand(stage);
+	stage.registerChild(new Deck(stage, 0, 0));
 }
 
 function onBodyResize() {
-	mainViewPort.width = mainBody.getBoundingClientRect().width;
-	mainViewPort.height = mainBody.getBoundingClientRect().height;
+	stage.parent.viewPort.width = mainBody.getBoundingClientRect().width;
+	stage.parent.viewPort.height = mainBody.getBoundingClientRect().height;
 	
 	stage.onParentChange();
 }

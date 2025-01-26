@@ -1,13 +1,21 @@
 class ZoomableElement {
-	constructor(parent, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, w, h, contentBehaviour, cW, cH) {
+	constructor(parent, zLayer, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, w, h, uiScaling) {
         this.parent = parent;
         if(parent instanceof HTMLElement) {
-            this.parentHTML = parent;
-            this.parentViewPort = mainViewPort;
-            this.parent = null;
-        } else {
-            this.parentViewPort = parent.viewPort;
-            this.parentHTML = parent.div;
+            this.parent = {
+                div: parent,
+                viewPort: new ViewPort(parent, "relative", 1.0, 1.0),
+                parent: null,
+                pickedUpChild: null,
+                getScreenDimensions: function() {
+                    return parent.getBoundingClientRect();
+                },
+                getUIScale: function() {
+                    let sX = parent.getBoundingClientRect().width / UIDefinitions.baseWidth;
+                    let sY = parent.getBoundingClientRect().height / UIDefinitions.baseHeight;
+                    return {scaleX: sX, scaleY: sY}
+                }            
+            }
         }
 
         this.positioningBehaviour = positioningBehaviour;
@@ -18,29 +26,30 @@ class ZoomableElement {
         this.dimensionsType = dimensionsType;
         this.width = w;
         this.height = h;
-        this.contentBehaviour = contentBehaviour;
-        this.contentWidth = cW;
-        this.contentHeight = cH;
-        this.contentAspectRatio = this.contentWidth/this.contentHeight;
+        this.uiScaling = uiScaling;
+
 
         this.div = document.createElement("div");
         this.div.style.position = "absolute";
 		this.div.style.backgroundColor = randomHexColorCode();
         this.parentObserver = new MutationObserver(this.onParentMutation.bind(this));
-		this.parentObserver.observe(this.parentHTML, { attributes: false, childList: true, characterData: false });	
-		this.parentHTML.appendChild(this.div);
-
+		this.parentObserver.observe(this.parent.div, { attributes: false, childList: true, characterData: false });	
+		this.parent.div.appendChild(this.div);
         
         
         this.div.addEventListener("mousedown", this.onMouseDown.bind(this), { passive: false });
-        this.div.addEventListener("dblclick", this.onDoubleClick.bind(this), { passive: false });
-    
+        this.div.addEventListener("dblclick", this.onDoubleClick.bind(this), { passive: false });   
 		
         
         this.cursorX = 0;
 		this.cursorY = 0;
         this.picking = null;
         this.pickedUp = false;
+        this.pickedUpChild = null;
+
+        this.zLayer = zLayer;
+        if(this.parent.zManager)
+            this.parent.zManager.set(this.zLayer, this);
     }
 
 
@@ -66,11 +75,12 @@ class ZoomableElement {
     onMouseDown(e) {
         e.stopPropagation();
 
+		this.cursorX = e.clientX;
+		this.cursorY = e.clientY;
+
         if(this.positionType == "absolute")
             this.picking = window.setTimeout(this.pickUp.bind(this), 200);
 
-		this.cursorX = e.clientX;
-		this.cursorY = e.clientY;
 		this.addedMouseMove = this.onMouseMove.bind(this);
 		this.addedMouseUp = this.onMouseUp.bind(this);
 		document.addEventListener("mouseup", this.addedMouseUp);
@@ -90,8 +100,8 @@ class ZoomableElement {
     
         if(this.pickedUp) {
             if(this.positioningBehaviour == "zoom") {
-                dX /= this.parentViewPort.getScaleX();
-                dY /= this.parentViewPort.getScaleY();
+                dX /= this.parent.viewPort.getScaleX();
+                dY /= this.parent.viewPort.getScaleY();
             }
             this.moveTo((this.x + dX), (this.y + dY));
         }
@@ -101,7 +111,7 @@ class ZoomableElement {
             clearTimeout(this.picking);
             this.picking = null;
         }
-        if(this.pickedUp) this.drop();
+        if(this.pickedUp) this.drop(e.clientX, e.clientY);
 
         this.clearMouseEvents();
 	}
@@ -121,13 +131,19 @@ class ZoomableElement {
         this.repositionDiv();
     }
     pickUp() {
+        this.parent.pickedUpChild = this;
         this.picking = null;
         this.pickedUp = true;
 		this.div.style.setProperty("-webkit-filter", "drop-shadow(0px 0px 4px rgba(0, 0, 0, 1.0)) drop-shadow(0px 0px 24px rgba(255, 255, 255, 0.33)");
+    
+        this.parent.zManager.remove(this.zLayer, this);
+        this.parent.zManager.set(3, this);
     }
     drop() {
         this.pickedUp = false;
 		this.setDefaultStyle();
+        this.parent.zManager.remove(3, this);
+        this.parent.zManager.set(this.zLayer, this);
     }
     setDefaultStyle() {
 		this.div.style.setProperty("-webkit-filter", "drop-shadow(0px 0px 0px rgba(0, 0, 0, 1.0))");
@@ -136,79 +152,79 @@ class ZoomableElement {
 
 
     onParentChange() {
-        //if(this.positioningBehaviour == "zoom") 
-            this.repositionDiv();
-        //if(this.dimensionsBehaviour == "zoom") 
-            this.resizeDiv();
+        this.repositionDiv();
+        this.resizeDiv();
     }
+
+    
+
     repositionDiv() {
-        let x = 0;
-        let y = 0;
-        
-        if(this.positionType == "absolute") {
-            x = this.x;
-            y = this.y;
-            if(this.positioningBehaviour == "zoom") {
-                x -= this.parentViewPort.x;
-                x *= this.parentViewPort.getScaleX();
-                y -= this.parentViewPort.y;
-                y *= this.parentViewPort.getScaleY();
-            }
-        } else if(this.positionType == "relative") {
-            x = this.getScreenX();
-            y = this.getScreenY();
-        }
+        let sP = this.getScreenPosition();
+        let x = sP.x;
+        let y = sP.y;
 
         this.div.style.left = x + "px";
         this.div.style.top = y + "px";
     }
     resizeDiv() {
-        let w = 0;
-        let h = 0;
-        
-        if(this.dimensionsType == "absolute") {
-            w = this.width * this.parentViewPort.getScaleX();
-            h = this.height * this.parentViewPort.getScaleY();
-        } else if(this.dimensionsType == "relative") {
-            let d = this.getScreenDimensions();
-            w = d.width;
-            h = d.height;
-        }
-        
+        let sD = this.getScreenDimensions();        
+        let w = sD.width;
+        let h = sD.height;
+
         this.div.style.width = w + "px";
         this.div.style.height = h + "px";
     }
 
 
 
+    getUIScale(keepAspectRatio) {
+        let sX = this.getScreenDimensions().width / UIDefinitions.baseWidth;
+        let sY = this.getScreenDimensions().height / UIDefinitions.baseHeight;
+        if(keepAspectRatio)
+            return {scaleX: Math.min(sX, sY), scaleY: Math.min(sX, sY)}
+        else 
+            return {scaleX: sX, scaleY: sY}
+    }
     getScreenDimensions() {
-        let w = this.width * this.parentViewPort.getScaleX();
-        let h = this.height * this.parentViewPort.getScaleY();
+        let width = 0;
+        let height = 0;
+
         if(this.dimensionsType == "relative") {
-            w = this.width * this.parentHTML.getBoundingClientRect().width;
-            h = this.height * this.parentHTML.getBoundingClientRect().height;
-            if(this.contentBehaviour == "keepAspectRatio") {
-                if(w > (h * this.contentAspectRatio)) {
-                    w = h * this.contentAspectRatio;
-                } else {
-                    h = w / this.contentAspectRatio;
-                }
+            width = this.width * this.parent.getScreenDimensions().width;
+            height = this.height * this.parent.getScreenDimensions().height;
+        } else if(this.dimensionsType == "absolute") {
+            width = this.width;
+            height = this.height;
+            if(this.dimensionsBehaviour == "zoom") {
+                width *= this.parent.viewPort.getScaleX();
+                height *= this.parent.viewPort.getScaleY();
+            }
+            if(this.uiScaling) {
+                let parentUIScale = this.parent.getUIScale(true);
+                width *= parentUIScale.scaleX;
+                height *= parentUIScale.scaleY;
             }
         }
-        return {width: w, height: h};
+        return {width: width, height: height};
     }
-
-    getScreenX() {
+    getScreenPosition() {
         let x = this.x;
-        if(this.positionType == "relative")
-            x *= this.parentHTML.getBoundingClientRect().width;
-        return x;
-    }
-    getScreenY() {
         let y = this.y;
-        if(this.positionType == "relative")
-            y *= this.parentHTML.getBoundingClientRect().height;
-        return y;
+
+        if(this.positionType == "relative") {
+            let pSD = this.parent.getScreenDimensions();
+            x *= pSD.width;
+            y *= pSD.height;
+        } else if(this.positionType == "absolute") {
+            if(this.positioningBehaviour == "zoom") {
+                x -= this.parent.viewPort.x;
+                x *= this.parent.viewPort.getScaleX();
+                y -= this.parent.viewPort.y;
+                y *= this.parent.viewPort.getScaleY();
+            }
+        }
+
+        return {x: x, y: y}
     }
 
 
@@ -217,15 +233,5 @@ class ZoomableElement {
         let cursorXOnDiv = Math.round(x - this.div.getBoundingClientRect().left);
 		let cursorYOnDiv = Math.round(y - this.div.getBoundingClientRect().top);
         return { x: cursorXOnDiv, y: cursorYOnDiv};
-    }
-    convertDivPosToViewPortPos(x, y) {
-        let d = this.getScreenDimensions();
-        let relX = x/d.width;
-        let relY = y/d.height;
-
-        let vD = this.viewPort.getDimensions()
-        let vX = this.viewPort.x + (vD.width * relX);
-		let vY = this.viewPort.y + (vD.height * relY);
-        return { x: vX, y: vY};
     }
 }

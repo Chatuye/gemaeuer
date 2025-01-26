@@ -1,12 +1,12 @@
 class Stage extends ZoomableElement {
-	constructor(parent, positionType, x, y, dimensionsType, w, h, viewPortType, vW, vH) {
-        super(parent, "zoom", positionType, x, y, "zoom", dimensionsType, w, h);
+	constructor(parent, zLayer, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, w, h, uiScaling, viewPortType, vW, vH, vpScaling) {
+        super(parent, zLayer, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, w, h, uiScaling);
 
-
+        this.zManager = new StageZIndexManager();
 
         this.zoomPerTick = 40;
 
-        this.viewPort = new ViewPort(this, viewPortType, vW, vH);
+        this.viewPort = new ViewPort(this, viewPortType, vW, vH, vpScaling);
         this.children = new Array();
 
         this.div.addEventListener("wheel", this.onWheel.bind(this), { passive: false });
@@ -70,5 +70,42 @@ class Stage extends ZoomableElement {
 		let zoomIncY = zoomInc;
 
         this.viewPort.zoom(zoomIncX*relX, zoomIncY*relY, zoomIncX, zoomIncY, this.updateChildren.bind(this));
+    }
+
+    
+    getScreenDimensionsOfChild(behaviour, type, width, height, uiScaling) {
+        let w = 0;
+        let h = 0;
+
+        if(type == "relative") {
+            w = width * this.getScreenDimensions().width;
+            h = height * this.getScreenDimensions().height;
+        } else if(type == "absolute") {
+            w = width;
+            h = height;
+            if(behaviour == "zoom") {
+                w *= this.viewPort.getScaleX();
+                h *= this.viewPort.getScaleY();
+            }
+            if(uiScaling) {
+                let uiScale = this.getUIScale(true);
+                w *= uiScale.scaleX;
+                h *= uiScale.scaleY;
+            }
+        }
+        return {width: w, height: h};
+    }
+
+
+
+    convertDivPosToViewPortPos(x, y) {
+        let d = this.getScreenDimensions();
+        let relX = x/d.width;
+        let relY = y/d.height;
+
+        let vD = this.viewPort.getDimensions();
+        let vX = this.viewPort.x + (vD.width * relX);
+		let vY = this.viewPort.y + (vD.height * relY);
+        return {x: vX, y: vY};
     }
 }

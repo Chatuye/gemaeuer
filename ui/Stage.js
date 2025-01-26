@@ -3,7 +3,6 @@ class Stage extends ZoomableElement {
         super(parent, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, w, h, uiScaling);
 
 
-
         this.zoomPerTick = 40;
 
         let scaledVW = vW;
@@ -79,13 +78,7 @@ class Stage extends ZoomableElement {
     getScreenDimensionsOfChild(behaviour, type, width, height, uiScaling) {
         let w = 0;
         let h = 0;
-/*
-        console.log("behaviour: "+behaviour)
-        console.log("type: "+type)
-        console.log("width: "+width)
-        console.log("height: "+height)
-        console.log("uiScaling: "+uiScaling)
-*/
+
         if(type == "relative") {
             w = width * this.getScreenDimensions().width;
             h = height * this.getScreenDimensions().height;
@@ -103,5 +96,18 @@ class Stage extends ZoomableElement {
             }
         }
         return {width: w, height: h};
+    }
+
+
+
+    convertDivPosToViewPortPos(x, y) {
+        let d = this.getScreenDimensions();
+        let relX = x/d.width;
+        let relY = y/d.height;
+
+        let vD = this.viewPort.getDimensions();
+        let vX = this.viewPort.x + (vD.width * relX);
+		let vY = this.viewPort.y + (vD.height * relY);
+        return {x: vX, y: vY};
     }
 }

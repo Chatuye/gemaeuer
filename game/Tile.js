@@ -1,4 +1,4 @@
-class Tile extends FlippableElement {
+class Tile extends FlippableObject {
 	constructor(parent, x, y, facing) {
         super(parent, "zoom", "absolute", x, y, "zoom", "absolute", false, "tile-front", "tile-back", facing);
 

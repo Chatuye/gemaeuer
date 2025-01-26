@@ -16,30 +16,6 @@ class ViewPort {
         this.y -= dY;
         if(callback) this.calculateScale(callback);
     }
-/*
-    zoom(dX, dY, dW, dH, callback) {
-        let w = 0;
-        let h = 0;
-        if(this.type == "absolute") {
-            w = this.width + dW;
-            h = this.height + dH;
-        } else if (this.type == "relative") {
-            let d = this.getDimensions()
-            console.log(this.height)
-            console.log(dH)
-            w = (d.width + dW)/d.screenDimensions.width;
-            h = (d.height + dH)/d.screenDimensions.height;
-        }
-
-        if((w > 0) && (h > 0)) {
-            this.x -= dX;
-            this.y -= dY;
-            this.width = w;
-            this.height = h;
-            if(callback) this.calculateScale(callback);
-        }
-    }
-*/
     zoom(dX, dY, dW, dH, callback) {
         let w = 0;
         let h = 0;

@@ -27,18 +27,6 @@ class ZoomableElement {
         this.width = w;
         this.height = h;
         this.uiScaling = uiScaling;
-/*
-        console.log("this.positioningBehaviour: "+ this.positioningBehaviour)
-        console.log("this.positionType: "+this.positionType)
-        console.log("this.x: "+this.x)
-        console.log("this.y: "+this.y)
-        console.log("this.dimensionsBehaviour: "+this.dimensionsBehaviour)
-        console.log("this.dimensionsType: "+this.dimensionsType)
-        console.log("this.width: "+this.width)
-        console.log("this.height: "+this.height)
-        console.log("this.uiScaling: "+this.uiScaling)
-        console.log("---")
-*/
 
 
         this.div = document.createElement("div");
@@ -47,12 +35,10 @@ class ZoomableElement {
         this.parentObserver = new MutationObserver(this.onParentMutation.bind(this));
 		this.parentObserver.observe(this.parent.div, { attributes: false, childList: true, characterData: false });	
 		this.parent.div.appendChild(this.div);
-
         
         
         this.div.addEventListener("mousedown", this.onMouseDown.bind(this), { passive: false });
-        this.div.addEventListener("dblclick", this.onDoubleClick.bind(this), { passive: false });
-    
+        this.div.addEventListener("dblclick", this.onDoubleClick.bind(this), { passive: false });   
 		
         
         this.cursorX = 0;
@@ -239,19 +225,5 @@ class ZoomableElement {
         let cursorXOnDiv = Math.round(x - this.div.getBoundingClientRect().left);
 		let cursorYOnDiv = Math.round(y - this.div.getBoundingClientRect().top);
         return { x: cursorXOnDiv, y: cursorYOnDiv};
-    }
-    convertDivPosToViewPortPos(x, y) {
-        console.log("y: "+y)
-        let d = this.getScreenDimensions();
-        let relX = x/d.width;
-        let relY = y/d.height;
-
-        let vD = this.viewPort.getDimensions();
-        let vX = this.viewPort.x + (vD.width * relX);
-		let vY = this.viewPort.y + (vD.height * relY);
-        console.log("vD: "+vD.height)
-        console.log("vDS: "+vD.screenDimensions.height)
-        console.log("vY: "+vY)
-        return { x: vX, y: vY};
     }
 }

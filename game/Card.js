@@ -1,6 +1,6 @@
 var cardDimensions = {svg: "card", width: 0, height: 0, uiScaling: true, behaviour:"fixed", type:"absolute"}
 
-class Card extends FlippableElement {
+class Card extends FlippableObject {
     constructor(parent, x, y, facing) {
         super(parent, "fixed", "absolute", x, y, cardDimensions.behaviour, cardDimensions.type, cardDimensions.uiScaling, "card", "cardBack", facing,);
 

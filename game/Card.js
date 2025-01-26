@@ -37,6 +37,7 @@ class Card extends FlippableObject {
         this.repositionDiv();
     }
     drop() {
+        this.zLayer = 0;
         super.drop();
 
         if(this.parent.hand.mode=="raised") {

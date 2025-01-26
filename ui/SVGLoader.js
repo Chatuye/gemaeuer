@@ -16,8 +16,8 @@ class SVGLoader {
 		this.svgs[key] = mySVGParent.firstElementChild;
 
         if(key == cardDimensions.svg) {
-            cardDimensions.svgWidth = this.svgs[key].getAttribute("width");
-            cardDimensions.svgHeight = this.svgs[key].getAttribute("height");
+            cardDimensions.width = this.svgs[key].getAttribute("width");
+            cardDimensions.height = this.svgs[key].getAttribute("height");
         }
     }
 

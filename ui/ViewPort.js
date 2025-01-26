@@ -1,11 +1,12 @@
 class ViewPort {
-    constructor(p, t, w, h) {
+    constructor(p, t, w, h, s) {
         this.parent = p;
         this.type = t;
         this.x = 0;
         this.y = 0;
         this.width = w;
         this.height = h;
+        this.uiScaling = s;
 
         this.calculateScale();
     }
@@ -15,7 +16,7 @@ class ViewPort {
         this.y -= dY;
         if(callback) this.calculateScale(callback);
     }
-
+/*
     zoom(dX, dY, dW, dH, callback) {
         let w = 0;
         let h = 0;
@@ -24,6 +25,8 @@ class ViewPort {
             h = this.height + dH;
         } else if (this.type == "relative") {
             let d = this.getDimensions()
+            console.log(this.height)
+            console.log(dH)
             w = (d.width + dW)/d.screenDimensions.width;
             h = (d.height + dH)/d.screenDimensions.height;
         }
@@ -36,15 +39,49 @@ class ViewPort {
             if(callback) this.calculateScale(callback);
         }
     }
+*/
+    zoom(dX, dY, dW, dH, callback) {
+        let w = 0;
+        let h = 0;
+        if(this.type == "absolute") {
+            w = this.width + dW;
+            h = this.height + dH;
+        } else if (this.type == "relative") {
+            let sD = this.getScreenDimensions()
+            w = ((this.width * sD.width) + dW)/sD.width;
+            h = ((this.height * sD.height) + dH)/sD.height;
+        }
 
+        if((w > 0) && (h > 0)) {
+            if(this.uiScaling) {
+                let uiScale = this.parent.getUIScale(true);
+                dX /= uiScale.scaleX;
+                dY /= uiScale.scaleY;
+            }
+    
+            this.x -= dX;
+            this.y -= dY;
+            this.width = w;
+            this.height = h;
+            if(callback) this.calculateScale(callback);
+        }
+    }
     getDimensions() {
         let w = this.width;
         let h = this.height;
-        let sD = this.getScreenDimensions();;
+
+        if(this.uiScaling) {
+            let uiScale = this.parent.getUIScale(true);
+            w /= uiScale.scaleX;
+            h /= uiScale.scaleY;
+        }
+        
+        let sD = this.getScreenDimensions();
         if(this.type == "relative") {
             w *= sD.width;
             h *= sD.height;
         }
+
         return {width: w, height: h, screenDimensions: sD};
     }
 

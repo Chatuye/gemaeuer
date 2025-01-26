@@ -32,7 +32,7 @@ class Hand {
 	}
 
 	getCardScreenDimensions() {
-		let cD = this.stage.getScreenDimensionsOfChild(cardDimensions.behaviour, cardDimensions.type, cardDimensions.svgWidth, cardDimensions.svgHeight, "keepAspectRatio");
+		let cD = this.stage.getScreenDimensionsOfChild(cardDimensions.behaviour, cardDimensions.type, cardDimensions.width, cardDimensions.height, cardDimensions.uiScaling);
 		return cD;
 	}
 

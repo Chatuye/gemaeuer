@@ -1,8 +1,8 @@
-var cardDimensions = {svg: "card", svgWidth: 1, svgHeight: 1, behaviour: "fixed", type: "absolute", width: 100, height: 100}
+var cardDimensions = {svg: "card", width: 0, height: 0, uiScaling: true, behaviour:"fixed", type:"absolute"}
 
 class Card extends FlippableElement {
     constructor(parent, x, y, facing) {
-        super(parent, "fixed", "absolute", x, y, cardDimensions.behaviour, cardDimensions.type, cardDimensions.width, cardDimensions.height, "card", "cardBack", facing, "keepAspectRatio");
+        super(parent, "fixed", "absolute", x, y, cardDimensions.behaviour, cardDimensions.type, cardDimensions.uiScaling, "card", "cardBack", facing,);
 
         this.hand = null;
 
@@ -26,32 +26,21 @@ class Card extends FlippableElement {
         this.div.style.transform = "none";
         this.positioningBehaviour = "fixed";
         this.positionType = "absolute";
-        this.dimensionsBehaviour = "fixed";
+        this.dimensionsBehaviour = cardDimensions.behaviour;
         this.dimensionsType = cardDimensions.type;
-        this.contentBehaviour = "keepAspectRatio";
+        this.uiScaling = true;
 
-
-        //console.log("Width: "+this.width)
-        this.setScreenDimensionsToParentScale();
-        //console.log("Width: "+this.width)
-        this.resizeDiv();
         this.x = cursorOnParent.x - (this.getScreenDimensions().width * relX);
         this.y = cursorOnParent.y - (this.getScreenDimensions().height * relY);
+
+        this.resizeDiv();
         this.repositionDiv();
     }
     drop() {
         super.drop();
 
         if(this.parent.hand.mode=="raised") {
-            this.positioningBehaviour = "fixed";
-            this.positionType = "absolute";
-            this.dimensionsBehaviour = "fixed";
-            this.dimensionsType = cardDimensions.type;
-            this.contentBehaviour = "keepAspectRatio";
-
-            this.parent.hand.addCard(this);
-//            this.setScreenDimensionsToParentScale();
-            this.resizeDiv();            
+            this.parent.hand.addCard(this);          
         } else {
             let cursorOnDiv = this.convertScreenPosToDivPos(this.cursorX, this.cursorY);
             let relX = cursorOnDiv.x/this.getScreenDimensions().width;
@@ -61,9 +50,7 @@ class Card extends FlippableElement {
             this.positionType = "absolute";
             this.dimensionsBehaviour = "zoom";
             this.dimensionsType = "absolute";
-            this.contentBehaviour = "fixed";
-            //this.width = this.contentWidth;
-            //this.height = this.contentHeight;
+            this.uiScaling = false;
 
             let cursorOnParent = this.parent.convertScreenPosToDivPos(this.cursorX-(this.getScreenDimensions().width*relX), this.cursorY-(this.getScreenDimensions().height*relY));
             let cursorOnParentVP = this.parent.convertDivPosToViewPortPos(cursorOnParent.x, cursorOnParent.y);

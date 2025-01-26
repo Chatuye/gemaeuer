@@ -1,7 +1,7 @@
 class Deck extends ZoomableElement {
     constructor(parent, x, y) {
         let mySVG = svgLoader.clone("cardBack");
-        super(parent, "fixed", "absolute", x, y, "fixed", "absolute", 100, 100, "keepAspectRatio", mySVG.getAttribute("width"), mySVG.getAttribute("height"));
+        super(parent, "fixed", "absolute", x, y, "fixed", "absolute", mySVG.getAttribute("width"), mySVG.getAttribute("height"), true);
         this.svg = mySVG;
 
         this.div.style.backgroundColor = "rgba(0, 0, 0, 0.0)";
@@ -17,7 +17,7 @@ class Deck extends ZoomableElement {
 
     onMouseUp(e) {
         if(!this.pickedUp) {
-            let card = new Card(stage, 500, 500, "front");
+            let card = new Card(stage, this.x, this.y, "front");
             this.parent.registerChild(card);
             hand.addCard(card);
         }

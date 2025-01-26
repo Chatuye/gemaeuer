@@ -1,12 +1,15 @@
 class Stage extends ZoomableElement {
-	constructor(parent, positionType, x, y, dimensionsType, w, h, viewPortType, vW, vH) {
-        super(parent, "zoom", positionType, x, y, "zoom", dimensionsType, w, h, "dynamic", 0, 0);
+	constructor(parent, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, w, h, uiScaling, viewPortType, vW, vH, vpScaling) {
+        super(parent, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, w, h, uiScaling);
 
 
 
         this.zoomPerTick = 40;
 
-        this.viewPort = new ViewPort(this, viewPortType, vW, vH);
+        let scaledVW = vW;
+        let scaledVH = vH;
+
+        this.viewPort = new ViewPort(this, viewPortType, scaledVW, scaledVH, vpScaling);
         this.children = new Array();
 
         this.div.addEventListener("wheel", this.onWheel.bind(this), { passive: false });
@@ -73,24 +76,32 @@ class Stage extends ZoomableElement {
     }
 
     
-    
-    getScreenDimensionsOfChild(b, t, w, h, cB) {
-        let width = w * this.viewPort.getScaleX();
-        let height = h * this.viewPort.getScaleY();
-        if(cB == "keepAspectRatio") {
-            let parentUIScale = this.getUIScale();
-            parentUIScale = Math.min(parentUIScale.scaleX, parentUIScale.scaleY);
-            width = w * parentUIScale;
-            height = h * parentUIScale;
-            if(b == "zoom") {
-                width *= this.viewPort.getScaleX();
-                height *= this.viewPort.getScaleY();
+    getScreenDimensionsOfChild(behaviour, type, width, height, uiScaling) {
+        let w = 0;
+        let h = 0;
+/*
+        console.log("behaviour: "+behaviour)
+        console.log("type: "+type)
+        console.log("width: "+width)
+        console.log("height: "+height)
+        console.log("uiScaling: "+uiScaling)
+*/
+        if(type == "relative") {
+            w = width * this.getScreenDimensions().width;
+            h = height * this.getScreenDimensions().height;
+        } else if(type == "absolute") {
+            w = width;
+            h = height;
+            if(behaviour == "zoom") {
+                w *= this.viewPort.getScaleX();
+                h *= this.viewPort.getScaleY();
+            }
+            if(uiScaling) {
+                let uiScale = this.getUIScale(true);
+                w *= uiScale.scaleX;
+                h *= uiScale.scaleY;
             }
         }
-        if(t == "relative") {
-            width = w * this.getScreenDimensions().width;
-            height = h * this.getScreenDimensions().height;
-        }
-        return {width: width, height: height};
+        return {width: w, height: h};
     }
 }

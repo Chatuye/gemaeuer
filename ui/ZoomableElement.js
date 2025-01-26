@@ -1,5 +1,5 @@
 class ZoomableElement {
-	constructor(parent, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, w, h, contentBehaviour, cW, cH) {
+	constructor(parent, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, w, h, uiScaling) {
         this.parent = parent;
         if(parent instanceof HTMLElement) {
             this.parent = {
@@ -26,16 +26,20 @@ class ZoomableElement {
         this.dimensionsType = dimensionsType;
         this.width = w;
         this.height = h;
-        this.contentBehaviour = contentBehaviour;
-        this.contentWidth = cW;
-        this.contentHeight = cH;
-        if(contentBehaviour == "dynamic") {
-            this.contentWidth = this.width;
-            this.contentHeight = this.height;
-        }
-        this.contentAspectRatio = this.contentWidth/this.contentHeight;
-        if(this.contentBehaviour == "keepAspectRatio")
-           this.setScreenDimensionsToParentScale();
+        this.uiScaling = uiScaling;
+/*
+        console.log("this.positioningBehaviour: "+ this.positioningBehaviour)
+        console.log("this.positionType: "+this.positionType)
+        console.log("this.x: "+this.x)
+        console.log("this.y: "+this.y)
+        console.log("this.dimensionsBehaviour: "+this.dimensionsBehaviour)
+        console.log("this.dimensionsType: "+this.dimensionsType)
+        console.log("this.width: "+this.width)
+        console.log("this.height: "+this.height)
+        console.log("this.uiScaling: "+this.uiScaling)
+        console.log("---")
+*/
+
 
         this.div = document.createElement("div");
         this.div.style.position = "absolute";
@@ -106,6 +110,7 @@ class ZoomableElement {
     
         if(this.pickedUp) {
             if(this.positioningBehaviour == "zoom") {
+                console.log("Huh?!?");
                 dX /= this.parent.viewPort.getScaleX();
                 dY /= this.parent.viewPort.getScaleY();
             }
@@ -150,101 +155,82 @@ class ZoomableElement {
 		this.div.style.setProperty("-webkit-filter", "drop-shadow(0px 0px 0px rgba(0, 0, 0, 1.0))");
     }
 
-    setScreenDimensionsToParentScale() {
-//        let sD = this.getScreenDimensions();
-//        this.width = sD.width;
-//        this.height = sD.height;
-    }
+
 
     onParentChange() {
-        if(this.contentBehaviour == "keepAspectRatio")
-            this.setScreenDimensionsToParentScale();
         this.repositionDiv();
         this.resizeDiv();
     }
+
+    
+
     repositionDiv() {
-        let x = 0;
-        let y = 0;
-        
-        if(this.positionType == "absolute") {
-            x = this.x;
-            y = this.y;
+        let sP = this.getScreenPosition();
+        let x = sP.x;
+        let y = sP.y;
+
+        this.div.style.left = x + "px";
+        this.div.style.top = y + "px";
+    }
+    resizeDiv() {
+        let sD = this.getScreenDimensions();        
+        let w = sD.width;
+        let h = sD.height;
+
+        this.div.style.width = w + "px";
+        this.div.style.height = h + "px";
+    }
+
+
+
+    getUIScale(keepAspectRatio) {
+        let sX = this.getScreenDimensions().width / UIDefinitions.baseWidth;
+        let sY = this.getScreenDimensions().height / UIDefinitions.baseHeight;
+        if(keepAspectRatio)
+            return {scaleX: Math.min(sX, sY), scaleY: Math.min(sX, sY)}
+        else 
+            return {scaleX: sX, scaleY: sY}
+    }
+    getScreenDimensions() {
+        let width = 0;
+        let height = 0;
+
+        if(this.dimensionsType == "relative") {
+            width = this.width * this.parent.getScreenDimensions().width;
+            height = this.height * this.parent.getScreenDimensions().height;
+        } else if(this.dimensionsType == "absolute") {
+            width = this.width;
+            height = this.height;
+            if(this.dimensionsBehaviour == "zoom") {
+                width *= this.parent.viewPort.getScaleX();
+                height *= this.parent.viewPort.getScaleY();
+            }
+            if(this.uiScaling) {
+                let parentUIScale = this.parent.getUIScale(true);
+                width *= parentUIScale.scaleX;
+                height *= parentUIScale.scaleY;
+            }
+        }
+        return {width: width, height: height};
+    }
+    getScreenPosition() {
+        let x = this.x;
+        let y = this.y;
+
+        if(this.positionType == "relative") {
+            let pSD = this.parent.getScreenDimensions();
+            x *= pSD.width;
+            y *= pSD.height;
+        } else if(this.positionType == "absolute") {
             if(this.positioningBehaviour == "zoom") {
                 x -= this.parent.viewPort.x;
                 x *= this.parent.viewPort.getScaleX();
                 y -= this.parent.viewPort.y;
                 y *= this.parent.viewPort.getScaleY();
             }
-        } else if(this.positionType == "relative") {
-            x = this.getScreenX();
-            y = this.getScreenY();
         }
 
-        this.div.style.left = x + "px";
-        this.div.style.top = y + "px";
-    }
-    resizeDiv() {
-        let w = 0;
-        let h = 0;
-        
-        if(this.dimensionsType == "absolute") {
-            w = this.contentWidth;
-            h = this.contentHeight;
-            if(this.contentBehaviour == "keepAspectRatio") {
-                let sD = this.getScreenDimensions();
-                w = sD.width;
-                h = sD.height;
-            }
-            if(this.dimensionsBehaviour == "zoom") {
-                w *= this.parent.viewPort.getScaleX();
-                h *= this.parent.viewPort.getScaleY()
-            }
-        } else if(this.dimensionsType == "relative") {
-            let d = this.getScreenDimensions();
-            w = d.width;
-            h = d.height;
-        }
-        this.div.style.width = w + "px";
-        this.div.style.height = h + "px";
-    }
-
-
-    
-    getUIScale() {
-        let sX = this.getScreenDimensions().width / UIDefinitions.baseWidth;
-        let sY = this.getScreenDimensions().height / UIDefinitions.baseHeight;
-        return {scaleX: sX, scaleY: sY}
-    }
-    getScreenDimensions() {
-        let width = this.contentWidth * this.parent.viewPort.getScaleX();
-        let height = this.contentHeight * this.parent.viewPort.getScaleY();
-        if(this.contentBehaviour == "keepAspectRatio") {
-            let parentUIScale = this.parent.getUIScale();
-            parentUIScale = Math.min(parentUIScale.scaleX, parentUIScale.scaleY);
-            width = this.contentWidth * parentUIScale;
-            height = this.contentHeight * parentUIScale;
-            if(this.dimensionsBehaviour == "zoom") {
-                width *= this.parent.viewPort.getScaleX();
-                height *= this.parent.viewPort.getScaleY();
-            }
-        }
-        if(this.dimensionsType == "relative") {
-            width = this.width * this.parent.getScreenDimensions().width;
-            height = this.height * this.parent.getScreenDimensions().height;
-        }
-        return {width: width, height: height};
-    }
-    getScreenX() {
-        let x = this.x;
-        if(this.positionType == "relative")
-            x *= this.parent.div.getBoundingClientRect().width;
-        return x;
-    }
-    getScreenY() {
-        let y = this.y;
-        if(this.positionType == "relative")
-            y *= this.parent.div.getBoundingClientRect().height;
-        return y;
+        return {x: x, y: y}
     }
 
 
@@ -255,6 +241,7 @@ class ZoomableElement {
         return { x: cursorXOnDiv, y: cursorYOnDiv};
     }
     convertDivPosToViewPortPos(x, y) {
+        console.log("y: "+y)
         let d = this.getScreenDimensions();
         let relX = x/d.width;
         let relY = y/d.height;
@@ -262,6 +249,9 @@ class ZoomableElement {
         let vD = this.viewPort.getDimensions();
         let vX = this.viewPort.x + (vD.width * relX);
 		let vY = this.viewPort.y + (vD.height * relY);
+        console.log("vD: "+vD.height)
+        console.log("vDS: "+vD.screenDimensions.height)
+        console.log("vY: "+vY)
         return { x: vX, y: vY};
     }
 }

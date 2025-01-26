@@ -14,7 +14,7 @@ function onSVGsLoaded() {
 
 	//mainViewPort = new ViewPort(null, "relative", 1.0, 1.0);
 	//stage = new GameStage(mainBody, "relative", 0.05, 0.05, "relative", 0.9, 0.9, "relative", 1.0, 1.0);
-	stage = new GameStage(mainBody, "absolute", 10, 10, "relative", 0.9, 0.9, "relative", 1.0, 1.0);
+	stage = new GameStage(mainBody, "fixed", "absolute", 10, 10, "fixed", "relative", 0.9, 0.9, false, "relative", 1.0, 1.0, true);
 	stage.div.className = "Stage";
 
 	//console.log("card: "+dummyCard.getScreenDimensions().height);

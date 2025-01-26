@@ -96,6 +96,9 @@ class Hand {
 
 	addCard(card) {
 		card.hand = this;
+		this.stage.zManager.remove(card.zLayer, card);
+		card.zLayer = 1;
+		this.stage.zManager.set(card.zLayer, card);
 
 		this.cards.push(card);
 		
@@ -103,6 +106,7 @@ class Hand {
 	}
 	removeCard(card) {
 		card.hand = null;
+
 		var i = this.cards.indexOf(card);
 		this.cards.splice(i, 1);
 	}

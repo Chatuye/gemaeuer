@@ -1,14 +1,12 @@
 class Stage extends ZoomableElement {
-	constructor(parent, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, w, h, uiScaling, viewPortType, vW, vH, vpScaling) {
-        super(parent, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, w, h, uiScaling);
+	constructor(parent, zLayer, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, w, h, uiScaling, viewPortType, vW, vH, vpScaling) {
+        super(parent, zLayer, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, w, h, uiScaling);
 
+        this.zManager = new StageZIndexManager();
 
         this.zoomPerTick = 40;
 
-        let scaledVW = vW;
-        let scaledVH = vH;
-
-        this.viewPort = new ViewPort(this, viewPortType, scaledVW, scaledVH, vpScaling);
+        this.viewPort = new ViewPort(this, viewPortType, vW, vH, vpScaling);
         this.children = new Array();
 
         this.div.addEventListener("wheel", this.onWheel.bind(this), { passive: false });

@@ -1,9 +1,9 @@
 class FlippableObject extends ZoomableElement {
-	constructor(parent, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, uiScaling, svgKeyFront, svgKeyBack, facing) {
+	constructor(parent, zLayer, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, uiScaling, svgKeyFront, svgKeyBack, facing) {
 		let mySVGFront = svgLoader.clone(svgKeyFront);
 		let mySVGBack = svgLoader.clone(svgKeyBack);
 
-		super(parent, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, mySVGFront.getAttribute("width"), mySVGFront.getAttribute("height"), uiScaling);
+		super(parent, zLayer, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, mySVGFront.getAttribute("width"), mySVGFront.getAttribute("height"), uiScaling);
 		
 		this.svgFront = mySVGFront;
 		this.svgBack = mySVGBack;

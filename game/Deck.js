@@ -1,6 +1,7 @@
 class Deck extends ZoomableObject {
     constructor(parent, x, y) {
-        super(parent, "fixed", "absolute", x, y, "fixed", "absolute", true, "cardBack");
+        super(parent, 2, "fixed", "absolute", x, y, "fixed", "absolute", true, "cardBack");
+
     }
 
     onMouseUp(e) {

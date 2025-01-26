@@ -1,7 +1,7 @@
 class ZoomableObject extends ZoomableElement {
-    constructor(parent, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, uiScaling, svgKey) {
+    constructor(parent, zLayer, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, uiScaling, svgKey) {
         let mySVG = svgLoader.clone(svgKey);
-        super(parent, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, mySVG.getAttribute("width"), mySVG.getAttribute("height"), uiScaling);
+        super(parent, zLayer, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, mySVG.getAttribute("width"), mySVG.getAttribute("height"), uiScaling);
         this.svg = mySVG;
 
         this.div.style.backgroundColor = "rgba(0, 0, 0, 0.0)";

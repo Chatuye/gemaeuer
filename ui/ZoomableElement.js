@@ -1,5 +1,5 @@
 class ZoomableElement {
-	constructor(parent, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, w, h, uiScaling) {
+	constructor(parent, zLayer, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, w, h, uiScaling) {
         this.parent = parent;
         if(parent instanceof HTMLElement) {
             this.parent = {
@@ -46,6 +46,10 @@ class ZoomableElement {
         this.picking = null;
         this.pickedUp = false;
         this.pickedUpChild = null;
+
+        this.zLayer = zLayer;
+        if(this.parent.zManager)
+            this.parent.zManager.set(this.zLayer, this);
     }
 
 
@@ -96,7 +100,6 @@ class ZoomableElement {
     
         if(this.pickedUp) {
             if(this.positioningBehaviour == "zoom") {
-                console.log("Huh?!?");
                 dX /= this.parent.viewPort.getScaleX();
                 dY /= this.parent.viewPort.getScaleY();
             }
@@ -132,10 +135,15 @@ class ZoomableElement {
         this.picking = null;
         this.pickedUp = true;
 		this.div.style.setProperty("-webkit-filter", "drop-shadow(0px 0px 4px rgba(0, 0, 0, 1.0)) drop-shadow(0px 0px 24px rgba(255, 255, 255, 0.33)");
+    
+        this.parent.zManager.remove(this.zLayer, this);
+        this.parent.zManager.set(3, this);
     }
     drop() {
         this.pickedUp = false;
 		this.setDefaultStyle();
+        this.parent.zManager.remove(3, this);
+        this.parent.zManager.set(this.zLayer, this);
     }
     setDefaultStyle() {
 		this.div.style.setProperty("-webkit-filter", "drop-shadow(0px 0px 0px rgba(0, 0, 0, 1.0))");

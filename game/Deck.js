@@ -12,7 +12,7 @@ class Deck extends ZoomableObject {
         dataObject.dimensionsType = "ABSOLUTE";
         dataObject.uiScaling = true;
         dataObject.svg01Key = "cardBack";
-        dataObject.zLayer = 2;
+        dataObject.zIndex = 200000;
 
         super(parent, dataObject);
     }

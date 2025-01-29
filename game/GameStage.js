@@ -1,6 +1,12 @@
+class GameStageDO extends StageDO {
+    constructor() {
+        super();
+    }
+}
+
 class GameStage extends Stage {
-	constructor(parent, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, uiScaling, w, h, viewPortType, vW, vH, vpScaling) {
-        super(parent, 0, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, uiScaling, w, h, viewPortType, vW, vH, vpScaling);
+	constructor(parent, dataObject) {
+        super(parent, dataObject);
 
         this.hand = null;
 
@@ -36,7 +42,11 @@ class GameStage extends Stage {
         let x = cursorOnVP.x;
         let y = cursorOnVP.y;
 
-        let tile = new Tile(this, x, y, "back");
+        let tileDO = new TileDO();
+        tileDO.x = x;
+        tileDO.y = y;
+        tileDO.facing = "BACK";
+        let tile = new Tile(this, tileDO);
         this.registerChild(tile);
     }
     onContextMenu(e) {
@@ -51,7 +61,23 @@ class GameStage extends Stage {
 
         let vSD = this.viewPort.getScreenDimensions();
         let q = vSD.width/vSD.height;
-        let gameStage = new GameStage(this, "zoom", "absolute", x, y, "zoom", "absolute", 400*q, 400, false, "absolute", 800*q, 800, false);
+        
+        let gameStageDO = new GameStageDO();
+        gameStageDO.positionBehaviour = "ZOOM";
+        gameStageDO.positionType = "ABSOLUTE";
+        gameStageDO.x = x;
+        gameStageDO.y = y;
+        gameStageDO.dimensionsBehaviour = "ZOOM";
+        gameStageDO.dimensionsType = "ABSOLUTE";
+        gameStageDO.width = 400;
+        gameStageDO.height = 400;
+        gameStageDO.uiScaling = false;
+        gameStageDO.viewPortDO.type = "ABSOLUTE";
+        gameStageDO.viewPortDO.width = 400;
+        gameStageDO.viewPortDO.height = 400;
+        gameStageDO.viewPortDO.uiScaling = false;
+        let gameStage = new GameStage(this, gameStageDO);
+//        let gameStage = new GameStage(this, "zoom", "absolute", x, y, "zoom", "absolute", 400*q, 400, false, viewPortDO, false);
         this.registerChild(gameStage);
     }
 

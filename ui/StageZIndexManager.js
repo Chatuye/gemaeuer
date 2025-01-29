@@ -12,7 +12,7 @@ class StageZIndexManager {
         let newIndex = ((layer * this.maxLayerSize) + index)
         this.layers[layer].set(object, newIndex)
 
-        object.div.style.zIndex = newIndex;
+        object.setZIndex(newIndex);
     }
 
     remove(layer, object) {
@@ -26,6 +26,9 @@ class StageZIndexManager {
             map.set(key, (value-1));
             key.div.style.zIndex = (value-1);
         }
+    }
+    getMaxLayerSize() {
+        return this.maxLayerSize;
     }
 
 }

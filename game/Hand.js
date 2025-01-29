@@ -10,7 +10,7 @@ class Hand {
         //console.log(this.x+" "+this.y);
         
         this.cards = new Array();
-        this.mode = "lowered";
+        this.mode = "LOWERED";
 		this.relCardOffsetLowered = 0.5;
 		this.relCardOffsetRaised = 0.05;
 		this.addRelCardOffsetRaisedPerCard = 0.02;
@@ -79,11 +79,11 @@ class Hand {
 		let newX = (this.x - anchorX) + (fromCenter * Math.floor(cD.width / 1.9));
 		let newY = (this.y - anchorY) + Math.abs(0.8 * fromCenter * (Math.sin(angle) * (cD.width / 2)));
 
-		switch (this.mode) {
-			case "lowered":
+		switch(this.mode) {
+			case "LOWERED":
 				newY += this.cardDimensions.height*this.relCardOffsetLowered;
 				break;
-			case "raised":
+			case "RAISED":
 				newY -= this.cardDimensions.height*(this.relCardOffsetRaised+(this.addRelCardOffsetRaisedPerCard*this.cards.length));
 				break;
 			default:
@@ -96,9 +96,8 @@ class Hand {
 
 	addCard(card) {
 		card.hand = this;
-		this.stage.zManager.remove(card.zLayer, card);
-		card.zLayer = 1;
-		this.stage.zManager.set(card.zLayer, card);
+		this.stage.zManager.remove(card.getZLayer(), card);
+		this.stage.zManager.set(1, card);
 
 		this.cards.push(card);
 		
@@ -117,25 +116,25 @@ class Hand {
 
 		this.interactionYLowered = pD.height - (cardHeight*this.relCardOffsetLowered);
 		this.interactionYRaised = pD.height - cardHeight - (cardHeight*(this.relCardOffsetRaised+(this.addRelCardOffsetRaisedPerCard*this.cards.length)));
-		if(this.mode == "lowered")
+		if(this.mode == "LOWERED")
 			this.interactionY = this.interactionYLowered;
-		else if(this.mode == "raised") 
+		else if(this.mode == "RAISED") 
 			this.interactionY = this.interactionYRaised;
 		else 
 			console.log("Unknown hand mode.");
 	}
 
 	raise() {
-		if (this.mode == "lowered") {
-			this.mode = "raised";
+		if (this.mode == "LOWERED") {
+			this.mode = "RAISED";
 			this.interactionY = this.interactionYRaised;
 			this.positionCards();
 		}
 	}
 
 	lower() {
-		if (this.mode == "raised") {
-			this.mode = "lowered";
+		if (this.mode == "RAISED") {
+			this.mode = "LOWERED";
 			this.interactionY = this.interactionYLowered;
 			this.positionCards();
 		}

@@ -1,8 +1,25 @@
-var cardDimensions = {svg: "card", width: 0, height: 0, uiScaling: true, behaviour:"fixed", type:"absolute"}
+var cardDimensions = {svg: "card", width: 0, height: 0, uiScaling: true, behaviour:"FIXED", type:"ABSOLUTE"}
+
+class CardDO extends FlippableObjectDO {
+    constructor() {
+        super();
+        
+    }
+}
 
 class Card extends FlippableObject {
-    constructor(parent, x, y, facing) {
-        super(parent, 0, "fixed", "absolute", x, y, cardDimensions.behaviour, cardDimensions.type, cardDimensions.uiScaling, "card", "cardBack", facing,);
+    constructor(parent, dataObject) {
+        dataObject.positionBehaviour = "FIXED";
+        dataObject.positionType = "ABSOLUTE";
+        dataObject.dimensionsBehaviour = cardDimensions.behaviour;
+        dataObject.dimensionsType = cardDimensions.type;
+        dataObject.uiScaling = cardDimensions.uiScaling;
+        dataObject.svg01Key = "card";
+        dataObject.svg02Key = "cardBack";
+        dataObject.zIndex = 0;
+
+        super(parent, dataObject);
+//        super(parent, 0, "fixed", "absolute", x, y, cardDimensions.behaviour, cardDimensions.type, cardDimensions.uiScaling, "card", "cardBack", facing,);
 
         this.hand = null;
 
@@ -24,39 +41,38 @@ class Card extends FlippableObject {
         let relY = cursorOnDiv.y/this.getScreenDimensions().height;
         
         this.div.style.transform = "none";
-        this.positioningBehaviour = "fixed";
-        this.positionType = "absolute";
-        this.dimensionsBehaviour = cardDimensions.behaviour;
-        this.dimensionsType = cardDimensions.type;
-        this.uiScaling = true;
+        this.dataObject.positionBehaviour = "FIXED";
+        this.dataObject.positionType = "ABSOLUTE";
+        this.dataObject.dimensionsBehaviour = cardDimensions.behaviour;
+        this.dataObject.dimensionsType = cardDimensions.type;
 
-        this.x = cursorOnParent.x - (this.getScreenDimensions().width * relX);
-        this.y = cursorOnParent.y - (this.getScreenDimensions().height * relY);
+        this.dataObject.x = cursorOnParent.x - (this.getScreenDimensions().width * relX);
+        this.dataObject.y = cursorOnParent.y - (this.getScreenDimensions().height * relY);
 
         this.resizeDiv();
         this.repositionDiv();
     }
     drop() {
-        this.zLayer = 0;
+        this.parent.zManager.remove(this.getZLayer(), this);
+        this.parent.zManager.set(0, this);
         super.drop();
 
-        if(this.parent.hand.mode=="raised") {
+        if(this.parent.hand.mode=="RAISED") {
             this.parent.hand.addCard(this);          
         } else {
             let cursorOnDiv = this.convertScreenPosToDivPos(this.cursorX, this.cursorY);
             let relX = cursorOnDiv.x/this.getScreenDimensions().width;
             let relY = cursorOnDiv.y/this.getScreenDimensions().height;
             
-            this.positioningBehaviour = "zoom";
-            this.positionType = "absolute";
-            this.dimensionsBehaviour = "zoom";
-            this.dimensionsType = "absolute";
-            this.uiScaling = false;
+            this.dataObject.positionBehaviour = "ZOOM";
+            this.dataObject.positionType = "ABSOLUTE";
+            this.dataObject.dimensionsBehaviour = "ZOOM";
+            this.dataObject.dimensionsType = "ABSOLUTE";
 
             let cursorOnParent = this.parent.convertScreenPosToDivPos(this.cursorX-(this.getScreenDimensions().width*relX), this.cursorY-(this.getScreenDimensions().height*relY));
             let cursorOnParentVP = this.parent.convertDivPosToViewPortPos(cursorOnParent.x, cursorOnParent.y);
-            this.x = cursorOnParentVP.x;
-            this.y = cursorOnParentVP.y;    
+            this.dataObject.x = cursorOnParentVP.x;
+            this.dataObject.y = cursorOnParentVP.y;    
 
             this.resizeDiv();
             this.repositionDiv();

@@ -1,12 +1,30 @@
-class Deck extends ZoomableObject {
-    constructor(parent, x, y) {
-        super(parent, 2, "fixed", "absolute", x, y, "fixed", "absolute", true, "cardBack");
+class DeckDO extends ZoomableObjectDO {
+    constructor() {
+        super();
+    }
+}
 
+class Deck extends ZoomableObject {
+    constructor(parent, dataObject) {
+        dataObject.positionBehaviour = "FIXED";
+        dataObject.positionType = "ABSOLUTE";
+        dataObject.dimensionsBehaviour = "FIXED";
+        dataObject.dimensionsType = "ABSOLUTE";
+        dataObject.uiScaling = true;
+        dataObject.svg01Key = "cardBack";
+        dataObject.zIndex = 200000;
+
+        super(parent, dataObject);
     }
 
     onMouseUp(e) {
         if(!this.pickedUp) {
-            let card = new Card(stage, this.x, this.y, "front");
+            let cardDO = new CardDO();
+            cardDO.x = this.dataObject.x;
+            cardDO.y = this.dataObject.y;
+            cardDO.facing = "FRONT";
+
+            let card = new Card(stage, cardDO);
             this.parent.registerChild(card);
             this.parent.hand.addCard(card);
         }

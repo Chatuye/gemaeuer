@@ -1,7 +1,19 @@
+class ZoomableObjectDO extends ZoomableElementDO {
+    constructor() {
+        super();
+        
+        this.svg01Key = "card";
+    }
+}
+
 class ZoomableObject extends ZoomableElement {
-    constructor(parent, zLayer, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, uiScaling, svgKey) {
-        let mySVG = svgLoader.clone(svgKey);
-        super(parent, zLayer, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, mySVG.getAttribute("width"), mySVG.getAttribute("height"), uiScaling);
+    constructor(parent, dataObject) {
+        let mySVG = svgLoader.clone(dataObject.svg01Key);
+        dataObject.width = mySVG.getAttribute("width"); 
+        dataObject.height = mySVG.getAttribute("height");
+
+        super(parent, dataObject);
+        //super(parent, zLayer, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, mySVG.getAttribute("width"), mySVG.getAttribute("height"), uiScaling);
         this.svg = mySVG;
 
         this.div.style.backgroundColor = "rgba(0, 0, 0, 0.0)";

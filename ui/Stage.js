@@ -1,13 +1,24 @@
-class Stage extends ZoomableElement {
-	constructor(parent, zLayer, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, w, h, uiScaling, viewPortType, vW, vH, vpScaling) {
-        super(parent, zLayer, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, w, h, uiScaling);
+class StageDO extends ZoomableElementDO {
+    constructor() {
+        super();
+        
+        this.isMainStage = false;
+        this.viewPortDO = new ViewPortDO();
+        this.children = new Array();
+    }
+}
 
-        this.zManager = new StageZIndexManager();
+class Stage extends ZoomableElement {
+	constructor(parent, dataObject) {
+        super(parent, dataObject);
+
+        this.viewPort = new ViewPort(this, this.dataObject.viewPortDO)
+        this.children = new Array();
+
+
 
         this.zoomPerTick = 40;
-
-        this.viewPort = new ViewPort(this, viewPortType, vW, vH, vpScaling);
-        this.children = new Array();
+        this.zManager = new StageZIndexManager();
 
         this.div.addEventListener("wheel", this.onWheel.bind(this), { passive: false });
     }
@@ -73,17 +84,25 @@ class Stage extends ZoomableElement {
     }
 
     
+    getUIScale(keepAspectRatio) {
+        let sX = this.getScreenDimensions().width / UIDefinitions.baseWidth;
+        let sY = this.getScreenDimensions().height / UIDefinitions.baseHeight;
+        if(keepAspectRatio)
+            return {scaleX: Math.min(sX, sY), scaleY: Math.min(sX, sY)}
+        else 
+            return {scaleX: sX, scaleY: sY}
+    }
     getScreenDimensionsOfChild(behaviour, type, width, height, uiScaling) {
         let w = 0;
         let h = 0;
 
-        if(type == "relative") {
+        if(type == "RELATIVE") {
             w = width * this.getScreenDimensions().width;
             h = height * this.getScreenDimensions().height;
-        } else if(type == "absolute") {
+        } else if(type == "ABSOLUTE") {
             w = width;
             h = height;
-            if(behaviour == "zoom") {
+            if(behaviour == "ZOOM") {
                 w *= this.viewPort.getScaleX();
                 h *= this.viewPort.getScaleY();
             }
@@ -95,6 +114,9 @@ class Stage extends ZoomableElement {
         }
         return {width: w, height: h};
     }
+    getViewPort() {
+        return this.viewPort;
+    }
 
 
 
@@ -104,8 +126,8 @@ class Stage extends ZoomableElement {
         let relY = y/d.height;
 
         let vD = this.viewPort.getDimensions();
-        let vX = this.viewPort.x + (vD.width * relX);
-		let vY = this.viewPort.y + (vD.height * relY);
+        let vX = this.viewPort.getX() + (vD.width * relX);
+		let vY = this.viewPort.getY() + (vD.height * relY);
         return {x: vX, y: vY};
     }
 }

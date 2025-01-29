@@ -1,6 +1,9 @@
 var svgLoader = null;
+var objectFactory = null;
+var dataManager = null;
 var mainBody = null;
 var stage = null;
+
 
 
 function onBodyLoad() {
@@ -12,11 +15,32 @@ function onBodyLoad() {
 function onSVGsLoaded() {
 	mainBody = document.getElementById("mainBody");
 
-	stage = new GameStage(mainBody, "fixed", "absolute", 10, 10, "fixed", "relative", 0.9, 0.9, false, "relative", 1.0, 1.0, true);
+	objectFactory = new ObjectFactory();
+	dataManager = new DataManager();
+
+	//let viewPortDO = new ViewPortDO();
+	let gameStageDO = new GameStageDO();
+	gameStageDO.isMainStage = true;
+	gameStageDO.positionBehaviour = "FIXED";
+	gameStageDO.positionType = "ABSOLUTE";
+	gameStageDO.x = 4;
+	gameStageDO.y = 24;
+	gameStageDO.dimensionsBehaviour = "FIXED";
+	gameStageDO.dimensionsType = "RELATIVE";
+	gameStageDO.width = 0.9;
+	gameStageDO.height = 0.9;
+	gameStageDO.uiScaling = false;
+	gameStageDO.viewPortDO.uiScaling = false;
+	stage = new GameStage(mainBody, gameStageDO);
+	//stage = new GameStage(mainBody, "fixed", "absolute", 4, 24, "fixed", "relative", 0.9, 0.9, false, viewPortDO);
 	stage.div.className = "Stage";
 	
 	stage.hand = new Hand(stage);
-	stage.registerChild(new Deck(stage, 0, 0));
+
+	let deckDO = new DeckDO();
+	deckDO.x = 10;
+	deckDO.y = 10;
+	stage.registerChild(new Deck(stage, deckDO));
 }
 
 function onBodyResize() {

@@ -1,14 +1,24 @@
-class FlippableObject extends ZoomableElement {
-	constructor(parent, zLayer, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, uiScaling, svgKeyFront, svgKeyBack, facing) {
-		let mySVGFront = svgLoader.clone(svgKeyFront);
-		let mySVGBack = svgLoader.clone(svgKeyBack);
+class FlippableObjectDO extends ZoomableElementDO {
+    constructor() {
+        super();
+        
+        this.svg01Key = "card";
+        this.svg02Key = "cardBack";
+		this.facing = "FRONT";
+    }
+}
 
-		super(parent, zLayer, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, mySVGFront.getAttribute("width"), mySVGFront.getAttribute("height"), uiScaling);
+class FlippableObject extends ZoomableElement {
+	constructor(parent, dataObject) {
+		let mySVGFront = svgLoader.clone(dataObject.svg01Key);
+		let mySVGBack = svgLoader.clone(dataObject.svg02Key);
+        dataObject.width = mySVGFront.getAttribute("width"); 
+        dataObject.height = mySVGFront.getAttribute("height");
+
+		super(parent, dataObject);
 		
 		this.svgFront = mySVGFront;
 		this.svgBack = mySVGBack;
-
-		this.facing = "front";
 
         this.div.className = "Flippable";
 		this.wrapper = document.createElement("div");
@@ -20,19 +30,22 @@ class FlippableObject extends ZoomableElement {
 
 		this.wrapperFront.appendChild(this.svgFront);
 		this.wrapperBack.appendChild(this.svgBack);
-
-		if(facing == "back") this.flip(0);
+		
+		if(this.dataObject.facing == "BACK") {
+			this.dataObject.facing = "FRONT";
+			this.flip(0);
+		}
     }
 
 	flip(d) {
-		if(this.facing == "front") {
+		if(this.dataObject.facing == "FRONT") {
 			this.wrapper.style.transitionDuration = d+"ms";
 			this.wrapper.style.transform = "rotateY(180deg)";
-			this.facing = "back";
+			this.dataObject.facing = "BACK";
 		} else {
 			this.wrapper.style.transitionDuration = d+"ms";
 			this.wrapper.style.transform = "none";
-			this.facing = "front";
+			this.dataObject.facing = "FRONT";
 		}
 	}
 

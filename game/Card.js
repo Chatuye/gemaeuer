@@ -4,27 +4,18 @@ class CardDO extends FlippableObjectDO {
     constructor() {
         super();
         
+        this.objectType = "CARD";
     }
 }
 
 class Card extends FlippableObject {
-    constructor(parent, dataObject) {
-        dataObject.positionBehaviour = "FIXED";
-        dataObject.positionType = "ABSOLUTE";
-        dataObject.dimensionsBehaviour = cardDimensions.behaviour;
-        dataObject.dimensionsType = cardDimensions.type;
-        dataObject.uiScaling = cardDimensions.uiScaling;
-        dataObject.svg01Key = "card";
-        dataObject.svg02Key = "cardBack";
-        dataObject.zIndex = 0;
-
-        super(parent, dataObject);
-//        super(parent, 0, "fixed", "absolute", x, y, cardDimensions.behaviour, cardDimensions.type, cardDimensions.uiScaling, "card", "cardBack", facing,);
+    constructor(dataObject) {
+        super(dataObject);
 
         this.hand = null;
 
         this.setDefaultStyle();
-        }
+    }
 
     setDefaultStyle() {
         this.div.style.setProperty("-webkit-filter", "drop-shadow(0px 0px 1px rgba(0, 0, 0, 1.0))");

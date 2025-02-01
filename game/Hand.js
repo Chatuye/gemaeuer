@@ -1,15 +1,28 @@
+class HandDO extends DataObject {
+    constructor() {
+        super();
+        
+        this.objectType = "HAND";
+
+        this.stage = { referenceId: -1 };
+
+		this.cards = new Array();
+    }
+}
+
 class Hand {
-    constructor(stage) {
-        this.stage = stage;
+    constructor(dataObject) {
+		this.dataObject = dataObject;
+        dataManager.registerObject(this);    
+
+        this.stage = dataManager.getObject(this.dataObject.stage.referenceId);
+		this.cards = new Array();
 
         let d = this.calculateCoordinates();
         this.x = d.x;
         this.y = d.y;
 		this.cardDimensions = this.getCardScreenDimensions();
 
-        //console.log(this.x+" "+this.y);
-        
-        this.cards = new Array();
         this.mode = "LOWERED";
 		this.relCardOffsetLowered = 0.5;
 		this.relCardOffsetRaised = 0.05;
@@ -19,7 +32,15 @@ class Hand {
 		this.interactionYRaised = 0;
 		this.interactionY = 0;
 		this.calculateInteractionY();
+		
+		for(let i = 0; i < this.dataObject.cards.length; i++) {
+			this.restoreCard(dataManager.getObject(this.dataObject.cards[i]));
+		}
     }
+
+	getCards() {
+		return this.cards;
+	}
 
     onParentChange() {
 		let d = this.calculateCoordinates();
@@ -44,8 +65,8 @@ class Hand {
     }
 
 	positionCards() {
-		if(this.cards.length > 0) {
-			let l = this.cards.length;
+		if(this.getCards().length > 0) {
+			let l = this.getCards().length;
 			
             if(this.stage.pickedUpChild == this)
 				if(this.stage.pickedUpChild.hand==this) l--;
@@ -56,15 +77,12 @@ class Hand {
 			else
 				middle = l / 2 - 0.5;
 
-			for(var i=0; i<this.cards.length; i++)
-				//if(this.stage.draggedCard != this.cards[i])
-					this.positionCard(this.cards[i], i, middle);
+			for(var i=0; i<this.getCards().length; i++)
+				this.positionCard(this.getCards()[i], i, middle);
 		}	
 	}
 	positionCard(card, pos, middle) {
 		let fromCenter = pos - middle;
-
-		//card.div.style.zIndex = this.stage.maxUsedZIndex+pos+1;
 
 		//Rotate card
 		card.div.style.transform = "none";
@@ -84,7 +102,7 @@ class Hand {
 				newY += this.cardDimensions.height*this.relCardOffsetLowered;
 				break;
 			case "RAISED":
-				newY -= this.cardDimensions.height*(this.relCardOffsetRaised+(this.addRelCardOffsetRaisedPerCard*this.cards.length));
+				newY -= this.cardDimensions.height*(this.relCardOffsetRaised+(this.addRelCardOffsetRaisedPerCard*this.getCards().length));
 				break;
 			default:
 				console.log("Unknown hand mode.");
@@ -94,20 +112,33 @@ class Hand {
 		card.moveTo(newX, newY);
 	}
 
+	restoreCard(card) {
+		card.hand = this;
+		this.stage.zManager.remove(card.getZLayer(), card);
+		this.stage.zManager.set(1, card);
+
+		this.getCards().push(card);
+		
+		this.positionCards();
+	}
 	addCard(card) {
 		card.hand = this;
 		this.stage.zManager.remove(card.getZLayer(), card);
 		this.stage.zManager.set(1, card);
 
-		this.cards.push(card);
+		this.getCards().push(card);
+		this.dataObject.cards.push(card.dataObject.objectId);
 		
 		this.positionCards();
 	}
 	removeCard(card) {
 		card.hand = null;
 
-		var i = this.cards.indexOf(card);
-		this.cards.splice(i, 1);
+		let i = this.getCards().indexOf(card);
+		this.getCards().splice(i, 1);
+
+		i = this.dataObject.cards.indexOf(card.dataObject.objectId);
+		this.dataObject.cards.splice(i, 1);
 	}
 
 	calculateInteractionY() {
@@ -115,7 +146,7 @@ class Hand {
 		let cardHeight = this.cardDimensions.height;
 
 		this.interactionYLowered = pD.height - (cardHeight*this.relCardOffsetLowered);
-		this.interactionYRaised = pD.height - cardHeight - (cardHeight*(this.relCardOffsetRaised+(this.addRelCardOffsetRaisedPerCard*this.cards.length)));
+		this.interactionYRaised = pD.height - cardHeight - (cardHeight*(this.relCardOffsetRaised+(this.addRelCardOffsetRaisedPerCard*this.getCards().length)));
 		if(this.mode == "LOWERED")
 			this.interactionY = this.interactionYLowered;
 		else if(this.mode == "RAISED") 

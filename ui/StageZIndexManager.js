@@ -1,35 +1,50 @@
-class StageZIndexManager {
-	constructor() {
+class StageZIndexManagerDO extends DataObject {
+    constructor() {
+        super();
+        
+        this.objectType = "STAGEZINDEXMANAGER";
+
         this.maxLayerSize = 100000;
         this.layers = new Array(); 
     }
+}
 
-    createLayer() {
-        this.layers.push(new Map());
+class StageZIndexManager {
+    constructor(dataObject) {
+        this.dataObject = dataObject;
+        dataManager.registerObject(this);
+
     }
-    set(layer, object, index) {
-        if(!index) index = this.layers[layer].size;
-        let newIndex = ((layer * this.maxLayerSize) + index)
-        this.layers[layer].set(object, newIndex)
+
+    set(layer, object) {
+        if(!this.getLayers()[layer]) this.getLayers()[layer] = new Array();
+
+        let index = this.getLayers()[layer].length;
+        let newIndex = ((layer * this.getMaxLayerSize()) + index)
+        this.getLayers()[layer].push(object.dataObject.objectId);
 
         object.setZIndex(newIndex);
     }
 
     remove(layer, object) {
-        let removedIndex = this.layers[layer].get(object);
-        this.layers[layer].delete(object);
+        let removedIndex = object.getZIndex();
+        
+        let index = this.getLayers()[layer].indexOf(object.dataObject.objectId);
+        this.getLayers()[layer].splice(index, 1);
 
-        this.layers[layer].forEach(function(value, key, map) { this.removeHelper(value, key, map, removedIndex) }, this);
-    }
-    removeHelper(value, key, map, removedIndex) {
-        if(value>removedIndex) {
-            map.set(key, (value-1));
-            key.div.style.zIndex = (value-1);
+        for(let i = 0; i < this.getLayers()[layer].length; i++) {
+            let obj = dataManager.getObject(this.getLayers()[layer][i]);
+            let zIndex = obj.getZIndex();
+            if(zIndex > removedIndex)
+                obj.setZIndex(zIndex-1);
         }
     }
-    getMaxLayerSize() {
-        return this.maxLayerSize;
-    }
 
+    getMaxLayerSize() {
+        return this.dataObject.maxLayerSize;
+    }
+    getLayers() {
+        return this.dataObject.layers;
+    }
 }
       

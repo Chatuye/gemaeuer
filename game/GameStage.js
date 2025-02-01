@@ -1,22 +1,32 @@
 class GameStageDO extends StageDO {
     constructor() {
         super();
+
+        this.objectType = "GAMESTAGE";
+
+        this.hand = -1;
     }
 }
 
 class GameStage extends Stage {
-	constructor(parent, dataObject) {
-        super(parent, dataObject);
+	constructor(dataObject) {
+        super(dataObject);
 
-        this.hand = null;
-
-        this.zManager.createLayer(); // 0: Objects on Stage
-        this.zManager.createLayer(); // 1: Objects in Hand
-        this.zManager.createLayer(); // 2: UI Elements
-        this.zManager.createLayer(); // 3: Drag'n'drop
+        if(this.dataObject.hand == -1) {
+            this.hand = null;
+        } else {
+            console.log("Hand_ID: "+this.dataObject.hand);
+            this.hand = dataManager.getObject(this.dataObject.hand);
+            console.log("Hand: "+JSON.stringify(this.hand.dataObject));
+        }
 
         this.div.addEventListener("contextmenu", this.onContextMenu.bind(this), { passive: false });
         this.div.addEventListener("mousemove", this.onMouseMove.bind(this));
+    }
+
+    registerHand(hand) {
+        this.hand = hand;
+        this.dataObject.hand = hand.dataObject.objectId;
     }
 
     onMouseMove(e) {
@@ -43,10 +53,11 @@ class GameStage extends Stage {
         let y = cursorOnVP.y;
 
         let tileDO = new TileDO();
+        tileDO.parent.referenceId = this.dataObject.objectId;
         tileDO.x = x;
         tileDO.y = y;
         tileDO.facing = "BACK";
-        let tile = new Tile(this, tileDO);
+        let tile = dataManager.createObject(tileDO);
         this.registerChild(tile);
     }
     onContextMenu(e) {
@@ -63,6 +74,7 @@ class GameStage extends Stage {
         let q = vSD.width/vSD.height;
         
         let gameStageDO = new GameStageDO();
+        gameStageDO.parent.referenceId = this.dataObject.objectId;
         gameStageDO.positionBehaviour = "ZOOM";
         gameStageDO.positionType = "ABSOLUTE";
         gameStageDO.x = x;
@@ -72,12 +84,14 @@ class GameStage extends Stage {
         gameStageDO.width = 400;
         gameStageDO.height = 400;
         gameStageDO.uiScaling = false;
-        gameStageDO.viewPortDO.type = "ABSOLUTE";
-        gameStageDO.viewPortDO.width = 400;
-        gameStageDO.viewPortDO.height = 400;
-        gameStageDO.viewPortDO.uiScaling = false;
-        let gameStage = new GameStage(this, gameStageDO);
-//        let gameStage = new GameStage(this, "zoom", "absolute", x, y, "zoom", "absolute", 400*q, 400, false, viewPortDO, false);
+
+        let gameStage = dataManager.createObject(gameStageDO);
+        gameStage.viewPort.dataObject.type = "ABSOLUTE";
+        gameStage.viewPort.dataObject.width = 400;
+        gameStage.viewPort.dataObject.height = 400;
+        gameStage.viewPort.dataObject.uiScaling = false;
+        gameStage.viewPort.calculateScale();
+
         this.registerChild(gameStage);
     }
 

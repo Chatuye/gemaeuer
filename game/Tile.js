@@ -1,11 +1,13 @@
 class TileDO extends FlippableObjectDO {
     constructor() {
         super();
+
+        this.objectType = "TILE";
     }
 }
 
 class Tile extends FlippableObject {
-	constructor(parent, dataObject) {
+	constructor(dataObject) {
 //        super(parent, 0, "zoom", "absolute", x, y, "zoom", "absolute", false, "tile-front", "tile-back", facing);
 
         dataObject.positionBehaviour = "ZOOM";
@@ -17,7 +19,7 @@ class Tile extends FlippableObject {
         dataObject.svg02Key = "tile-back";
         dataObject.zIndex = 0;// * parent.zManager.getMaxLayerSize();
 
-        super(parent, dataObject);
+        super(dataObject);
 
         this.svgFront.getElementById("text").firstChild.innerHTML = Math.floor((Math.random()*9))+1;
     }

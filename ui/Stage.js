@@ -1,26 +1,53 @@
 class StageDO extends ZoomableElementDO {
     constructor() {
         super();
+
+        this.objectType = "STAGE";
         
         this.isMainStage = false;
-        this.viewPortDO = new ViewPortDO();
+        this.viewPort = -1;
+        this.zManager = -1;
         this.children = new Array();
     }
 }
 
 class Stage extends ZoomableElement {
-	constructor(parent, dataObject) {
-        super(parent, dataObject);
+	constructor(dataObject) {
+        super(dataObject);
+        console.log("1 "+this.dataObject.objectId);
 
-        this.viewPort = new ViewPort(this, this.dataObject.viewPortDO)
+        console.log("2 "+this.dataObject.viewPort);
+
+        if(this.dataObject.viewPort == -1) {
+            let viewPortDO = new ViewPortDO();
+            viewPortDO.parent.referenceId = this.dataObject.objectId;
+            this.viewPort = dataManager.createObject(viewPortDO);
+            this.dataObject.viewPort = this.viewPort.dataObject.objectId;
+        } else {
+            this.viewPort = dataManager.getObject(this.dataObject.viewPort);
+        }
+        console.log("3");
+
+        if(this.dataObject.zManager == -1) {
+            let stageZIndexManagerDO = new StageZIndexManagerDO()
+            this.zManager = dataManager.createObject(stageZIndexManagerDO);
+            this.dataObject.zManager = this.zManager.dataObject.objectId;
+        } else {
+            this.zManager = dataManager.getObject(this.dataObject.zManager);
+        }
+
+
         this.children = new Array();
 
 
-
         this.zoomPerTick = 40;
-        this.zManager = new StageZIndexManager();
 
         this.div.addEventListener("wheel", this.onWheel.bind(this), { passive: false });
+
+        for(let i = 0; i < this.dataObject.children.length; i++) {
+			this.children.push(dataManager.getObject(this.dataObject.children[i]));
+		}
+        console.log("4");
     }
 
 
@@ -56,6 +83,7 @@ class Stage extends ZoomableElement {
     }
     registerChild(child) {
         this.children.push(child);
+        this.dataObject.children.push(child.dataObject.objectId);
     }
 
 

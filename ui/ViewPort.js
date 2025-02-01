@@ -1,10 +1,11 @@
-class ViewPortDO {
+class ViewPortDO extends DataObject {
     constructor() {
-        this.objectId = -1;
+        super();
+        
         this.objectType = "VIEWPORT";
-        this.objectStatus = "NEW";
 
         this.parent = { referenceId: -1 };
+
         this.type = "RELATIVE";
         this.x = 0;
         this.y = 0;
@@ -17,18 +18,14 @@ class ViewPortDO {
 }
 
 class ViewPort {
-    constructor(parent, dataObject) {
-        this.parent = parent;
+    constructor(dataObject) {
         this.dataObject = dataObject;
-        if(this.dataObject.objectStatus == "NEW") {
-            this.calculateScale();
-            this.dataObject.objectStatus = "EXISTING";
-        }
-    }
+        dataManager.registerObject(this);
 
-    setParent(p) {
-        this.parent = p;
-        //this.dataObject = this.parent.data.id;
+        console.log("*************************************" + this.dataObject.parent.referenceId)
+
+        this.parent = dataManager.getObject(this.dataObject.parent.referenceId);
+        this.calculateScale();
     }
     
     pan(dX, dY, callback) {

@@ -1,8 +1,8 @@
-class ZoomableElementDO {
+class ZoomableElementDO extends DataObject {
     constructor() {
-        this.objectId = -1;
+        super();
+
         this.objectType = "ZOOMABLEELEMENT";
-        this.objectStatus = "NEW";
         
         this.parent = { referenceId: -1 };
         
@@ -20,27 +20,33 @@ class ZoomableElementDO {
 }
 
 class ZoomableElement {
-	constructor(parent, dataObject) {
-        this.parent = parent;
-        if(parent instanceof HTMLElement) {
+	constructor(dataObject) {
+        this.dataObject = dataObject;
+        dataManager.registerObject(this);
+
+
+        if(this.dataObject.parent.referenceId >= 0)
+            this.parent = dataManager.getObject(this.dataObject.parent.referenceId);
+        else {
+            console.log("Sven");
+            let viewPortDO = new ViewPortDO();
+            viewPortDO.objectStatus = "PSEUDO";
+            viewPortDO.parent.referenceId = "mainBody";
             this.parent = {
-                div: parent,
-                viewPort: new ViewPort(parent, new ViewPortDO()),
-                //viewPort: new ViewPort(parent, "RELATIVE", 1.0, 1.0),
+                div: mainBody,
+                viewPort: new ViewPort(viewPortDO),
                 parent: null,
                 pickedUpChild: null,
                 getScreenDimensions: function() {
-                    return parent.getBoundingClientRect();
+                    return mainBody.getBoundingClientRect();
                 },
                 getUIScale: function() {
-                    let sX = parent.getBoundingClientRect().width / UIDefinitions.baseWidth;
-                    let sY = parent.getBoundingClientRect().height / UIDefinitions.baseHeight;
+                    let sX = mainBody.getBoundingClientRect().width / UIDefinitions.baseWidth;
+                    let sY = mainBody.getBoundingClientRect().height / UIDefinitions.baseHeight;
                     return {scaleX: sX, scaleY: sY}
                 }            
             }
         }
-        this.dataObject = dataObject;
-
 
         this.div = document.createElement("div");
         this.div.style.position = "absolute";
@@ -190,12 +196,6 @@ class ZoomableElement {
         let w = sD.width;
         let h = sD.height;
 
-        if(this instanceof Tile) {
-            console.log("rrr"+w);
-            console.log("rrr"+h);
-        }
-
-
         this.div.style.width = w + "px";
         this.div.style.height = h + "px";
     }
@@ -219,18 +219,9 @@ class ZoomableElement {
                 let parentUIScale = this.getMainStage().getUIScale(true);
                 width *= parentUIScale.scaleX;
                 height *= parentUIScale.scaleY;
-                if(this instanceof Tile) console.log("Sven: "+parentUIScale.scaleX);
             }
         }
         
-
-        if(this instanceof Tile) {
-            console.log("1 "+width);
-            console.log("1 "+this.parent.getViewPort().getScaleX());
-            console.log("S "+this.parent.getViewPort().dataObject.uiScaling);
-            console.log("1 "+this.dataObject.uiScaling);
-        }
-
         return {width: width, height: height};
     }
     getScreenPosition() {
@@ -260,8 +251,11 @@ class ZoomableElement {
     setZIndex(index) {
         this.dataObject.zIndex = index;
         this.div.style.zIndex = index;
+    }    
+    getZIndex() {
+        return this.dataObject.zIndex;
     }
-    getMainStage() { 
+    getMainStage() {
         if(this.dataObject.isMainStage)
             return this;
         else

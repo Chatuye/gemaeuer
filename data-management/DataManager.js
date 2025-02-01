@@ -1,9 +1,37 @@
 class DataManager {
     constructor() {
-        this.objectCounter = 0;
+        this.dataObjects = new Map();
+        this.objects = new Map();
+        this.objectFactory = new ObjectFactory();
 
         this.createSave();
         this.createLoad();
+    }
+
+    createObject(dataObject) {
+        let newObject = this.objectFactory.createObject(dataObject);
+        
+        return newObject;
+    }
+
+    getObject(id) {
+        console.log("PEEP "+id)
+
+        if(id == "mainBody") 
+            return mainBody
+        else if(id >= 0)
+            if(this.objects.has(id)) {
+                return this.objects.get(id);
+            } else {
+                return this.objectFactory.createObject(this.dataObjects.get(id));
+            }
+        else
+            console.log("ERROR: Unkown object id: "+id);
+    }
+
+    registerObject(object) {
+        this.dataObjects.set(object.dataObject.objectId, object.dataObject)
+        this.objects.set(object.dataObject.objectId, object);
     }
 
     createSave() {
@@ -23,44 +51,49 @@ class DataManager {
         div.appendChild(this.fileInput);
         mainBody.appendChild(div);
     }
+
     handleFile() {
-        const fileList = this.fileInput.files;
-        console.log("FileList: "+fileList.length);
+        //const fileList = this.fileInput.files;
+        //console.log("FileList: "+fileList.length);
 
         const reader = new FileReader();
         reader.addEventListener('load', (event) => {
             const result = event.target.result;
-            console.log(result);
+            //console.log(result);
 
-            let viewPort = objectFactory.create(JSON.parse(result));
-            
-            stage.viewPort = viewPort;
-            viewPort.setParent(stage);
-            stage.onParentChange();
+            this.restoreData(JSON.parse(result, this.mapReviver));
         });
         reader.readAsText(this.fileInput.files[0]);
     }
 
+    restoreData(data) {
+        //console.log(data);
+        this.dataObjects = new Map();
+        this.objects = new Map();
+        this.objectFactory = new ObjectFactory();
+        mainBody.removeChild(stage.div);
+        this.dataObjects = data.dataObjects;
+
+        stage = this.createObject(this.dataObjects.get(data.mainStage));
+        stage.div.className = "Stage";    
+    }
+
     save() {
         console.log("Prepare download...");
-
-        let myDataObject = this.gatherData();
-
-        let json = JSON.stringify(myDataObject, this.mapReplacer);
+        let data = this.gatherData()      
+        let json = JSON.stringify(data, this.mapReplacer);
 
         this.downloadFile(json);
     }
-
     gatherData() {
-        let myData = {stageRoot: stage.viewPort.dataObject.objectId, stageObjects: new Map(), other: 5}
+        let data = {
+            mainStage: stage.dataObject.objectId,
+            dataObjects: this.dataObjects
+        }
 
-        myData.stageObjects.set(stage.viewPort.dataObject.objectId, stage.viewPort.dataObject);
-        myData.stageObjects.set(5, {});
-        console.log(myData.stageObjects)
-
-        return myData;
+        return data;
     }
-
+    
     mapReplacer(key, value) {
         if(value instanceof Map) {
             return {
@@ -71,7 +104,6 @@ class DataManager {
             return value;
         }
     }
-
     mapReviver(key, value) {
         if(typeof value === 'object' && value !== null) {
             if (value.dataType === 'Map') {

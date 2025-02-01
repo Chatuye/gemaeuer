@@ -74,6 +74,7 @@ class DataManager {
         mainBody.removeChild(stage.div);
         this.dataObjects = data.dataObjects;
 
+        console.log(data.dataObjects);
         stage = this.createObject(this.dataObjects.get(data.mainStage));
         stage.div.className = "Stage";    
     }

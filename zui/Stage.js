@@ -4,7 +4,6 @@ class StageDO extends ZoomableElementDO {
 
         this.objectType = "STAGE";
         
-        this.isMainStage = false;
         this.viewPort = -1;
         this.zManager = -1;
         this.children = new Array();
@@ -19,7 +18,7 @@ class Stage extends ZoomableElement {
         if(this.dataObject.viewPort == -1) {
             let viewPortDO = new ViewPortDO();
 
-            if(this.dataObject.isMainStage) viewPortDO.uiScaling = true;
+            if(this.parent instanceof RootObject) viewPortDO.uiScaling = true;
             viewPortDO.parent.referenceId = this.dataObject.objectId;
             this.viewPort = dataManager.createObject(viewPortDO);
             this.dataObject.viewPort = this.viewPort.dataObject.objectId;

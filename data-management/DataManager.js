@@ -33,7 +33,7 @@ class DataManager {
     }
 
     createSave() {
-        let div = document.createElement('div');
+        let div = document.createElement("div");
         div.innerHTML = "Save";
         div.className = "Button";
         div.addEventListener("click", this.save.bind(this));
@@ -41,18 +41,25 @@ class DataManager {
     }
 
     createLoad() {
-        let div = document.createElement('div');
-        this.fileInput = document.createElement('input');
+        let div = document.createElement("div");
+        this.fileInput = document.createElement("input");
         this.fileInput.type = "file";
-        this.fileInput.addEventListener("change", this.handleFile.bind(this))
+        this.fileInput.addEventListener("change", this.handleFile.bind(this));
+        this.fileInput.style.display = "none";
+        this.fileInput.id = "fileInput";
+        let fileInputLabel = document.createElement("label");
+        fileInputLabel.setAttribute("for", "fileInput");
+        fileInputLabel.innerHTML = "Load";
+        div.className = "Button";
         div.style.left = "40px";
         div.appendChild(this.fileInput);
+        div.appendChild(fileInputLabel);
         mainBody.appendChild(div);
     }
 
     handleFile() {
         const reader = new FileReader();
-        reader.addEventListener('load', (event) => {
+        reader.addEventListener("load", (event) => {
             const result = event.target.result;
 
             this.restoreData(JSON.parse(result, this.mapReviver));
@@ -64,11 +71,14 @@ class DataManager {
         this.dataObjects = new Map();
         this.objects = new Map();
         this.objectFactory = new ObjectFactory();
-        mainBody.removeChild(stage.div);
-        this.dataObjects = data.dataObjects;
 
-        stage = this.createObject(this.dataObjects.get(data.mainStage));
-        stage.div.className = "Stage";    
+        rootObject.clearDiv();
+        
+        this.dataObjects = data.dataObjects;
+        rootObject = this.createObject(this.dataObjects.get(data.rootObject));
+
+
+        this.fileInput.value = null;
     }
 
     save() {
@@ -79,7 +89,7 @@ class DataManager {
     }
     gatherData() {
         let data = {
-            mainStage: stage.dataObject.objectId,
+            rootObject: rootObject.dataObject.objectId,
             dataObjects: this.dataObjects
         }
 

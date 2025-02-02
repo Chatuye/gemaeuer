@@ -2,6 +2,7 @@ var svgLoader = null;
 var dataManager = null;
 var mainBody = null;
 var stage = null;
+var rootObject = null;
 
 
 
@@ -15,10 +16,11 @@ function onSVGsLoaded() {
 	mainBody = document.getElementById("mainBody");
 
 	dataManager = new DataManager();
+	let rootObjectDO = new RootObjectDO();
+	rootObject = dataManager.createObject(rootObjectDO);
 
-	//let viewPortDO = new ViewPortDO();
 	let gameStageDO = new GameStageDO();
-	gameStageDO.isMainStage = true;
+	gameStageDO.parent.referenceId = rootObject.dataObject.objectId;
 	gameStageDO.positionBehaviour = "FIXED";
 	gameStageDO.positionType = "ABSOLUTE";
 	gameStageDO.x = 4;
@@ -31,6 +33,8 @@ function onSVGsLoaded() {
 	stage = dataManager.createObject(gameStageDO);
 	stage.div.className = "Stage";
 	
+	rootObject.registerChild(stage);
+
 	let handDO = new HandDO();
 	handDO.stage.referenceId = stage.dataObject.objectId;
 	let hand = dataManager.createObject(handDO);
@@ -44,10 +48,7 @@ function onSVGsLoaded() {
 }
 
 function onBodyResize() {
-	stage.parent.viewPort.width = mainBody.getBoundingClientRect().width;
-	stage.parent.viewPort.height = mainBody.getBoundingClientRect().height;
-	
-	stage.onParentChange();
+	//stage.onParentChange();
 }
 
 function randomHexColorCode() {

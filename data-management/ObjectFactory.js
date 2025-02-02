@@ -18,6 +18,8 @@ class ObjectFactory {
 				return new GameStage(dataObject);
 			case "HAND":
 				return new Hand(dataObject);
+			case "ROOTOBJECT":
+				return new RootObject(dataObject);
 			case "STAGEZINDEXMANAGER":
 				return new StageZIndexManager(dataObject);
 			case "TILE":

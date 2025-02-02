@@ -25,27 +25,7 @@ class ZoomableElement {
         dataManager.registerObject(this);
 
 
-        if(this.dataObject.parent.referenceId >= 0)
-            this.parent = dataManager.getObject(this.dataObject.parent.referenceId);
-        else {
-            let viewPortDO = new ViewPortDO();
-            viewPortDO.objectStatus = "PSEUDO";
-            viewPortDO.parent.referenceId = "mainBody";
-            this.parent = {
-                div: mainBody,
-                viewPort: new ViewPort(viewPortDO),
-                parent: null,
-                pickedUpChild: null,
-                getScreenDimensions: function() {
-                    return mainBody.getBoundingClientRect();
-                },
-                getUIScale: function() {
-                    let sX = mainBody.getBoundingClientRect().width / UIDefinitions.baseWidth;
-                    let sY = mainBody.getBoundingClientRect().height / UIDefinitions.baseHeight;
-                    return {scaleX: sX, scaleY: sY}
-                }            
-            }
-        }
+        this.parent = dataManager.getObject(this.dataObject.parent.referenceId);
 
         this.div = document.createElement("div");
         this.div.style.position = "absolute";
@@ -215,9 +195,9 @@ class ZoomableElement {
                 height *= this.parent.getViewPort().getScaleY();
             }
             if(this.dataObject.uiScaling) {
-                let parentUIScale = this.getMainStage().getUIScale(true);
-                width *= parentUIScale.scaleX;
-                height *= parentUIScale.scaleY;
+                let uiScale = this.getMainStage().getUIScale(true);
+                width *= uiScale.scaleX;
+                height *= uiScale.scaleY;
             }
         }
         
@@ -255,7 +235,7 @@ class ZoomableElement {
         return this.dataObject.zIndex;
     }
     getMainStage() {
-        if(this.dataObject.isMainStage)
+        if(this.parent instanceof RootObject)
             return this;
         else
             return this.parent.getMainStage();

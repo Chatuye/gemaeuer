@@ -37,7 +37,7 @@ div.Stage {
 	background: linear-gradient(#242424, #040404);
 }
 
-div.Button {
+.Button {
 	background-color: rgba(200, 200, 200,1.0) !important;
 }
 

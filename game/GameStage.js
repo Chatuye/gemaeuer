@@ -15,9 +15,7 @@ class GameStage extends Stage {
         if(this.dataObject.hand == -1) {
             this.hand = null;
         } else {
-            console.log("Hand_ID: "+this.dataObject.hand);
             this.hand = dataManager.getObject(this.dataObject.hand);
-            console.log("Hand: "+JSON.stringify(this.hand.dataObject));
         }
 
         this.div.addEventListener("contextmenu", this.onContextMenu.bind(this), { passive: false });
@@ -57,6 +55,18 @@ class GameStage extends Stage {
         tileDO.x = x;
         tileDO.y = y;
         tileDO.facing = "BACK";
+
+        tileDO.positionBehaviour = "ZOOM";
+        tileDO.positionType = "ABSOLUTE";
+        tileDO.dimensionsBehaviour = "ZOOM";
+        tileDO.dimensionsType = "ABSOLUTE";
+        tileDO.uiScaling = true;
+        tileDO.svg01Key = "tile-front";
+        tileDO.svg02Key = "tile-back";
+        tileDO.zIndex = 0;
+        tileDO.uiScaling = false;
+        tileDO.value = Math.floor((Math.random()*9))+1;
+
         let tile = dataManager.createObject(tileDO);
         this.registerChild(tile);
     }

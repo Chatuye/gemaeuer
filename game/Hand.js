@@ -105,7 +105,7 @@ class Hand {
 				newY -= this.cardDimensions.height*(this.relCardOffsetRaised+(this.addRelCardOffsetRaisedPerCard*this.getCards().length));
 				break;
 			default:
-				console.log("Unknown hand mode.");
+				console.log("ERROR: Unknown hand mode.");
 		}
 
 
@@ -152,7 +152,7 @@ class Hand {
 		else if(this.mode == "RAISED") 
 			this.interactionY = this.interactionYRaised;
 		else 
-			console.log("Unknown hand mode.");
+			console.log("ERROR: Unknown hand mode.");
 	}
 
 	raise() {

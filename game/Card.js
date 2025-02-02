@@ -36,6 +36,7 @@ class Card extends FlippableObject {
         this.dataObject.positionType = "ABSOLUTE";
         this.dataObject.dimensionsBehaviour = cardDimensions.behaviour;
         this.dataObject.dimensionsType = cardDimensions.type;
+        this.dataObject.uiScaling = true;
 
         this.dataObject.x = cursorOnParent.x - (this.getScreenDimensions().width * relX);
         this.dataObject.y = cursorOnParent.y - (this.getScreenDimensions().height * relY);
@@ -59,6 +60,7 @@ class Card extends FlippableObject {
             this.dataObject.positionType = "ABSOLUTE";
             this.dataObject.dimensionsBehaviour = "ZOOM";
             this.dataObject.dimensionsType = "ABSOLUTE";
+            this.dataObject.uiScaling = false;
 
             let cursorOnParent = this.parent.convertScreenPosToDivPos(this.cursorX-(this.getScreenDimensions().width*relX), this.cursorY-(this.getScreenDimensions().height*relY));
             let cursorOnParentVP = this.parent.convertDivPosToViewPortPos(cursorOnParent.x, cursorOnParent.y);

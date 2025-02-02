@@ -15,8 +15,6 @@ class DataManager {
     }
 
     getObject(id) {
-        console.log("PEEP "+id)
-
         if(id == "mainBody") 
             return mainBody
         else if(id >= 0)
@@ -53,13 +51,9 @@ class DataManager {
     }
 
     handleFile() {
-        //const fileList = this.fileInput.files;
-        //console.log("FileList: "+fileList.length);
-
         const reader = new FileReader();
         reader.addEventListener('load', (event) => {
             const result = event.target.result;
-            //console.log(result);
 
             this.restoreData(JSON.parse(result, this.mapReviver));
         });
@@ -67,20 +61,17 @@ class DataManager {
     }
 
     restoreData(data) {
-        //console.log(data);
         this.dataObjects = new Map();
         this.objects = new Map();
         this.objectFactory = new ObjectFactory();
         mainBody.removeChild(stage.div);
         this.dataObjects = data.dataObjects;
 
-        console.log(data.dataObjects);
         stage = this.createObject(this.dataObjects.get(data.mainStage));
         stage.div.className = "Stage";    
     }
 
     save() {
-        console.log("Prepare download...");
         let data = this.gatherData()      
         let json = JSON.stringify(data, this.mapReplacer);
 

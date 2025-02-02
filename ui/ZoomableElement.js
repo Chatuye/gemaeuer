@@ -28,7 +28,6 @@ class ZoomableElement {
         if(this.dataObject.parent.referenceId >= 0)
             this.parent = dataManager.getObject(this.dataObject.parent.referenceId);
         else {
-            console.log("Sven");
             let viewPortDO = new ViewPortDO();
             viewPortDO.objectStatus = "PSEUDO";
             viewPortDO.parent.referenceId = "mainBody";

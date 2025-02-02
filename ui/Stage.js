@@ -14,19 +14,18 @@ class StageDO extends ZoomableElementDO {
 class Stage extends ZoomableElement {
 	constructor(dataObject) {
         super(dataObject);
-        console.log("1 "+this.dataObject.objectId);
 
-        console.log("2 "+this.dataObject.viewPort);
 
         if(this.dataObject.viewPort == -1) {
             let viewPortDO = new ViewPortDO();
+
+            if(this.dataObject.isMainStage) viewPortDO.uiScaling = true;
             viewPortDO.parent.referenceId = this.dataObject.objectId;
             this.viewPort = dataManager.createObject(viewPortDO);
             this.dataObject.viewPort = this.viewPort.dataObject.objectId;
         } else {
             this.viewPort = dataManager.getObject(this.dataObject.viewPort);
         }
-        console.log("3");
 
         if(this.dataObject.zManager == -1) {
             let stageZIndexManagerDO = new StageZIndexManagerDO()
@@ -47,7 +46,6 @@ class Stage extends ZoomableElement {
         for(let i = 0; i < this.dataObject.children.length; i++) {
 			this.children.push(dataManager.getObject(this.dataObject.children[i]));
 		}
-        console.log("4");
     }
 
 

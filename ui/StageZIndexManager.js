@@ -16,7 +16,6 @@ class StageZIndexManager {
 
         this.layers = new Array();
         for(let i = 0; i < this.dataObject.layers.length; i++) {
-            console.log("QWERTZ: "+this.dataObject.layers.length+" "+i);
 			this.getLayers().push(new Array());
             if(this.dataObject.layers[i]) {
                 for(let i2 = 0; i2 < this.dataObject.layers[i].length; i2++) {
@@ -45,15 +44,11 @@ class StageZIndexManager {
     remove(layer, object) {
         let removedIndex = object.getZIndex();
         
-//        let index = this.getLayers()[layer].indexOf(object.dataObject.objectId);
         let index = this.getLayers()[layer].indexOf(object);
-//        console.log("SvenREMOVE "+(this.getLayers()[layer]));
         this.getLayers()[layer].splice(index, 1);
 
-//        console.log("SvenREMOVE "+JSON.stringify(this.dataObject.layers[layer]));
         index = this.dataObject.layers[layer].indexOf(object.dataObject.objectId);
         this.dataObject.layers[layer].splice(index, 1);
-//        console.log("SvenREMOVE "+JSON.stringify(this.dataObject.layers[layer]));
 
         for(let i = 0; i < this.getLayers()[layer].length; i++) {
             let obj = this.getLayers()[layer][i];

@@ -22,8 +22,6 @@ class ViewPort {
         this.dataObject = dataObject;
         dataManager.registerObject(this);
 
-        console.log("*************************************" + this.dataObject.parent.referenceId)
-
         this.parent = dataManager.getObject(this.dataObject.parent.referenceId);
         this.calculateScale();
     }
@@ -63,7 +61,6 @@ class ViewPort {
         let w = this.dataObject.width;
         let h = this.dataObject.height;
         if(this.dataObject.uiScaling) {
-//            console.log(this.parent)
             let uiScale = this.parent.getUIScale(true);
             w /= uiScale.scaleX;
             h /= uiScale.scaleY;

@@ -8,7 +8,6 @@ class ObjectFactory {
 			dataObject.objectId = this.numObjects;
 		}
         this.numObjects += 1;
-        console.log("Creating Object: " + dataObject.objectId + " " +dataObject.objectType);
 
         switch(dataObject.objectType) {
 			case "CARD":
@@ -26,7 +25,7 @@ class ObjectFactory {
 			case "VIEWPORT":
 				return new ViewPort(dataObject);
 			default:
-				console.log("Error: Unknown object type: "+dataObject.objectType);
+				console.log("ERROR: Unknown object type: "+dataObject.objectType);
                 return null;
 		}
     }

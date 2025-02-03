@@ -24,7 +24,11 @@ class Card extends FlippableObject {
 
     setHand(hand) {
         this.hand = hand;
-        this.dataObject.hand = this.hand.dataObject.objectId;
+        if(hand) {
+            this.dataObject.hand = this.hand.dataObject.objectId;
+        } else {
+            this.dataObject.hand = -1;
+        }
     }
 
     setDefaultStyle() {

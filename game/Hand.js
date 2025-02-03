@@ -125,7 +125,7 @@ class Hand {
 		this.positionCards();
 	}
 	removeCard(card) {
-		card.hand = null;
+		card.setHand(null);
 
 		let i = this.getCards().indexOf(card);
 		this.getCards().splice(i, 1);

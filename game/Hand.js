@@ -32,10 +32,11 @@ class Hand {
 		this.interactionYRaised = 0;
 		this.interactionY = 0;
 		this.calculateInteractionY();
-		
-		for(let i = 0; i < this.dataObject.cards.length; i++) {
-			this.restoreCard(dataManager.getObject(this.dataObject.cards[i]));
-		}
+
+        for(let i = 0; i < this.dataObject.cards.length; i++) {
+			this.cards.push(dataManager.getObject(this.dataObject.cards[i]));
+		}		
+		this.positionCards();
     }
 
 	getCards() {
@@ -112,19 +113,11 @@ class Hand {
 		card.moveTo(newX, newY);
 	}
 
-	restoreCard(card) {
-		card.hand = this;
-		this.stage.zManager.remove(card.getZLayer(), card);
-		this.stage.zManager.set(1, card);
-
-		this.getCards().push(card);
-		
-		this.positionCards();
-	}
 	addCard(card) {
-		card.hand = this;
-		this.stage.zManager.remove(card.getZLayer(), card);
-		this.stage.zManager.set(1, card);
+		card.setHand(this);
+		this.stage.zManager.remove(card);
+		card.dataObject.zIndex = 1;
+		this.stage.zManager.set(card);
 
 		this.getCards().push(card);
 		this.dataObject.cards.push(card.dataObject.objectId);

@@ -5,6 +5,7 @@ class CardDO extends FlippableObjectDO {
         super();
         
         this.objectType = "CARD";
+        this.hand = -1;
     }
 }
 
@@ -12,9 +13,18 @@ class Card extends FlippableObject {
     constructor(dataObject) {
         super(dataObject);
 
-        this.hand = null;
+        if(this.dataObject.hand == -1) {
+            this.hand = null;
+        } else {
+            this.hand = dataManager.getObject(this.dataObject.hand);
+        }
 
         this.setDefaultStyle();
+    }
+
+    setHand(hand) {
+        this.hand = hand;
+        this.dataObject.hand = this.hand.dataObject.objectId;
     }
 
     setDefaultStyle() {
@@ -45,8 +55,9 @@ class Card extends FlippableObject {
         this.repositionDiv();
     }
     drop() {
-        this.parent.zManager.remove(this.getZLayer(), this);
-        this.parent.zManager.set(0, this);
+        //this.parent.zManager.remove(this);
+        //this.dataObject.zIndex = 0;
+        //this.parent.zManager.set(this);
         super.drop();
 
         if(this.parent.hand.mode=="RAISED") {

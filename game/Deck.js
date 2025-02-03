@@ -8,14 +8,6 @@ class DeckDO extends ZoomableObjectDO {
 
 class Deck extends ZoomableObject {
     constructor(dataObject) {
-        dataObject.positionBehaviour = "FIXED";
-        dataObject.positionType = "ABSOLUTE";
-        dataObject.dimensionsBehaviour = "FIXED";
-        dataObject.dimensionsType = "ABSOLUTE";
-        dataObject.uiScaling = true;
-        dataObject.svg01Key = "cardBack";
-        dataObject.zIndex = 200000;
-
         super(dataObject);
     }
 
@@ -26,7 +18,6 @@ class Deck extends ZoomableObject {
             cardDO.x = this.dataObject.x;
             cardDO.y = this.dataObject.y;
             cardDO.facing = "FRONT";
-            cardDO.zIndex = 0;
 
             cardDO.positionBehaviour = "FIXED";
             cardDO.positionType = "ABSOLUTE";

@@ -35,7 +35,7 @@ class RootObject {
         } else {
             this.zManager = dataManager.getObject(this.dataObject.zManager);
         }
-        
+        //console.log("!!!!!!!!!!!"+this.dataObject.zManager+" "+this.zManager);
         this.pickedUpChild = null;
         this.children = new Array();
         for(let i = 0; i < this.dataObject.children.length; i++) {
@@ -43,6 +43,9 @@ class RootObject {
 		}
 
         window.addEventListener("resize",this.update.bind(this));
+
+        this.onNew = this.createGameStage.bind(this);
+        document.getElementById("new").addEventListener("click", this.onNew)
     }
 
     update() {
@@ -57,7 +60,8 @@ class RootObject {
         this.children.push(child);
         this.dataObject.children.push(child.dataObject.objectId);
     }
-    clearDiv() {
+    clearAll() {
+        document.getElementById("new").removeEventListener("click", this.onNew);
         for(let i = 0; i < this.children.length; i++) {
 			this.div.removeChild(this.children[i].div);
 		}
@@ -72,5 +76,41 @@ class RootObject {
         let sX = this.boundingClientRect.width / UIDefinitions.baseWidth;
         let sY = this.boundingClientRect.height / UIDefinitions.baseHeight;
         return {scaleX: sX, scaleY: sY}
-    } 
+    }
+
+    createGameStage() {
+        let gameStageDO = new GameStageDO();
+        gameStageDO.parent.referenceId = rootObject.dataObject.objectId;
+        gameStageDO.positionBehaviour = "FIXED";
+        gameStageDO.positionType = "ABSOLUTE";
+        gameStageDO.x = 4;
+        gameStageDO.y = 24;
+        gameStageDO.dimensionsBehaviour = "FIXED";
+        gameStageDO.dimensionsType = "RELATIVE";
+        gameStageDO.width = 0.9;
+        gameStageDO.height = 0.9;
+        gameStageDO.uiScaling = false;
+        
+        let gameStage = dataManager.createObject(gameStageDO);
+        //gameStage.div.className = "Stage";
+        this.registerChild(gameStage);
+        
+        let handDO = new HandDO();
+        handDO.stage.referenceId = gameStage.dataObject.objectId;
+        let hand = dataManager.createObject(handDO);
+        gameStage.registerHand(hand);
+
+        let deckDO = new DeckDO();
+        deckDO.parent.referenceId = gameStage.dataObject.objectId;
+        deckDO.x = 10;
+        deckDO.y = 10;
+        deckDO.positionBehaviour = "FIXED";
+        deckDO.positionType = "ABSOLUTE";
+        deckDO.dimensionsBehaviour = "FIXED";
+        deckDO.dimensionsType = "ABSOLUTE";
+        deckDO.uiScaling = true;
+        deckDO.svg01Key = "cardBack";
+        deckDO.zIndex = 2;
+        gameStage.registerChild(dataManager.createObject(deckDO));
+    }
 }

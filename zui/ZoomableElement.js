@@ -45,8 +45,8 @@ class ZoomableElement {
         this.pickedUp = false;
         this.pickedUpChild = null;
 
-        if(this.parent.zManager)
-            this.parent.zManager.set(this.getZLayer(), this);
+
+        this.parent.zManager.set(this);
     }
 
 
@@ -134,9 +134,11 @@ class ZoomableElement {
 		this.div.style.setProperty("-webkit-filter", "drop-shadow(0px 0px 4px rgba(0, 0, 0, 1.0)) drop-shadow(0px 0px 24px rgba(255, 255, 255, 0.33)");
    
         if(this.parent.zManager) {
-            this.div.style.zIndex += 3*this.parent.zManager.getMaxLayerSize();
+            //this.div.style.zIndex += 3*this.parent.zManager.getMaxLayerSize();
             //this.parent.zManager.remove(this.getZLayer(), this);
-            //this.parent.zManager.set(3, this);
+            this.parent.zManager.remove(this);
+            this.dataObject.zIndex = 3;
+            this.parent.zManager.set(this);
         }
     }
     drop() {
@@ -144,8 +146,9 @@ class ZoomableElement {
 		this.setDefaultStyle();
         
         if(this.parent.zManager) {
-            this.parent.zManager.remove(this.getZLayer(), this);
-            this.parent.zManager.set(this.getZLayer(), this);
+            this.parent.zManager.remove(this);
+            this.dataObject.zIndex = 0;
+            this.parent.zManager.set(this);
         }
 
     }
@@ -222,11 +225,11 @@ class ZoomableElement {
 
         return {x: x, y: y}
     }
-    getZLayer() {
+/*    getZLayer() {
         let layer = Math.floor(this.dataObject.zIndex/this.parent.zManager.getMaxLayerSize());
 
         return layer;
-    }
+    }*/
     setZIndex(index) {
         this.dataObject.zIndex = index;
         this.div.style.zIndex = index;

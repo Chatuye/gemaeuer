@@ -5,7 +5,6 @@ class StageZIndexManagerDO extends DataObject {
         this.objectType = "STAGEZINDEXMANAGER";
 
         this.maxLayerSize = 100000;
-        this.layers = new Array(); 
     }
 }
 
@@ -15,40 +14,38 @@ class StageZIndexManager {
         dataManager.registerObject(this);
 
         this.layers = new Array();
-        for(let i = 0; i < this.dataObject.layers.length; i++) {
-			this.getLayers().push(new Array());
-            if(this.dataObject.layers[i]) {
-                for(let i2 = 0; i2 < this.dataObject.layers[i].length; i2++) {
-                    this.layers[i].push(dataManager.getObject(this.dataObject.layers[i][i2]));
-                }
-            } else {
-                this.dataObject.layers[i] = new Array();
+    }
+
+    set(object) {
+        let zIndex = object.getZIndex();
+        if(zIndex < this.getMaxLayerSize()) {
+            let layer = zIndex;
+            if(!this.getLayers()[layer]) {
+                this.getLayers()[layer] = new Array();
             }
+
+            let index = this.getLayers()[layer].length;
+            let newZIndex = (((layer+1) * this.getMaxLayerSize()) + index)
+            this.getLayers()[layer].push(object);
+    
+            object.setZIndex(newZIndex);
+        } else {
+            let layer = Math.floor(zIndex/this.getMaxLayerSize())-1;;
+            if(!this.getLayers()[layer]) {
+                this.getLayers()[layer] = new Array();
+            }
+            this.getLayers()[layer].push(object);
+            object.setZIndex(zIndex);
         }
     }
 
-    set(layer, object) {
-        if(!this.getLayers()[layer]) {
-            this.getLayers()[layer] = new Array();
-            this.dataObject.layers[layer] = new Array();
-        }
-
-        let index = this.getLayers()[layer].length;
-        let newIndex = ((layer * this.getMaxLayerSize()) + index)
-        this.getLayers()[layer].push(object);
-        this.dataObject.layers[layer].push(object.dataObject.objectId);
-
-        object.setZIndex(newIndex);
-    }
-
-    remove(layer, object) {
+    remove(object) {
         let removedIndex = object.getZIndex();
         
-        let index = this.getLayers()[layer].indexOf(object);
-        this.getLayers()[layer].splice(index, 1);
+        let layer = Math.floor(removedIndex/this.getMaxLayerSize())-1;
 
-        index = this.dataObject.layers[layer].indexOf(object.dataObject.objectId);
-        this.dataObject.layers[layer].splice(index, 1);
+        let pos = this.getLayers()[layer].indexOf(object);
+        this.getLayers()[layer].splice(pos, 1);
 
         for(let i = 0; i < this.getLayers()[layer].length; i++) {
             let obj = this.getLayers()[layer][i];

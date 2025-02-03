@@ -4,8 +4,8 @@ class DataManager {
         this.objects = new Map();
         this.objectFactory = new ObjectFactory();
 
-        this.createSave();
-        this.createLoad();
+        this.createSaveButton();
+        this.createLoadButton();
     }
 
     createObject(dataObject) {
@@ -15,9 +15,7 @@ class DataManager {
     }
 
     getObject(id) {
-        if(id == "mainBody") 
-            return mainBody
-        else if(id >= 0)
+        if(id >= 0)
             if(this.objects.has(id)) {
                 return this.objects.get(id);
             } else {
@@ -32,15 +30,16 @@ class DataManager {
         this.objects.set(object.dataObject.objectId, object);
     }
 
-    createSave() {
+    createSaveButton() {
         let div = document.createElement("div");
         div.innerHTML = "Save";
         div.className = "Button";
+        div.style.left = "40px";
         div.addEventListener("click", this.save.bind(this));
-        mainBody.appendChild(div);
+        document.getElementById("menu").appendChild(div);
     }
 
-    createLoad() {
+    createLoadButton() {
         let div = document.createElement("div");
         this.fileInput = document.createElement("input");
         this.fileInput.type = "file";
@@ -51,10 +50,10 @@ class DataManager {
         fileInputLabel.setAttribute("for", "fileInput");
         fileInputLabel.innerHTML = "Load";
         div.className = "Button";
-        div.style.left = "40px";
+        div.style.left = "80px";
         div.appendChild(this.fileInput);
         div.appendChild(fileInputLabel);
-        mainBody.appendChild(div);
+        document.getElementById("menu").appendChild(div);
     }
 
     handleFile() {
@@ -72,7 +71,7 @@ class DataManager {
         this.objects = new Map();
         this.objectFactory = new ObjectFactory();
 
-        rootObject.clearDiv();
+        rootObject.clearAll();
         
         this.dataObjects = data.dataObjects;
         rootObject = this.createObject(this.dataObjects.get(data.rootObject));
@@ -124,7 +123,6 @@ class DataManager {
         a.download    = "gemaeuer.json";
         a.textContent = "Download gemaeuer.json";
         a.click();
-        URL.revokeObjectURL(url);
-        //document.getElementById("mainBody").appendChild(a);        
+        URL.revokeObjectURL(url);      
     }
 }

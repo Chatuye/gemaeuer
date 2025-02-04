@@ -1,66 +1,103 @@
 class DataManager {
     constructor() {
-        this.objectCounter = 0;
+        this.dataObjects = new Map();
+        this.objects = new Map();
+        this.objectFactory = new ObjectFactory();
 
-        this.createSave();
-        this.createLoad();
+        this.createSaveButton();
+        this.createLoadButton();
     }
 
-    createSave() {
-        let div = document.createElement('div');
+    createObject(dataObject) {
+        let newObject = this.objectFactory.createObject(dataObject);
+        
+        return newObject;
+    }
+
+    getObject(id) {
+        if(id == -1) {
+            return null;
+        } else if(id >= 0) {
+            if(this.objects.has(id)) {
+                return this.objects.get(id);
+            } else {
+                return this.objectFactory.createObject(this.dataObjects.get(id));
+            }
+        } else {
+            console.log("ERROR: Unkown object id: "+id);
+        }
+    }
+
+    registerObject(object) {
+        this.dataObjects.set(object.dataObject.objectId, object.dataObject)
+        this.objects.set(object.dataObject.objectId, object);
+    }
+
+    createSaveButton() {
+        let div = document.createElement("div");
         div.innerHTML = "Save";
         div.className = "Button";
-        div.addEventListener("click", this.save.bind(this));
-        mainBody.appendChild(div);
-    }
-
-    createLoad() {
-        let div = document.createElement('div');
-        this.fileInput = document.createElement('input');
-        this.fileInput.type = "file";
-        this.fileInput.addEventListener("change", this.handleFile.bind(this))
         div.style.left = "40px";
-        div.appendChild(this.fileInput);
-        mainBody.appendChild(div);
+        div.addEventListener("click", this.save.bind(this));
+        document.getElementById("menu").appendChild(div);
     }
+
+    createLoadButton() {
+        let div = document.createElement("div");
+        this.fileInput = document.createElement("input");
+        this.fileInput.type = "file";
+        this.fileInput.addEventListener("change", this.handleFile.bind(this));
+        this.fileInput.style.display = "none";
+        this.fileInput.id = "fileInput";
+        let fileInputLabel = document.createElement("label");
+        fileInputLabel.setAttribute("for", "fileInput");
+        fileInputLabel.innerHTML = "Load";
+        div.className = "Button";
+        div.style.left = "80px";
+        div.appendChild(this.fileInput);
+        div.appendChild(fileInputLabel);
+        document.getElementById("menu").appendChild(div);
+    }
+
     handleFile() {
-        const fileList = this.fileInput.files;
-        console.log("FileList: "+fileList.length);
-
         const reader = new FileReader();
-        reader.addEventListener('load', (event) => {
+        reader.addEventListener("load", (event) => {
             const result = event.target.result;
-            console.log(result);
 
-            let viewPort = objectFactory.create(JSON.parse(result));
-            
-            stage.viewPort = viewPort;
-            viewPort.setParent(stage);
-            stage.onParentChange();
+            this.restoreData(JSON.parse(result, this.mapReviver));
         });
         reader.readAsText(this.fileInput.files[0]);
     }
 
+    restoreData(data) {
+        this.dataObjects = new Map();
+        this.objects = new Map();
+        this.objectFactory = new ObjectFactory();
+
+        rootObject.clearAll();
+        
+        this.dataObjects = data.dataObjects;
+        rootObject = this.createObject(this.dataObjects.get(data.rootObject));
+
+
+        this.fileInput.value = null;
+    }
+
     save() {
-        console.log("Prepare download...");
-
-        let myDataObject = this.gatherData();
-
-        let json = JSON.stringify(myDataObject, this.mapReplacer);
+        let data = this.gatherData()      
+        let json = JSON.stringify(data, this.mapReplacer);
 
         this.downloadFile(json);
     }
-
     gatherData() {
-        let myData = {stageRoot: stage.viewPort.dataObject.objectId, stageObjects: new Map(), other: 5}
+        let data = {
+            rootObject: rootObject.dataObject.objectId,
+            dataObjects: this.dataObjects
+        }
 
-        myData.stageObjects.set(stage.viewPort.dataObject.objectId, stage.viewPort.dataObject);
-        myData.stageObjects.set(5, {});
-        console.log(myData.stageObjects)
-
-        return myData;
+        return data;
     }
-
+    
     mapReplacer(key, value) {
         if(value instanceof Map) {
             return {
@@ -71,7 +108,6 @@ class DataManager {
             return value;
         }
     }
-
     mapReviver(key, value) {
         if(typeof value === 'object' && value !== null) {
             if (value.dataType === 'Map') {
@@ -90,7 +126,6 @@ class DataManager {
         a.download    = "gemaeuer.json";
         a.textContent = "Download gemaeuer.json";
         a.click();
-        URL.revokeObjectURL(url);
-        //document.getElementById("mainBody").appendChild(a);        
+        URL.revokeObjectURL(url);      
     }
 }

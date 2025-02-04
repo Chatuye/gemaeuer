@@ -10,20 +10,22 @@
 	<script src="./assets/svgData/tile-front.js"></script>
 	<script src="./assets/svgData/tile-back.js"></script>
 
-	<script src="./ui/UIDefinitions.js"></script>
+	<script src="./assets/UIDefinitions.js"></script>
+	<script src="./assets/SVGLoader.js"></script>
 	
 	<script src="main.js"></script>
 	
+	<script src="./data-management/DataObject.js"></script>
 	<script src="./data-management/ObjectFactory.js"></script>
 	<script src="./data-management/DataManager.js"></script>
 	
-	<script src="./ui/SVGLoader.js"></script>
-	<script src="./ui/ViewPort.js"></script>
-	<script src="./ui/ZoomableElement.js"></script>
-	<script src="./ui/ZoomableObject.js"></script>
-	<script src="./ui/FlippableObject.js"></script>
-	<script src="./ui/Stage.js"></script>
-	<script src="./ui/StageZIndexManager.js"></script>
+	<script src="./zui/rootObject.js"></script>
+	<script src="./zui/ViewPort.js"></script>
+	<script src="./zui/ZoomableElement.js"></script>
+	<script src="./zui/ZoomableObject.js"></script>
+	<script src="./zui/FlippableObject.js"></script>
+	<script src="./zui/Stage.js"></script>
+	<script src="./zui/StageZIndexManager.js"></script>
 
 	<script src="./game/GameStage.js"></script>
 	<script src="./game/Tile.js"></script>
@@ -37,8 +39,8 @@
 	<link rel="stylesheet" type="text/css" href="main.css">	
 </head>
 
-<body id="mainBody" onload="onBodyLoad()" onresize="onBodyResize()">
-	
+<body onload="onBodyLoad()">
+	<div id="menu" class="menu"><div id="new" class="Button">New</div></div>
 </body>
 
 </html>

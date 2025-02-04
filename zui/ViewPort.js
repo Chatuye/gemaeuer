@@ -1,10 +1,11 @@
-class ViewPortDO {
+class ViewPortDO extends DataObject {
     constructor() {
-        this.objectId = -1;
+        super();
+        
         this.objectType = "VIEWPORT";
-        this.objectStatus = "NEW";
 
         this.parent = { referenceId: -1 };
+
         this.type = "RELATIVE";
         this.x = 0;
         this.y = 0;
@@ -17,18 +18,12 @@ class ViewPortDO {
 }
 
 class ViewPort {
-    constructor(parent, dataObject) {
-        this.parent = parent;
+    constructor(dataObject) {
         this.dataObject = dataObject;
-        if(this.dataObject.objectStatus == "NEW") {
-            this.calculateScale();
-            this.dataObject.objectStatus = "EXISTING";
-        }
-    }
+        dataManager.registerObject(this);
 
-    setParent(p) {
-        this.parent = p;
-        //this.dataObject = this.parent.data.id;
+        this.parent = dataManager.getObject(this.dataObject.parent.referenceId);
+        this.calculateScale();
     }
     
     pan(dX, dY, callback) {
@@ -66,7 +61,6 @@ class ViewPort {
         let w = this.dataObject.width;
         let h = this.dataObject.height;
         if(this.dataObject.uiScaling) {
-//            console.log(this.parent)
             let uiScale = this.parent.getUIScale(true);
             w /= uiScale.scaleX;
             h /= uiScale.scaleY;
@@ -82,16 +76,9 @@ class ViewPort {
     }
 
     getScreenDimensions() {
-        let w = 0;
-        let h = 0;
-        if(this.parent instanceof HTMLElement) {
-            w = this.parent.getBoundingClientRect().width;
-            h = this.parent.getBoundingClientRect().height;
-        } else {
-            let d = this.parent.getScreenDimensions();
-            w = d.width;
-            h = d.height;
-        }
+        let d = this.parent.getScreenDimensions();
+        let w = d.width;
+        let h = d.height;
         return {width: w, height: h};
     }
 

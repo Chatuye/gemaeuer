@@ -1,26 +1,50 @@
 class StageDO extends ZoomableElementDO {
     constructor() {
         super();
+
+        this.objectType = "STAGE";
         
-        this.isMainStage = false;
-        this.viewPortDO = new ViewPortDO();
+        this.viewPort = -1;
+        this.zManager = -1;
         this.children = new Array();
     }
 }
 
 class Stage extends ZoomableElement {
-	constructor(parent, dataObject) {
-        super(parent, dataObject);
+	constructor(dataObject) {
+        super(dataObject);
 
-        this.viewPort = new ViewPort(this, this.dataObject.viewPortDO)
+
+        if(this.dataObject.viewPort == -1) {
+            let viewPortDO = new ViewPortDO();
+
+            if(this.parent instanceof RootObject) viewPortDO.uiScaling = true;
+            viewPortDO.parent.referenceId = this.dataObject.objectId;
+            this.viewPort = dataManager.createObject(viewPortDO);
+            this.dataObject.viewPort = this.viewPort.dataObject.objectId;
+        } else {
+            this.viewPort = dataManager.getObject(this.dataObject.viewPort);
+        }
+
+        if(this.dataObject.zManager == -1) {
+            let stageZIndexManagerDO = new StageZIndexManagerDO()
+            this.zManager = dataManager.createObject(stageZIndexManagerDO);
+            this.dataObject.zManager = this.zManager.dataObject.objectId;
+        } else {
+            this.zManager = dataManager.getObject(this.dataObject.zManager);
+        }
+
+
         this.children = new Array();
 
 
-
         this.zoomPerTick = 40;
-        this.zManager = new StageZIndexManager();
 
         this.div.addEventListener("wheel", this.onWheel.bind(this), { passive: false });
+
+        for(let i = 0; i < this.dataObject.children.length; i++) {
+			this.children.push(dataManager.getObject(this.dataObject.children[i]));
+		}
     }
 
 
@@ -56,6 +80,7 @@ class Stage extends ZoomableElement {
     }
     registerChild(child) {
         this.children.push(child);
+        this.dataObject.children.push(child.dataObject.objectId);
     }
 
 

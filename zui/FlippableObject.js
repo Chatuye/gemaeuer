@@ -1,6 +1,8 @@
 class FlippableObjectDO extends ZoomableElementDO {
     constructor() {
         super();
+
+        this.objectType = "FLIPPABLEOBJECT";
         
         this.svg01Key = "card";
         this.svg02Key = "cardBack";
@@ -9,13 +11,13 @@ class FlippableObjectDO extends ZoomableElementDO {
 }
 
 class FlippableObject extends ZoomableElement {
-	constructor(parent, dataObject) {
+	constructor(dataObject) {
 		let mySVGFront = svgLoader.clone(dataObject.svg01Key);
 		let mySVGBack = svgLoader.clone(dataObject.svg02Key);
         dataObject.width = mySVGFront.getAttribute("width"); 
         dataObject.height = mySVGFront.getAttribute("height");
 
-		super(parent, dataObject);
+		super(dataObject);
 		
 		this.svgFront = mySVGFront;
 		this.svgBack = mySVGBack;

@@ -4,27 +4,28 @@ class CardDO extends FlippableObjectDO {
     constructor() {
         super();
         
+        this.objectType = "CARD";
+        this.hand = -1;
     }
 }
 
 class Card extends FlippableObject {
-    constructor(parent, dataObject) {
-        dataObject.positionBehaviour = "FIXED";
-        dataObject.positionType = "ABSOLUTE";
-        dataObject.dimensionsBehaviour = cardDimensions.behaviour;
-        dataObject.dimensionsType = cardDimensions.type;
-        dataObject.uiScaling = cardDimensions.uiScaling;
-        dataObject.svg01Key = "card";
-        dataObject.svg02Key = "cardBack";
-        dataObject.zIndex = 0;
+    constructor(dataObject) {
+        super(dataObject);
 
-        super(parent, dataObject);
-//        super(parent, 0, "fixed", "absolute", x, y, cardDimensions.behaviour, cardDimensions.type, cardDimensions.uiScaling, "card", "cardBack", facing,);
-
-        this.hand = null;
+        this.hand = dataManager.getObject(this.dataObject.hand);
 
         this.setDefaultStyle();
+    }
+
+    setHand(hand) {
+        this.hand = hand;
+        if(hand) {
+            this.dataObject.hand = this.hand.dataObject.objectId;
+        } else {
+            this.dataObject.hand = -1;
         }
+    }
 
     setDefaultStyle() {
         this.div.style.setProperty("-webkit-filter", "drop-shadow(0px 0px 1px rgba(0, 0, 0, 1.0))");
@@ -45,6 +46,7 @@ class Card extends FlippableObject {
         this.dataObject.positionType = "ABSOLUTE";
         this.dataObject.dimensionsBehaviour = cardDimensions.behaviour;
         this.dataObject.dimensionsType = cardDimensions.type;
+        this.dataObject.uiScaling = true;
 
         this.dataObject.x = cursorOnParent.x - (this.getScreenDimensions().width * relX);
         this.dataObject.y = cursorOnParent.y - (this.getScreenDimensions().height * relY);
@@ -53,8 +55,6 @@ class Card extends FlippableObject {
         this.repositionDiv();
     }
     drop() {
-        this.parent.zManager.remove(this.getZLayer(), this);
-        this.parent.zManager.set(0, this);
         super.drop();
 
         if(this.parent.hand.mode=="RAISED") {
@@ -68,6 +68,7 @@ class Card extends FlippableObject {
             this.dataObject.positionType = "ABSOLUTE";
             this.dataObject.dimensionsBehaviour = "ZOOM";
             this.dataObject.dimensionsType = "ABSOLUTE";
+            this.dataObject.uiScaling = false;
 
             let cursorOnParent = this.parent.convertScreenPosToDivPos(this.cursorX-(this.getScreenDimensions().width*relX), this.cursorY-(this.getScreenDimensions().height*relY));
             let cursorOnParentVP = this.parent.convertDivPosToViewPortPos(cursorOnParent.x, cursorOnParent.y);

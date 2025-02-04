@@ -35,7 +35,6 @@ class RootObject {
         } else {
             this.zManager = dataManager.getObject(this.dataObject.zManager);
         }
-        //console.log("!!!!!!!!!!!"+this.dataObject.zManager+" "+this.zManager);
         this.pickedUpChild = null;
         this.children = new Array();
         for(let i = 0; i < this.dataObject.children.length; i++) {
@@ -68,7 +67,6 @@ class RootObject {
     }
 
     getScreenDimensions() {
-        //console.log("gSD "+this.boundingClientRect);
         return this.boundingClientRect;
     }
 
@@ -92,7 +90,6 @@ class RootObject {
         gameStageDO.uiScaling = false;
         
         let gameStage = dataManager.createObject(gameStageDO);
-        //gameStage.div.className = "Stage";
         this.registerChild(gameStage);
         
         let handDO = new HandDO();

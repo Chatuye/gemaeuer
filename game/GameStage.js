@@ -12,11 +12,8 @@ class GameStage extends Stage {
 	constructor(dataObject) {
         super(dataObject);
 
-        if(this.dataObject.hand == -1) {
-            this.hand = null;
-        } else {
-            this.hand = dataManager.getObject(this.dataObject.hand);
-        }
+        this.hand = dataManager.getObject(this.dataObject.hand);
+
         this.div.addEventListener("contextmenu", this.onContextMenu.bind(this), { passive: false });
         this.div.addEventListener("mousemove", this.onMouseMove.bind(this));
     }

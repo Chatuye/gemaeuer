@@ -15,14 +15,17 @@ class DataManager {
     }
 
     getObject(id) {
-        if(id >= 0)
+        if(id == -1) {
+            return null;
+        } else if(id >= 0) {
             if(this.objects.has(id)) {
                 return this.objects.get(id);
             } else {
                 return this.objectFactory.createObject(this.dataObjects.get(id));
             }
-        else
+        } else {
             console.log("ERROR: Unkown object id: "+id);
+        }
     }
 
     registerObject(object) {

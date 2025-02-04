@@ -13,11 +13,7 @@ class Card extends FlippableObject {
     constructor(dataObject) {
         super(dataObject);
 
-        if(this.dataObject.hand == -1) {
-            this.hand = null;
-        } else {
-            this.hand = dataManager.getObject(this.dataObject.hand);
-        }
+        this.hand = dataManager.getObject(this.dataObject.hand);
 
         this.setDefaultStyle();
     }
@@ -59,9 +55,6 @@ class Card extends FlippableObject {
         this.repositionDiv();
     }
     drop() {
-        //this.parent.zManager.remove(this);
-        //this.dataObject.zIndex = 0;
-        //this.parent.zManager.set(this);
         super.drop();
 
         if(this.parent.hand.mode=="RAISED") {

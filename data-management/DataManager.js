@@ -34,16 +34,10 @@ class DataManager {
     }
 
     createSaveButton() {
-        let div = document.createElement("div");
-        div.innerHTML = "Save";
-        div.className = "Button";
-        div.style.left = "40px";
-        div.addEventListener("click", this.save.bind(this));
-        document.getElementById("menu").appendChild(div);
+        document.getElementById("menu-save").addEventListener("click", this.save.bind(this));
     }
 
     createLoadButton() {
-        let div = document.createElement("div");
         this.fileInput = document.createElement("input");
         this.fileInput.type = "file";
         this.fileInput.addEventListener("change", this.handleFile.bind(this));
@@ -51,12 +45,10 @@ class DataManager {
         this.fileInput.id = "fileInput";
         let fileInputLabel = document.createElement("label");
         fileInputLabel.setAttribute("for", "fileInput");
+        fileInputLabel.style.display = "block";
         fileInputLabel.innerHTML = "Load";
-        div.className = "Button";
-        div.style.left = "80px";
-        div.appendChild(this.fileInput);
-        div.appendChild(fileInputLabel);
-        document.getElementById("menu").appendChild(div);
+        document.getElementById("menu-load").appendChild(this.fileInput);
+        document.getElementById("menu-load").appendChild(fileInputLabel);
     }
 
     handleFile() {

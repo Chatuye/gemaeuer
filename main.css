@@ -6,9 +6,10 @@
 body {
 	margin: 0px;
 	background-color: #000000;
+	font-family: Roboto;
 	
 	width:100vw;
-	height:100vh;	
+	height:100vh;
 }
 
 div {
@@ -32,20 +33,31 @@ svg {
 }
 
 
-
 div.Stage {
 	background: linear-gradient(#242424, #040404);
 }
 
 div.menu {
 	width: 100%;
+	overflow: visible;
+}
+
+div.menu > * {
+	position:relative;
+	display:inline-block;
+	margin-left: 12px;
+	text-align: center;
+	line-height: 24px;
+	width: 80px;
 	height: 24px;
+	
+	color:  rgba(222, 222, 222, 1.0);
+	background: linear-gradient(#484848, #242424);
 }
 
-.Button {
-	background-color: rgba(200, 200, 200,1.0) !important;
+div.menu > *:first-child {
+	margin-left: 0px;
 }
-
 
 div.Flippable {
 	overflow: visible;

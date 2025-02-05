@@ -15,7 +15,8 @@ class RootObject {
         this.dataObject = dataObject;
         dataManager.registerObject(this);
 
-        this.div = document.getElementsByTagName('body')[0];
+        //this.div = document.getElementsByTagName('body')[0];
+        this.div = document.getElementById("content");
         this.boundingClientRect = this.div.getBoundingClientRect();
 
         if(this.dataObject.viewPort == -1) {
@@ -66,7 +67,8 @@ class RootObject {
     }
 
     getScreenDimensions() {
-        return this.boundingClientRect;
+        let clientRect = this.boundingClientRect;
+        return clientRect;
     }
 
     getUIScale() {
@@ -80,12 +82,12 @@ class RootObject {
         gameStageDO.parent.referenceId = rootObject.dataObject.objectId;
         gameStageDO.positionBehaviour = "FIXED";
         gameStageDO.positionType = "ABSOLUTE";
-        gameStageDO.x = 4;
-        gameStageDO.y = 24;
+        gameStageDO.x = 0;
+        gameStageDO.y = 0;
         gameStageDO.dimensionsBehaviour = "FIXED";
         gameStageDO.dimensionsType = "RELATIVE";
-        gameStageDO.width = 0.9;
-        gameStageDO.height = 0.9;
+        gameStageDO.width = 1;
+        gameStageDO.height = 1;
         gameStageDO.uiScaling = false;
         
         let gameStage = dataManager.createObject(gameStageDO);

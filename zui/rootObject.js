@@ -44,13 +44,12 @@ class RootObject {
         window.addEventListener("resize",this.update.bind(this));
 
         this.onNew = this.createGameStage.bind(this);
-        document.getElementById("new").addEventListener("click", this.onNew)
+        document.getElementById("menu-new").addEventListener("click", this.onNew)
     }
 
     update() {
         this.boundingClientRect = this.div.getBoundingClientRect();
         this.updateChildren();
-        console.log("update ");
     }
     updateChildren() {
         this.children.forEach((child) => child.onParentChange())
@@ -60,7 +59,7 @@ class RootObject {
         this.dataObject.children.push(child.dataObject.objectId);
     }
     clearAll() {
-        document.getElementById("new").removeEventListener("click", this.onNew);
+        document.getElementById("menu-new").removeEventListener("click", this.onNew);
         for(let i = 0; i < this.children.length; i++) {
 			this.div.removeChild(this.children[i].div);
 		}

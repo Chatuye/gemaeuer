@@ -54,7 +54,7 @@ class Hand {
 	}
 
 	getCardScreenDimensions() {
-		let cD = this.stage.getScreenDimensionsOfChild(LayoutPresets.SCREEN.dimensionsBehaviour, LayoutPresets.SCREEN.dimensionsType, cardDimensions.width, cardDimensions.height, LayoutPresets.SCREEN.uiScaling);
+		let cD = this.stage.getScreenDimensionsOfChild(LayoutPresets.SCREEN.dimensionsBehaviour, LayoutPresets.SCREEN.dimensionsType, cardDimensions.width, cardDimensions.height, LayoutPresets.SCREEN.scaleWithWindowSize);
 		return cD;
 	}
 

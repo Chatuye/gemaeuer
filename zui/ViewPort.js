@@ -11,7 +11,7 @@ class ViewPortSO extends StateObject {
         this.y = 0;
         this.width = 1.0;
         this.height = 1.0;
-        this.uiScaling = false;
+        this.scaleWithWindowSize = false;
         this.scaleX = 1.0;
         this.scaleY = 1.0;
     }
@@ -44,7 +44,7 @@ class ViewPort {
         }
 
         if((w > 0) && (h > 0)) {
-            if(this.stateObject.uiScaling) {
+            if(this.stateObject.scaleWithWindowSize) {
                 let uiScale = this.parent.getUIScale(true);
                 dX /= uiScale.scaleX;
                 dY /= uiScale.scaleY;
@@ -60,7 +60,7 @@ class ViewPort {
     getDimensions() {
         let w = this.stateObject.width;
         let h = this.stateObject.height;
-        if(this.stateObject.uiScaling) {
+        if(this.stateObject.scaleWithWindowSize) {
             let uiScale = this.parent.getUIScale(true);
             w /= uiScale.scaleX;
             h /= uiScale.scaleY;

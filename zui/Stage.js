@@ -18,7 +18,7 @@ class Stage extends ZoomableElement {
         if(this.stateObject.viewPort == -1) {
             let viewPortSO = new ViewPortSO();
 
-            if(this.parent instanceof RootObject) viewPortSO.uiScaling = true;
+            if(this.parent instanceof RootObject) viewPortSO.scaleWithWindowSize = true;
             viewPortSO.parent.referenceId = this.stateObject.objectId;
             this.viewPort = dataManager.createObject(viewPortSO);
             this.stateObject.viewPort = this.viewPort.stateObject.objectId;
@@ -117,7 +117,7 @@ class Stage extends ZoomableElement {
         else 
             return {scaleX: sX, scaleY: sY}
     }
-    getScreenDimensionsOfChild(behaviour, type, width, height, uiScaling) {
+    getScreenDimensionsOfChild(behaviour, type, width, height, scaleWithWindowSize) {
         let w = 0;
         let h = 0;
 
@@ -131,7 +131,7 @@ class Stage extends ZoomableElement {
                 w *= this.viewPort.getScaleX();
                 h *= this.viewPort.getScaleY();
             }
-            if(uiScaling) {
+            if(scaleWithWindowSize) {
                 let uiScale = this.getUIScale(true);
                 w *= uiScale.scaleX;
                 h *= uiScale.scaleY;

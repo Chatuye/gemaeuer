@@ -85,7 +85,7 @@ class GameStage extends Stage {
         gameStage.viewPort.stateObject.type = "ABSOLUTE";
         gameStage.viewPort.stateObject.width = 400;
         gameStage.viewPort.stateObject.height = 400;
-        gameStage.viewPort.stateObject.uiScaling = false;
+        gameStage.viewPort.stateObject.scaleWithWindowSize = false;
         gameStage.viewPort.calculateScale();
 
         this.registerChild(gameStage);

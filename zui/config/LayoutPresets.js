@@ -10,7 +10,7 @@
  *   - Type: are the values in world units (ABSOLUTE) or fractions of the parent (RELATIVE)?
  *
  * On top of that, there's one extra flag:
- *   - uiScaling: if true, dimensions are multiplied by (main stage size / 1920x1080).
+ *   - scaleWithWindowSize: if true, dimensions are multiplied by (main stage size / 1920x1080).
  *     This keeps objects the same relative size on any screen resolution.
  *     A card that looks right on a 1920x1080 monitor will look proportionally
  *     the same on a 2560x1440 or 1366x768 monitor.
@@ -47,7 +47,7 @@ const LayoutPresets = {
         positionType: "ABSOLUTE",
         dimensionsBehaviour: "ZOOM",
         dimensionsType: "ABSOLUTE",
-        uiScaling: false
+        scaleWithWindowSize: false
     },
 
     /** Lives on the screen. Ignores zoom/pan. Size adapts to screen resolution. */
@@ -56,7 +56,7 @@ const LayoutPresets = {
         positionType: "ABSOLUTE",
         dimensionsBehaviour: "FIXED",
         dimensionsType: "ABSOLUTE",
-        uiScaling: true
+        scaleWithWindowSize: true
     },
 
     /** Lives on the screen. Ignores zoom/pan. Size is a fraction of the parent (0–1). */
@@ -65,6 +65,6 @@ const LayoutPresets = {
         positionType: "ABSOLUTE",
         dimensionsBehaviour: "FIXED",
         dimensionsType: "RELATIVE",
-        uiScaling: false
+        scaleWithWindowSize: false
     }
 };

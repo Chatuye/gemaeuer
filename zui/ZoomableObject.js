@@ -15,7 +15,7 @@ class ZoomableObject extends ZoomableElement {
         stateObject.height = mySVG.getAttribute("height");
 
         super(stateObject);
-        //super(parent, zLayer, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, mySVG.getAttribute("width"), mySVG.getAttribute("height"), uiScaling);
+        //super(parent, zLayer, positioningBehaviour, positionType, x, y, dimensionsBehaviour, dimensionsType, mySVG.getAttribute("width"), mySVG.getAttribute("height"), scaleWithWindowSize);
         this.svg = mySVG;
 
         this.div.style.backgroundColor = "rgba(0, 0, 0, 0.0)";

@@ -193,7 +193,7 @@ class ZoomableElement {
                 width *= this.parent.getViewPort().getScaleX();
                 height *= this.parent.getViewPort().getScaleY();
             }
-            if(this.stateObject.uiScaling) {
+            if(this.stateObject.scaleWithWindowSize) {
                 let uiScale = this.getMainStage().getUIScale(true);
                 width *= uiScale.scaleX;
                 height *= uiScale.scaleY;

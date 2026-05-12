@@ -1,4 +1,4 @@
-class GameStageDO extends StageDO {
+class GameStageSO extends StageSO {
     constructor() {
         super();
 
@@ -9,10 +9,10 @@ class GameStageDO extends StageDO {
 }
 
 class GameStage extends Stage {
-	constructor(dataObject) {
-        super(dataObject);
+	constructor(stateObject) {
+        super(stateObject);
 
-        this.hand = dataManager.getObject(this.dataObject.hand);
+        this.hand = dataManager.getObject(this.stateObject.hand);
 
         this.div.addEventListener("contextmenu", this.onContextMenu.bind(this), { passive: false });
         this.div.addEventListener("mousemove", this.onMouseMove.bind(this));
@@ -20,7 +20,7 @@ class GameStage extends Stage {
 
     registerHand(hand) {
         this.hand = hand;
-        this.dataObject.hand = hand.dataObject.objectId;
+        this.stateObject.hand = hand.stateObject.objectId;
     }
 
     onMouseMove(e) {
@@ -46,24 +46,18 @@ class GameStage extends Stage {
         let x = cursorOnVP.x;
         let y = cursorOnVP.y;
 
-        let tileDO = new TileDO();
-        tileDO.parent.referenceId = this.dataObject.objectId;
-        tileDO.x = x;
-        tileDO.y = y;
-        tileDO.facing = "BACK";
+        let tileSO = new TileSO();
+        Object.assign(tileSO, LayoutPresets.WORLD);
+        tileSO.parent.referenceId = this.stateObject.objectId;
+        tileSO.x = x;
+        tileSO.y = y;
+        tileSO.facing = "BACK";
+        tileSO.svg01Key = "tile-front";
+        tileSO.svg02Key = "tile-back";
+        tileSO.zIndex = 0;
+        tileSO.value = Math.floor((Math.random()*9))+1;
 
-        tileDO.positionBehaviour = "ZOOM";
-        tileDO.positionType = "ABSOLUTE";
-        tileDO.dimensionsBehaviour = "ZOOM";
-        tileDO.dimensionsType = "ABSOLUTE";
-        tileDO.uiScaling = true;
-        tileDO.svg01Key = "tile-front";
-        tileDO.svg02Key = "tile-back";
-        tileDO.zIndex = 0;
-        tileDO.uiScaling = false;
-        tileDO.value = Math.floor((Math.random()*9))+1;
-
-        let tile = dataManager.createObject(tileDO);
+        let tile = dataManager.createObject(tileSO);
         this.registerChild(tile);
     }
     onContextMenu(e) {
@@ -79,23 +73,19 @@ class GameStage extends Stage {
         let vSD = this.viewPort.getScreenDimensions();
         let q = vSD.width/vSD.height;
         
-        let gameStageDO = new GameStageDO();
-        gameStageDO.parent.referenceId = this.dataObject.objectId;
-        gameStageDO.positionBehaviour = "ZOOM";
-        gameStageDO.positionType = "ABSOLUTE";
-        gameStageDO.x = x;
-        gameStageDO.y = y;
-        gameStageDO.dimensionsBehaviour = "ZOOM";
-        gameStageDO.dimensionsType = "ABSOLUTE";
-        gameStageDO.width = 400;
-        gameStageDO.height = 400;
-        gameStageDO.uiScaling = false;
+        let gameStageSO = new GameStageSO();
+        Object.assign(gameStageSO, LayoutPresets.WORLD);
+        gameStageSO.parent.referenceId = this.stateObject.objectId;
+        gameStageSO.x = x;
+        gameStageSO.y = y;
+        gameStageSO.width = 400;
+        gameStageSO.height = 400;
 
-        let gameStage = dataManager.createObject(gameStageDO);
-        gameStage.viewPort.dataObject.type = "ABSOLUTE";
-        gameStage.viewPort.dataObject.width = 400;
-        gameStage.viewPort.dataObject.height = 400;
-        gameStage.viewPort.dataObject.uiScaling = false;
+        let gameStage = dataManager.createObject(gameStageSO);
+        gameStage.viewPort.stateObject.type = "ABSOLUTE";
+        gameStage.viewPort.stateObject.width = 400;
+        gameStage.viewPort.stateObject.height = 400;
+        gameStage.viewPort.stateObject.uiScaling = false;
         gameStage.viewPort.calculateScale();
 
         this.registerChild(gameStage);

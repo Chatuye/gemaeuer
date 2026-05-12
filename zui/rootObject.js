@@ -1,4 +1,4 @@
-class RootObjectDO extends DataObject {
+class RootObjectSO extends StateObject {
     constructor() {
         super();
 
@@ -11,35 +11,35 @@ class RootObjectDO extends DataObject {
 }
 
 class RootObject {
-	constructor(dataObject) {
-        this.dataObject = dataObject;
+	constructor(stateObject) {
+        this.stateObject = stateObject;
         dataManager.registerObject(this);
 
         //this.div = document.getElementsByTagName('body')[0];
         this.div = document.getElementById("content");
         this.boundingClientRect = this.div.getBoundingClientRect();
 
-        if(this.dataObject.viewPort == -1) {
-            let viewPortDO = new ViewPortDO();
+        if(this.stateObject.viewPort == -1) {
+            let viewPortSO = new ViewPortSO();
 
-            viewPortDO.parent.referenceId = this.dataObject.objectId;
-            this.viewPort = dataManager.createObject(viewPortDO);
-            this.dataObject.viewPort = this.viewPort.dataObject.objectId;
+            viewPortSO.parent.referenceId = this.stateObject.objectId;
+            this.viewPort = dataManager.createObject(viewPortSO);
+            this.stateObject.viewPort = this.viewPort.stateObject.objectId;
         } else {
-            this.viewPort = dataManager.getObject(this.dataObject.viewPort);
+            this.viewPort = dataManager.getObject(this.stateObject.viewPort);
         }
 
-        if(this.dataObject.zManager == -1) {
-            let stageZIndexManagerDO = new StageZIndexManagerDO()
-            this.zManager = dataManager.createObject(stageZIndexManagerDO);
-            this.dataObject.zManager = this.zManager.dataObject.objectId;
+        if(this.stateObject.zManager == -1) {
+            let stageZIndexManagerSO = new StageZIndexManagerSO()
+            this.zManager = dataManager.createObject(stageZIndexManagerSO);
+            this.stateObject.zManager = this.zManager.stateObject.objectId;
         } else {
-            this.zManager = dataManager.getObject(this.dataObject.zManager);
+            this.zManager = dataManager.getObject(this.stateObject.zManager);
         }
         this.pickedUpChild = null;
         this.children = new Array();
-        for(let i = 0; i < this.dataObject.children.length; i++) {
-			this.children.push(dataManager.getObject(this.dataObject.children[i]));
+        for(let i = 0; i < this.stateObject.children.length; i++) {
+			this.children.push(dataManager.getObject(this.stateObject.children[i]));
 		}
 
         window.addEventListener("resize",this.update.bind(this));
@@ -57,7 +57,7 @@ class RootObject {
     }
     registerChild(child) {
         this.children.push(child);
-        this.dataObject.children.push(child.dataObject.objectId);
+        this.stateObject.children.push(child.stateObject.objectId);
     }
     clearAll() {
         document.getElementById("menu-new").removeEventListener("click", this.onNew);
@@ -78,37 +78,29 @@ class RootObject {
     }
 
     createGameStage() {
-        let gameStageDO = new GameStageDO();
-        gameStageDO.parent.referenceId = rootObject.dataObject.objectId;
-        gameStageDO.positionBehaviour = "FIXED";
-        gameStageDO.positionType = "ABSOLUTE";
-        gameStageDO.x = 0;
-        gameStageDO.y = 0;
-        gameStageDO.dimensionsBehaviour = "FIXED";
-        gameStageDO.dimensionsType = "RELATIVE";
-        gameStageDO.width = 1;
-        gameStageDO.height = 1;
-        gameStageDO.uiScaling = false;
+        let gameStageSO = new GameStageSO();
+        gameStageSO.parent.referenceId = rootObject.stateObject.objectId;
+        Object.assign(gameStageSO, LayoutPresets.SCREEN_RELATIVE);
+        gameStageSO.x = 0;
+        gameStageSO.y = 0;
+        gameStageSO.width = 1;
+        gameStageSO.height = 1;
         
-        let gameStage = dataManager.createObject(gameStageDO);
+        let gameStage = dataManager.createObject(gameStageSO);
         this.registerChild(gameStage);
         
-        let handDO = new HandDO();
-        handDO.stage.referenceId = gameStage.dataObject.objectId;
-        let hand = dataManager.createObject(handDO);
+        let handSO = new HandSO();
+        handSO.stage.referenceId = gameStage.stateObject.objectId;
+        let hand = dataManager.createObject(handSO);
         gameStage.registerHand(hand);
 
-        let deckDO = new DeckDO();
-        deckDO.parent.referenceId = gameStage.dataObject.objectId;
-        deckDO.x = 10;
-        deckDO.y = 10;
-        deckDO.positionBehaviour = "FIXED";
-        deckDO.positionType = "ABSOLUTE";
-        deckDO.dimensionsBehaviour = "FIXED";
-        deckDO.dimensionsType = "ABSOLUTE";
-        deckDO.uiScaling = true;
-        deckDO.svg01Key = "cardBack";
-        deckDO.zIndex = 2;
-        gameStage.registerChild(dataManager.createObject(deckDO));
+        let deckSO = new DeckSO();
+        deckSO.parent.referenceId = gameStage.stateObject.objectId;
+        Object.assign(deckSO, LayoutPresets.SCREEN);
+        deckSO.x = 10;
+        deckSO.y = 10;
+        deckSO.svg01Key = "cardBack";
+        deckSO.zIndex = 2;
+        gameStage.registerChild(dataManager.createObject(deckSO));
     }
 }

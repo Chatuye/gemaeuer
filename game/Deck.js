@@ -1,4 +1,4 @@
-class DeckDO extends ZoomableObjectDO {
+class DeckSO extends ZoomableObjectSO {
     constructor() {
         super();
 
@@ -7,27 +7,22 @@ class DeckDO extends ZoomableObjectDO {
 }
 
 class Deck extends ZoomableObject {
-    constructor(dataObject) {
-        super(dataObject);
+    constructor(stateObject) {
+        super(stateObject);
     }
 
     onMouseUp(e) {
         if(!this.pickedUp) {
-            let cardDO = new CardDO();
-            cardDO.parent.referenceId = this.parent.dataObject.objectId;
-            cardDO.x = this.dataObject.x;
-            cardDO.y = this.dataObject.y;
-            cardDO.facing = "FRONT";
+            let cardSO = new CardSO();
+            cardSO.parent.referenceId = this.parent.stateObject.objectId;
+            Object.assign(cardSO, LayoutPresets.SCREEN);
+            cardSO.x = this.stateObject.x;
+            cardSO.y = this.stateObject.y;
+            cardSO.facing = "FRONT";
+            cardSO.svg01Key = "card";
+            cardSO.svg02Key = "cardBack";
 
-            cardDO.positionBehaviour = "FIXED";
-            cardDO.positionType = "ABSOLUTE";
-            cardDO.dimensionsBehaviour = cardDimensions.behaviour;
-            cardDO.dimensionsType = cardDimensions.type;
-            cardDO.uiScaling = cardDimensions.uiScaling;
-            cardDO.svg01Key = "card";
-            cardDO.svg02Key = "cardBack";
-
-            let card = dataManager.createObject(cardDO);
+            let card = dataManager.createObject(cardSO);
             this.parent.registerChild(card);
             this.parent.hand.addCard(card);
         }

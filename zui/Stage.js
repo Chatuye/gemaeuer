@@ -1,4 +1,4 @@
-class StageDO extends ZoomableElementDO {
+class StageSO extends ZoomableElementSO {
     constructor() {
         super();
 
@@ -11,27 +11,27 @@ class StageDO extends ZoomableElementDO {
 }
 
 class Stage extends ZoomableElement {
-	constructor(dataObject) {
-        super(dataObject);
+	constructor(stateObject) {
+        super(stateObject);
 
 
-        if(this.dataObject.viewPort == -1) {
-            let viewPortDO = new ViewPortDO();
+        if(this.stateObject.viewPort == -1) {
+            let viewPortSO = new ViewPortSO();
 
-            if(this.parent instanceof RootObject) viewPortDO.uiScaling = true;
-            viewPortDO.parent.referenceId = this.dataObject.objectId;
-            this.viewPort = dataManager.createObject(viewPortDO);
-            this.dataObject.viewPort = this.viewPort.dataObject.objectId;
+            if(this.parent instanceof RootObject) viewPortSO.uiScaling = true;
+            viewPortSO.parent.referenceId = this.stateObject.objectId;
+            this.viewPort = dataManager.createObject(viewPortSO);
+            this.stateObject.viewPort = this.viewPort.stateObject.objectId;
         } else {
-            this.viewPort = dataManager.getObject(this.dataObject.viewPort);
+            this.viewPort = dataManager.getObject(this.stateObject.viewPort);
         }
 
-        if(this.dataObject.zManager == -1) {
-            let stageZIndexManagerDO = new StageZIndexManagerDO()
-            this.zManager = dataManager.createObject(stageZIndexManagerDO);
-            this.dataObject.zManager = this.zManager.dataObject.objectId;
+        if(this.stateObject.zManager == -1) {
+            let stageZIndexManagerSO = new StageZIndexManagerSO()
+            this.zManager = dataManager.createObject(stageZIndexManagerSO);
+            this.stateObject.zManager = this.zManager.stateObject.objectId;
         } else {
-            this.zManager = dataManager.getObject(this.dataObject.zManager);
+            this.zManager = dataManager.getObject(this.stateObject.zManager);
         }
 
 
@@ -42,8 +42,8 @@ class Stage extends ZoomableElement {
 
         this.div.addEventListener("wheel", this.onWheel.bind(this), { passive: false });
 
-        for(let i = 0; i < this.dataObject.children.length; i++) {
-			this.children.push(dataManager.getObject(this.dataObject.children[i]));
+        for(let i = 0; i < this.stateObject.children.length; i++) {
+			this.children.push(dataManager.getObject(this.stateObject.children[i]));
 		}
     }
 
@@ -80,7 +80,7 @@ class Stage extends ZoomableElement {
     }
     registerChild(child) {
         this.children.push(child);
-        this.dataObject.children.push(child.dataObject.objectId);
+        this.stateObject.children.push(child.stateObject.objectId);
     }
 
 

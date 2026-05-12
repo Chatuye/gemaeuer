@@ -1,6 +1,6 @@
-var cardDimensions = {svg: "card", width: 0, height: 0, uiScaling: true, behaviour:"FIXED", type:"ABSOLUTE"}
+var cardDimensions = {svg: "card", width: 0, height: 0}
 
-class CardDO extends FlippableObjectDO {
+class CardSO extends FlippableObjectSO {
     constructor() {
         super();
         
@@ -10,10 +10,10 @@ class CardDO extends FlippableObjectDO {
 }
 
 class Card extends FlippableObject {
-    constructor(dataObject) {
-        super(dataObject);
+    constructor(stateObject) {
+        super(stateObject);
 
-        this.hand = dataManager.getObject(this.dataObject.hand);
+        this.hand = dataManager.getObject(this.stateObject.hand);
 
         this.setDefaultStyle();
     }
@@ -21,9 +21,9 @@ class Card extends FlippableObject {
     setHand(hand) {
         this.hand = hand;
         if(hand) {
-            this.dataObject.hand = this.hand.dataObject.objectId;
+            this.stateObject.hand = this.hand.stateObject.objectId;
         } else {
-            this.dataObject.hand = -1;
+            this.stateObject.hand = -1;
         }
     }
 
@@ -42,14 +42,10 @@ class Card extends FlippableObject {
         let relY = cursorOnDiv.y/this.getScreenDimensions().height;
         
         this.div.style.transform = "none";
-        this.dataObject.positionBehaviour = "FIXED";
-        this.dataObject.positionType = "ABSOLUTE";
-        this.dataObject.dimensionsBehaviour = cardDimensions.behaviour;
-        this.dataObject.dimensionsType = cardDimensions.type;
-        this.dataObject.uiScaling = true;
+        Object.assign(this.stateObject, LayoutPresets.SCREEN);
 
-        this.dataObject.x = cursorOnParent.x - (this.getScreenDimensions().width * relX);
-        this.dataObject.y = cursorOnParent.y - (this.getScreenDimensions().height * relY);
+        this.stateObject.x = cursorOnParent.x - (this.getScreenDimensions().width * relX);
+        this.stateObject.y = cursorOnParent.y - (this.getScreenDimensions().height * relY);
 
         this.resizeDiv();
         this.repositionDiv();
@@ -64,16 +60,12 @@ class Card extends FlippableObject {
             let relX = cursorOnDiv.x/this.getScreenDimensions().width;
             let relY = cursorOnDiv.y/this.getScreenDimensions().height;
             
-            this.dataObject.positionBehaviour = "ZOOM";
-            this.dataObject.positionType = "ABSOLUTE";
-            this.dataObject.dimensionsBehaviour = "ZOOM";
-            this.dataObject.dimensionsType = "ABSOLUTE";
-            this.dataObject.uiScaling = false;
+            Object.assign(this.stateObject, LayoutPresets.WORLD);
 
             let cursorOnParent = this.parent.convertScreenPosToDivPos(this.cursorX-(this.getScreenDimensions().width*relX), this.cursorY-(this.getScreenDimensions().height*relY));
             let cursorOnParentVP = this.parent.convertDivPosToViewPortPos(cursorOnParent.x, cursorOnParent.y);
-            this.dataObject.x = cursorOnParentVP.x;
-            this.dataObject.y = cursorOnParentVP.y;    
+            this.stateObject.x = cursorOnParentVP.x;
+            this.stateObject.y = cursorOnParentVP.y;    
 
             this.resizeDiv();
             this.repositionDiv();

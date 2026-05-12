@@ -12,8 +12,8 @@ function onBodyLoad() {
 
 function onSVGsLoaded() {
 	dataManager = new DataManager();
-	let rootObjectDO = new RootObjectDO();
-	rootObject = dataManager.createObject(rootObjectDO);
+	let rootObjectSO = new RootObjectSO();
+	rootObject = dataManager.createObject(rootObjectSO);
 
 //	rootObject.createGameStage();
 //	rootObject.createGameStage();

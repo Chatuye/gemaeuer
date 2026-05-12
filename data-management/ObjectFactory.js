@@ -3,31 +3,31 @@ class ObjectFactory {
         this.numObjects = 0;
     }
 
-    createObject(dataObject) {
-        if(dataObject.objectId == -1) {
-			dataObject.objectId = this.numObjects;
+    createObject(stateObject) {
+        if(stateObject.objectId == -1) {
+			stateObject.objectId = this.numObjects;
 		}
         this.numObjects += 1;
 
-        switch(dataObject.objectType) {
+        switch(stateObject.objectType) {
 			case "CARD":
-				return new Card(dataObject);
+				return new Card(stateObject);
 			case "DECK":
-				return new Deck(dataObject);
+				return new Deck(stateObject);
 			case "GAMESTAGE":
-				return new GameStage(dataObject);
+				return new GameStage(stateObject);
 			case "HAND":
-				return new Hand(dataObject);
+				return new Hand(stateObject);
 			case "ROOTOBJECT":
-				return new RootObject(dataObject);
+				return new RootObject(stateObject);
 			case "STAGEZINDEXMANAGER":
-				return new StageZIndexManager(dataObject);
+				return new StageZIndexManager(stateObject);
 			case "TILE":
-				return new Tile(dataObject);
+				return new Tile(stateObject);
 			case "VIEWPORT":
-				return new ViewPort(dataObject);
+				return new ViewPort(stateObject);
 			default:
-				console.log("ERROR: Unknown object type: "+dataObject.objectType);
+				console.log("ERROR: Unknown object type: "+stateObject.objectType);
                 return null;
 		}
     }

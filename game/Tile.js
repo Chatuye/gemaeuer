@@ -1,4 +1,4 @@
-class TileDO extends FlippableObjectDO {
+class TileSO extends FlippableObjectSO {
     constructor() {
         super();
 
@@ -9,12 +9,9 @@ class TileDO extends FlippableObjectDO {
 }
 
 class Tile extends FlippableObject {
-	constructor(dataObject) {
-        super(dataObject);
+	constructor(stateObject) {
+        super(stateObject);
         
-        this.svgFront.getElementById("text").firstChild.innerHTML = this.dataObject.value;
+        this.svgFront.getElementById("text").firstChild.innerHTML = this.stateObject.value;
     }
-
-
-
 }

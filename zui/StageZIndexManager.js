@@ -1,4 +1,4 @@
-class StageZIndexManagerDO extends DataObject {
+class StageZIndexManagerSO extends StateObject {
     constructor() {
         super();
         
@@ -9,8 +9,8 @@ class StageZIndexManagerDO extends DataObject {
 }
 
 class StageZIndexManager {
-    constructor(dataObject) {
-        this.dataObject = dataObject;
+    constructor(stateObject) {
+        this.stateObject = stateObject;
         dataManager.registerObject(this);
 
         this.layers = new Array();
@@ -56,10 +56,9 @@ class StageZIndexManager {
     }
 
     getMaxLayerSize() {
-        return this.dataObject.maxLayerSize;
+        return this.stateObject.maxLayerSize;
     }
     getLayers() {
         return this.layers;
     }
 }
-      

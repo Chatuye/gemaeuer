@@ -1,4 +1,4 @@
-class FlippableObjectDO extends ZoomableElementDO {
+class FlippableObjectSO extends ZoomableElementSO {
     constructor() {
         super();
 
@@ -11,13 +11,13 @@ class FlippableObjectDO extends ZoomableElementDO {
 }
 
 class FlippableObject extends ZoomableElement {
-	constructor(dataObject) {
-		let mySVGFront = svgLoader.clone(dataObject.svg01Key);
-		let mySVGBack = svgLoader.clone(dataObject.svg02Key);
-        dataObject.width = mySVGFront.getAttribute("width"); 
-        dataObject.height = mySVGFront.getAttribute("height");
+	constructor(stateObject) {
+		let mySVGFront = svgLoader.clone(stateObject.svg01Key);
+		let mySVGBack = svgLoader.clone(stateObject.svg02Key);
+        stateObject.width = mySVGFront.getAttribute("width"); 
+        stateObject.height = mySVGFront.getAttribute("height");
 
-		super(dataObject);
+		super(stateObject);
 		
 		this.svgFront = mySVGFront;
 		this.svgBack = mySVGBack;
@@ -33,21 +33,21 @@ class FlippableObject extends ZoomableElement {
 		this.wrapperFront.appendChild(this.svgFront);
 		this.wrapperBack.appendChild(this.svgBack);
 		
-		if(this.dataObject.facing == "BACK") {
-			this.dataObject.facing = "FRONT";
+		if(this.stateObject.facing == "BACK") {
+			this.stateObject.facing = "FRONT";
 			this.flip(0);
 		}
     }
 
 	flip(d) {
-		if(this.dataObject.facing == "FRONT") {
+		if(this.stateObject.facing == "FRONT") {
 			this.wrapper.style.transitionDuration = d+"ms";
 			this.wrapper.style.transform = "rotateY(180deg)";
-			this.dataObject.facing = "BACK";
+			this.stateObject.facing = "BACK";
 		} else {
 			this.wrapper.style.transitionDuration = d+"ms";
 			this.wrapper.style.transform = "none";
-			this.dataObject.facing = "FRONT";
+			this.stateObject.facing = "FRONT";
 		}
 	}
 

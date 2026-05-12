@@ -1,4 +1,4 @@
-class ZoomableElementDO extends DataObject {
+class ZoomableElementSO extends StateObject {
     constructor() {
         super();
 
@@ -6,26 +6,22 @@ class ZoomableElementDO extends DataObject {
         
         this.parent = { referenceId: -1 };
         
-        this.positionBehaviour = "ZOOM";
-        this.positionType = "ABSOLUTE";
+        Object.assign(this, LayoutPresets.WORLD);
         this.x = 0;
         this.y = 0;
-        this.dimensionsBehaviour = "ZOOM";
-        this.dimensionsType = "ABSOLUTE";
         this.width = 0;
         this.height = 0;
-        this.uiScaling = true;
         this.zIndex = 0;
     }
 }
 
 class ZoomableElement {
-	constructor(dataObject) {
-        this.dataObject = dataObject;
+	constructor(stateObject) {
+        this.stateObject = stateObject;
         dataManager.registerObject(this);
 
 
-        this.parent = dataManager.getObject(this.dataObject.parent.referenceId);
+        this.parent = dataManager.getObject(this.stateObject.parent.referenceId);
 
         this.div = document.createElement("div");
         this.div.style.position = "absolute";
@@ -75,7 +71,7 @@ class ZoomableElement {
 		this.cursorX = e.clientX;
 		this.cursorY = e.clientY;
 
-        if(this.dataObject.positionType == "ABSOLUTE")
+        if(this.stateObject.positionType == "ABSOLUTE")
             this.picking = window.setTimeout(this.pickUp.bind(this), 200);
 
 		this.addedMouseMove = this.onMouseMove.bind(this);
@@ -96,11 +92,11 @@ class ZoomableElement {
         this.cursorY = e.clientY;
    
         if(this.pickedUp) {
-            if(this.dataObject.positionBehaviour == "ZOOM") {
+            if(this.stateObject.positionBehaviour == "ZOOM") {
                 dX /= this.parent.getViewPort().getScaleX();
                 dY /= this.parent.getViewPort().getScaleY();
             }
-            this.moveTo((this.dataObject.x + dX), (this.dataObject.y + dY));
+            this.moveTo((this.stateObject.x + dX), (this.stateObject.y + dY));
         }
 	}
 	onMouseUp(e) {
@@ -123,8 +119,8 @@ class ZoomableElement {
 
 
     moveTo(x, y) {
-        this.dataObject.x = x;
-        this.dataObject.y = y;
+        this.stateObject.x = x;
+        this.stateObject.y = y;
         this.repositionDiv();
     }
     pickUp() {
@@ -137,7 +133,7 @@ class ZoomableElement {
             //this.div.style.zIndex += 3*this.parent.zManager.getMaxLayerSize();
             //this.parent.zManager.remove(this.getZLayer(), this);
             this.parent.zManager.remove(this);
-            this.dataObject.zIndex = 3;
+            this.stateObject.zIndex = 3;
             this.parent.zManager.set(this);
         }
     }
@@ -147,7 +143,7 @@ class ZoomableElement {
         
         if(this.parent.zManager) {
             this.parent.zManager.remove(this);
-            this.dataObject.zIndex = 0;
+            this.stateObject.zIndex = 0;
             this.parent.zManager.set(this);
         }
 
@@ -187,17 +183,17 @@ class ZoomableElement {
         let width = 0;
         let height = 0;
 
-        if(this.dataObject.dimensionsType == "RELATIVE") {
-            width = this.dataObject.width * this.parent.getScreenDimensions().width;
-            height = this.dataObject.height * this.parent.getScreenDimensions().height;
-        } else if(this.dataObject.dimensionsType == "ABSOLUTE") {
-            width = this.dataObject.width;
-            height = this.dataObject.height;
-            if(this.dataObject.dimensionsBehaviour == "ZOOM") {
+        if(this.stateObject.dimensionsType == "RELATIVE") {
+            width = this.stateObject.width * this.parent.getScreenDimensions().width;
+            height = this.stateObject.height * this.parent.getScreenDimensions().height;
+        } else if(this.stateObject.dimensionsType == "ABSOLUTE") {
+            width = this.stateObject.width;
+            height = this.stateObject.height;
+            if(this.stateObject.dimensionsBehaviour == "ZOOM") {
                 width *= this.parent.getViewPort().getScaleX();
                 height *= this.parent.getViewPort().getScaleY();
             }
-            if(this.dataObject.uiScaling) {
+            if(this.stateObject.uiScaling) {
                 let uiScale = this.getMainStage().getUIScale(true);
                 width *= uiScale.scaleX;
                 height *= uiScale.scaleY;
@@ -207,15 +203,15 @@ class ZoomableElement {
         return {width: width, height: height};
     }
     getScreenPosition() {
-        let x = this.dataObject.x;
-        let y = this.dataObject.y;
+        let x = this.stateObject.x;
+        let y = this.stateObject.y;
 
-        if(this.dataObject.positionType == "RELATIVE") {
+        if(this.stateObject.positionType == "RELATIVE") {
             let pSD = this.parent.getScreenDimensions();
             x *= pSD.width;
             y *= pSD.height;
-        } else if(this.dataObject.positionType == "ABSOLUTE") {
-            if(this.dataObject.positionBehaviour == "ZOOM") {
+        } else if(this.stateObject.positionType == "ABSOLUTE") {
+            if(this.stateObject.positionBehaviour == "ZOOM") {
                 x -= this.parent.getViewPort().getX();
                 x *= this.parent.getViewPort().getScaleX();
                 y -= this.parent.getViewPort().getY();
@@ -226,16 +222,16 @@ class ZoomableElement {
         return {x: x, y: y}
     }
 /*    getZLayer() {
-        let layer = Math.floor(this.dataObject.zIndex/this.parent.zManager.getMaxLayerSize());
+        let layer = Math.floor(this.stateObject.zIndex/this.parent.zManager.getMaxLayerSize());
 
         return layer;
     }*/
     setZIndex(index) {
-        this.dataObject.zIndex = index;
+        this.stateObject.zIndex = index;
         this.div.style.zIndex = index;
     }    
     getZIndex() {
-        return this.dataObject.zIndex;
+        return this.stateObject.zIndex;
     }
     getMainStage() {
         if(this.parent instanceof RootObject)

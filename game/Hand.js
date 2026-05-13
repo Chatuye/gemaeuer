@@ -1,16 +1,24 @@
-class HandSO extends StateObject {
+import { StateObject } from '../data-management/StateObject.js';
+import { LayoutPresets } from '../zui/config/LayoutPresets.js';
+import { dataManager } from '../data-management/DataManager.js';
+
+
+
+export class HandSO extends StateObject {
     constructor() {
         super();
         
         this.objectType = "HAND";
 
         this.stage = { referenceId: -1 };
+        this.cardWidth = 0;
+        this.cardHeight = 0;
 
 		this.cards = new Array();
     }
 }
 
-class Hand {
+export class Hand {
     constructor(stateObject) {
 		this.stateObject = stateObject;
         dataManager.registerObject(this);    
@@ -54,7 +62,7 @@ class Hand {
 	}
 
 	getCardScreenDimensions() {
-		let cD = this.stage.getScreenDimensionsOfChild(LayoutPresets.SCREEN.dimensionsBehaviour, LayoutPresets.SCREEN.dimensionsType, cardDimensions.width, cardDimensions.height, LayoutPresets.SCREEN.scaleWithWindowSize);
+		let cD = this.stage.getScreenDimensionsOfChild(LayoutPresets.SCREEN.dimensionsBehaviour, LayoutPresets.SCREEN.dimensionsType, this.stateObject.cardWidth, this.stateObject.cardHeight, LayoutPresets.SCREEN.scaleWithWindowSize);
 		return cD;
 	}
 

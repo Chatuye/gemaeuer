@@ -1,6 +1,10 @@
-var cardDimensions = {svg: "card", width: 0, height: 0}
+import { LayoutPresets } from '../zui/config/LayoutPresets.js';
+import { FlippableObjectSO, FlippableObject } from '../zui/FlippableObject.js';
+import { dataManager } from '../data-management/DataManager.js';
 
-class CardSO extends FlippableObjectSO {
+
+
+export class CardSO extends FlippableObjectSO {
     constructor() {
         super();
         
@@ -9,7 +13,7 @@ class CardSO extends FlippableObjectSO {
     }
 }
 
-class Card extends FlippableObject {
+export class Card extends FlippableObject {
     constructor(stateObject) {
         super(stateObject);
 

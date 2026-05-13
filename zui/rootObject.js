@@ -1,4 +1,17 @@
-class RootObjectSO extends StateObject {
+import { StateObject } from '../data-management/StateObject.js';
+import { UIDefinitions } from './config/UIDefinitions.js';
+import { LayoutPresets } from './config/LayoutPresets.js';
+import { ViewPortSO } from './ViewPort.js';
+import { StageZIndexManagerSO } from './StageZIndexManager.js';
+import { GameStageSO } from '../game/GameStage.js';
+import { HandSO } from '../game/Hand.js';
+import { DeckSO } from '../game/Deck.js';
+import { svgLoader } from '../assets/SVGLoader.js';
+import { dataManager } from '../data-management/DataManager.js';
+
+
+
+export class RootObjectSO extends StateObject {
     constructor() {
         super();
 
@@ -10,7 +23,7 @@ class RootObjectSO extends StateObject {
     }
 }
 
-class RootObject {
+export class RootObject {
 	constructor(stateObject) {
         this.stateObject = stateObject;
         dataManager.registerObject(this);
@@ -79,7 +92,7 @@ class RootObject {
 
     createGameStage() {
         let gameStageSO = new GameStageSO();
-        gameStageSO.parent.referenceId = rootObject.stateObject.objectId;
+        gameStageSO.parent.referenceId = this.stateObject.objectId;
         Object.assign(gameStageSO, LayoutPresets.SCREEN_RELATIVE);
         gameStageSO.x = 0;
         gameStageSO.y = 0;
@@ -91,6 +104,9 @@ class RootObject {
         
         let handSO = new HandSO();
         handSO.stage.referenceId = gameStage.stateObject.objectId;
+        let cardDims = svgLoader.getDimensions("card");
+        handSO.cardWidth = cardDims.width;
+        handSO.cardHeight = cardDims.height;
         let hand = dataManager.createObject(handSO);
         gameStage.registerHand(hand);
 

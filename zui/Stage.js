@@ -1,4 +1,12 @@
-class StageSO extends ZoomableElementSO {
+import { UIDefinitions } from './config/UIDefinitions.js';
+import { ZoomableElementSO, ZoomableElement } from './ZoomableElement.js';
+import { ViewPortSO } from './ViewPort.js';
+import { StageZIndexManagerSO } from './StageZIndexManager.js';
+import { dataManager } from '../data-management/DataManager.js';
+
+
+
+export class StageSO extends ZoomableElementSO {
     constructor() {
         super();
 
@@ -10,7 +18,7 @@ class StageSO extends ZoomableElementSO {
     }
 }
 
-class Stage extends ZoomableElement {
+export class Stage extends ZoomableElement {
 	constructor(stateObject) {
         super(stateObject);
 
@@ -18,7 +26,7 @@ class Stage extends ZoomableElement {
         if(this.stateObject.viewPort == -1) {
             let viewPortSO = new ViewPortSO();
 
-            if(this.parent instanceof RootObject) viewPortSO.scaleWithWindowSize = true;
+            if(this.parent.stateObject.objectType === "ROOTOBJECT") viewPortSO.scaleWithWindowSize = true;
             viewPortSO.parent.referenceId = this.stateObject.objectId;
             this.viewPort = dataManager.createObject(viewPortSO);
             this.stateObject.viewPort = this.viewPort.stateObject.objectId;

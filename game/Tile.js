@@ -1,4 +1,8 @@
-class TileSO extends FlippableObjectSO {
+import { FlippableObjectSO, FlippableObject } from '../zui/FlippableObject.js';
+
+
+
+export class TileSO extends FlippableObjectSO {
     constructor() {
         super();
 
@@ -8,7 +12,7 @@ class TileSO extends FlippableObjectSO {
     }
 }
 
-class Tile extends FlippableObject {
+export class Tile extends FlippableObject {
 	constructor(stateObject) {
         super(stateObject);
         

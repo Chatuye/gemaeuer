@@ -1,4 +1,15 @@
-class ObjectFactory {
+import { Card } from '../game/Card.js';
+import { Deck } from '../game/Deck.js';
+import { GameStage } from '../game/GameStage.js';
+import { Hand } from '../game/Hand.js';
+import { Tile } from '../game/Tile.js';
+import { RootObject } from '../zui/rootObject.js';
+import { StageZIndexManager } from '../zui/StageZIndexManager.js';
+import { ViewPort } from '../zui/ViewPort.js';
+
+
+
+export class ObjectFactory {
     constructor() {
         this.numObjects = 0;
     }

@@ -1,5 +1,17 @@
+/**
+ * DataManager — central registry for all game objects.
+ *
+ * Singleton instance exported as `dataManager`. Handles object creation,
+ * retrieval, registration, and save/load serialization.
+ */
+
+import { ObjectFactory } from './ObjectFactory.js';
+
+
+
 class DataManager {
     constructor() {
+        this.rootObject = null;
         this.stateObjects = new Map();
         this.objects = new Map();
         this.objectFactory = new ObjectFactory();
@@ -66,10 +78,10 @@ class DataManager {
         this.objects = new Map();
         this.objectFactory = new ObjectFactory();
 
-        rootObject.clearAll();
+        this.rootObject.clearAll();
         
         this.stateObjects = data.stateObjects;
-        rootObject = this.createObject(this.stateObjects.get(data.rootObject));
+        this.rootObject = this.createObject(this.stateObjects.get(data.rootObject));
 
         this.fileInput.value = null;
     }
@@ -82,7 +94,7 @@ class DataManager {
     }
     gatherData() {
         let data = {
-            rootObject: rootObject.stateObject.objectId,
+            rootObject: this.rootObject.stateObject.objectId,
             stateObjects: this.stateObjects
         }
 
@@ -120,3 +132,5 @@ class DataManager {
         URL.revokeObjectURL(url);      
     }
 }
+
+export const dataManager = new DataManager();

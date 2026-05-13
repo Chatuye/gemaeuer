@@ -39,7 +39,7 @@
  *   SCREEN          — the deck, cards in hand or being dragged
  *   SCREEN_RELATIVE — the main game stage (fills the window with width:1, height:1)
  */
-const LayoutPresets = {
+export const LayoutPresets = {
 
     /** Lives in the world. Pans and zooms with the viewport. Size is in world units. */
     WORLD: {

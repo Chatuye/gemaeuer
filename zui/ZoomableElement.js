@@ -1,4 +1,11 @@
-class ZoomableElementSO extends StateObject {
+import { StateObject } from '../data-management/StateObject.js';
+import { LayoutPresets } from './config/LayoutPresets.js';
+import { randomHexColorCode } from '../utils.js';
+import { dataManager } from '../data-management/DataManager.js';
+
+
+
+export class ZoomableElementSO extends StateObject {
     constructor() {
         super();
 
@@ -15,7 +22,7 @@ class ZoomableElementSO extends StateObject {
     }
 }
 
-class ZoomableElement {
+export class ZoomableElement {
 	constructor(stateObject) {
         this.stateObject = stateObject;
         dataManager.registerObject(this);
@@ -234,7 +241,7 @@ class ZoomableElement {
         return this.stateObject.zIndex;
     }
     getMainStage() {
-        if(this.parent instanceof RootObject)
+        if(this.parent.stateObject.objectType === "ROOTOBJECT")
             return this;
         else
             return this.parent.getMainStage();

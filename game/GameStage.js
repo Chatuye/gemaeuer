@@ -1,4 +1,11 @@
-class GameStageSO extends StageSO {
+import { LayoutPresets } from '../zui/config/LayoutPresets.js';
+import { StageSO, Stage } from '../zui/Stage.js';
+import { TileSO } from './Tile.js';
+import { dataManager } from '../data-management/DataManager.js';
+
+
+
+export class GameStageSO extends StageSO {
     constructor() {
         super();
 
@@ -8,7 +15,7 @@ class GameStageSO extends StageSO {
     }
 }
 
-class GameStage extends Stage {
+export class GameStage extends Stage {
 	constructor(stateObject) {
         super(stateObject);
 
@@ -52,8 +59,8 @@ class GameStage extends Stage {
         tileSO.x = x;
         tileSO.y = y;
         tileSO.facing = "BACK";
-        tileSO.svg01Key = "tile-front";
-        tileSO.svg02Key = "tile-back";
+        tileSO.svg01Key = "tileFront";
+        tileSO.svg02Key = "tileBack";
         tileSO.zIndex = 0;
         tileSO.value = Math.floor((Math.random()*9))+1;
 

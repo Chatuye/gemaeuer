@@ -1,4 +1,9 @@
-class FlippableObjectSO extends ZoomableElementSO {
+import { ZoomableElementSO, ZoomableElement } from './ZoomableElement.js';
+import { svgLoader } from '../assets/SVGLoader.js';
+
+
+
+export class FlippableObjectSO extends ZoomableElementSO {
     constructor() {
         super();
 
@@ -10,7 +15,7 @@ class FlippableObjectSO extends ZoomableElementSO {
     }
 }
 
-class FlippableObject extends ZoomableElement {
+export class FlippableObject extends ZoomableElement {
 	constructor(stateObject) {
 		let mySVGFront = svgLoader.clone(stateObject.svg01Key);
 		let mySVGBack = svgLoader.clone(stateObject.svg02Key);

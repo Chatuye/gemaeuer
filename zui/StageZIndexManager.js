@@ -1,4 +1,9 @@
-class StageZIndexManagerSO extends StateObject {
+import { StateObject } from '../data-management/StateObject.js';
+import { dataManager } from '../data-management/DataManager.js';
+
+
+
+export class StageZIndexManagerSO extends StateObject {
     constructor() {
         super();
         
@@ -8,7 +13,7 @@ class StageZIndexManagerSO extends StateObject {
     }
 }
 
-class StageZIndexManager {
+export class StageZIndexManager {
     constructor(stateObject) {
         this.stateObject = stateObject;
         dataManager.registerObject(this);

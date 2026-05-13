@@ -1,4 +1,11 @@
-class DeckSO extends ZoomableObjectSO {
+import { LayoutPresets } from '../zui/config/LayoutPresets.js';
+import { ZoomableObjectSO, ZoomableObject } from '../zui/ZoomableObject.js';
+import { CardSO } from './Card.js';
+import { dataManager } from '../data-management/DataManager.js';
+
+
+
+export class DeckSO extends ZoomableObjectSO {
     constructor() {
         super();
 
@@ -6,7 +13,7 @@ class DeckSO extends ZoomableObjectSO {
     }
 }
 
-class Deck extends ZoomableObject {
+export class Deck extends ZoomableObject {
     constructor(stateObject) {
         super(stateObject);
     }

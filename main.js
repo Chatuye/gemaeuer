@@ -1,25 +1,17 @@
-var svgLoader = null;
-var dataManager = null;
-var rootObject = null;
+import { svgLoader } from './assets/SVGLoader.js';
+import { dataManager } from './data-management/DataManager.js';
+import { RootObjectSO } from './zui/rootObject.js';
 
 
 
 function onBodyLoad() {
-	svgLoader = new SVGLoader();
 	svgLoader.loadAll(onSVGsLoaded);
 }
 
-
 function onSVGsLoaded() {
-	dataManager = new DataManager();
 	let rootObjectSO = new RootObjectSO();
-	rootObject = dataManager.createObject(rootObjectSO);
-
-//	rootObject.createGameStage();
-//	rootObject.createGameStage();
+	dataManager.rootObject = dataManager.createObject(rootObjectSO);
 }
 
-function randomHexColorCode() {
-	let n = (Math.random() * 0xfffff * 1000000).toString(16);
-	return '#' + n.slice(0, 6);
-};
+
+window.addEventListener('DOMContentLoaded', onBodyLoad);

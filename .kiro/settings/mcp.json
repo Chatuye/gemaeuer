@@ -14,7 +14,8 @@
         "take_snapshot",
         "click",
         "evaluate_script",
-        "list_console_messages"
+        "list_console_messages",
+        "get_console_message"
       ]
     }
   }

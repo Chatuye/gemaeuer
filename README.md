@@ -4,7 +4,7 @@ A browser-based tabletop game engine. Provides a zoomable, pannable canvas for p
 
 ## Running
 
-No build step. Open `index.html` in a browser or use a local dev server (e.g. Live Server on port 5500).
+No build step. Serve the project with any static file server (e.g. Live Server on port 5500). The app uses native ES Modules (`<script type="module">`), so opening `index.html` directly via `file://` will not work due to CORS restrictions — a server is required.
 
 ## Menu
 
@@ -28,14 +28,34 @@ No build step. Open `index.html` in a browser or use a local dev server (e.g. Li
 
 ## Architecture
 
-Plain JavaScript, no bundler. Three layers loaded via `<script>` tags:
+Plain JavaScript, no bundler. ES Modules with a single entry point:
 
 ```
-index.html / main.js          ← entry point
-├── data-management/          ← object lifecycle and persistence
-├── zui/                      ← layout, rendering, interaction primitives
-│   └── config/               ← LayoutPresets, UIDefinitions
-└── game/                     ← game-specific objects (Card, Tile, Deck, Hand, GameStage)
+index.html                     ← <script type="module" src="main.js">
+main.js                        ← bootstraps svgLoader and dataManager
+utils.js                       ← general-purpose utility functions
+├── assets/
+│   ├── SVGLoader.js           ← singleton, parses and caches SVGs
+│   └── svgData/               ← SVG strings as modules, barrel file index.js
+├── data-management/
+│   ├── StateObject.js         ← base class for all serialisable state
+│   ├── ObjectFactory.js       ← instantiates classes by type string
+│   └── DataManager.js         ← singleton, central registry and persistence
+├── zui/
+│   ├── config/                ← LayoutPresets, UIDefinitions
+│   ├── ZoomableElement.js     ← base: positioning, drag/drop, coordinates
+│   ├── ZoomableObject.js      ← extends with single SVG rendering
+│   ├── FlippableObject.js     ← extends with front/back SVG flipping
+│   ├── ViewPort.js            ← pan/zoom state and scale calculation
+│   ├── StageZIndexManager.js  ← layered z-index management
+│   ├── Stage.js               ← container with viewport and children
+│   └── rootObject.js          ← top-level container (browser window)
+└── game/
+    ├── GameStage.js           ← stage with tile/card creation and hand
+    ├── Tile.js                ← flippable tile with a numeric value
+    ├── Card.js                ← flippable card, can be picked up/dropped
+    ├── Deck.js                ← spawns cards on click
+    └── Hand.js                ← fan of cards, raises/lowers on hover
 ```
 
 ### Layers
@@ -48,13 +68,17 @@ index.html / main.js          ← entry point
 
 ### Key concepts
 
+- **ES Modules** — all files use `import`/`export`. No globals. The browser resolves the dependency graph from `main.js`.
+- **Singletons** — `svgLoader` (from `assets/SVGLoader.js`) and `dataManager` (from `data-management/DataManager.js`) are module-level instances, imported where needed.
 - **State/behaviour split** — every object has a `StateObject` subclass (`XxxSO`) holding serialisable state, and a live class holding logic.
 - **Layout presets** — objects use `LayoutPresets.WORLD`, `.SCREEN`, or `.SCREEN_RELATIVE` to define how they position and size themselves. See `zui/config/LayoutPresets.js` for details.
-- **DataManager** — central registry and factory. Single entry point for creating, retrieving, saving, and loading objects.
+- **DataManager** — central registry and factory. Owns `rootObject`. Single entry point for creating, retrieving, saving, and loading objects.
+- **SVG data** — raw SVG strings live in `assets/svgData/` as module exports. The barrel file `index.js` re-exports all. Add new SVGs there.
 
 ## Startup sequence
 
-1. `SVGLoader` fetches and caches all SVG assets
-2. `DataManager` is instantiated
-3. `RootObject` is created (root viewport + z-index manager)
-4. User clicks **New** to create a `GameStage` with a `Hand` and `Deck`
+1. Modules load: `main.js` imports `svgLoader` and `dataManager` (both instantiated at module level)
+2. `DOMContentLoaded` fires → `svgLoader.loadAll()` parses all SVG data
+3. `RootObjectSO` is created and passed to `dataManager.createObject()` → `RootObject` is built (viewport + z-index manager)
+4. `dataManager.rootObject` is set
+5. User clicks **New** to create a `GameStage` with a `Hand` and `Deck`

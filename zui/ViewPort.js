@@ -1,4 +1,9 @@
-class ViewPortSO extends StateObject {
+import { StateObject } from '../data-management/StateObject.js';
+import { dataManager } from '../data-management/DataManager.js';
+
+
+
+export class ViewPortSO extends StateObject {
     constructor() {
         super();
         
@@ -17,7 +22,7 @@ class ViewPortSO extends StateObject {
     }
 }
 
-class ViewPort {
+export class ViewPort {
     constructor(stateObject) {
         this.stateObject = stateObject;
         dataManager.registerObject(this);

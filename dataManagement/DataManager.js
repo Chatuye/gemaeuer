@@ -5,7 +5,7 @@
  * retrieval, registration, and save/load serialization.
  */
 
-import { ObjectFactory } from './ObjectFactory.js';
+import { objectRegistry } from './ObjectRegistry.js';
 
 
 
@@ -14,14 +14,13 @@ class DataManager {
         this.rootObject = null;
         this.stateObjects = new Map();
         this.objects = new Map();
-        this.objectFactory = new ObjectFactory();
 
         this.createSaveButton();
         this.createLoadButton();
     }
 
     createObject(stateObject) {
-        let newObject = this.objectFactory.createObject(stateObject);
+        let newObject = objectRegistry.create(stateObject);
         
         return newObject;
     }
@@ -33,7 +32,7 @@ class DataManager {
             if(this.objects.has(id)) {
                 return this.objects.get(id);
             } else {
-                return this.objectFactory.createObject(this.stateObjects.get(id));
+                return objectRegistry.create(this.stateObjects.get(id));
             }
         } else {
             console.log("ERROR: Unkown object id: "+id);
@@ -76,7 +75,7 @@ class DataManager {
     restoreData(data) {
         this.stateObjects = new Map();
         this.objects = new Map();
-        this.objectFactory = new ObjectFactory();
+        objectRegistry.numObjects = 0;
 
         this.rootObject.clearAll();
         

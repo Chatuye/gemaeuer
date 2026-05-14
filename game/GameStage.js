@@ -1,7 +1,8 @@
 import { LayoutPresets } from '../zui/config/LayoutPresets.js';
 import { StageSO, Stage } from '../zui/Stage.js';
 import { TileSO } from './Tile.js';
-import { dataManager } from '../data-management/DataManager.js';
+import { dataManager } from '../dataManagement/DataManager.js';
+import { objectRegistry } from '../dataManagement/ObjectRegistry.js';
 
 
 
@@ -105,3 +106,5 @@ export class GameStage extends Stage {
     }
 
 }
+
+objectRegistry.register("GAMESTAGE", GameStage);

@@ -1,4 +1,5 @@
 import { FlippableObjectSO, FlippableObject } from '../zui/FlippableObject.js';
+import { objectRegistry } from '../dataManagement/ObjectRegistry.js';
 
 
 
@@ -19,3 +20,5 @@ export class Tile extends FlippableObject {
         this.svgFront.getElementById("text").firstChild.innerHTML = this.stateObject.value;
     }
 }
+
+objectRegistry.register("TILE", Tile);

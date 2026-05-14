@@ -1,7 +1,8 @@
 import { LayoutPresets } from '../zui/config/LayoutPresets.js';
 import { ZoomableObjectSO, ZoomableObject } from '../zui/ZoomableObject.js';
 import { CardSO } from './Card.js';
-import { dataManager } from '../data-management/DataManager.js';
+import { dataManager } from '../dataManagement/DataManager.js';
+import { objectRegistry } from '../dataManagement/ObjectRegistry.js';
 
 
 
@@ -37,3 +38,5 @@ export class Deck extends ZoomableObject {
         super.onMouseUp(e);
     }
 }
+
+objectRegistry.register("DECK", Deck);

@@ -1,7 +1,7 @@
-import { StateObject } from '../data-management/StateObject.js';
+import { StateObject } from '../dataManagement/StateObject.js';
 import { LayoutPresets } from './config/LayoutPresets.js';
 import { randomHexColorCode } from '../utils.js';
-import { dataManager } from '../data-management/DataManager.js';
+import { dataManager } from '../dataManagement/DataManager.js';
 
 
 

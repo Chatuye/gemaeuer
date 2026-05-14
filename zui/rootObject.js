@@ -1,4 +1,4 @@
-import { StateObject } from '../data-management/StateObject.js';
+import { StateObject } from '../dataManagement/StateObject.js';
 import { UIDefinitions } from './config/UIDefinitions.js';
 import { LayoutPresets } from './config/LayoutPresets.js';
 import { ViewPortSO } from './ViewPort.js';
@@ -7,7 +7,8 @@ import { GameStageSO } from '../game/GameStage.js';
 import { HandSO } from '../game/Hand.js';
 import { DeckSO } from '../game/Deck.js';
 import { svgLoader } from '../assets/SVGLoader.js';
-import { dataManager } from '../data-management/DataManager.js';
+import { dataManager } from '../dataManagement/DataManager.js';
+import { objectRegistry } from '../dataManagement/ObjectRegistry.js';
 
 
 
@@ -120,3 +121,5 @@ export class RootObject {
         gameStage.registerChild(dataManager.createObject(deckSO));
     }
 }
+
+objectRegistry.register("ROOTOBJECT", RootObject);

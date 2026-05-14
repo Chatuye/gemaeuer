@@ -37,9 +37,10 @@ utils.js                       ← general-purpose utility functions
 ├── assets/
 │   ├── SVGLoader.js           ← singleton, parses and caches SVGs
 │   └── svgData/               ← SVG strings as modules, barrel file index.js
-├── data-management/
+├── dataManagement/
 │   ├── StateObject.js         ← base class for all serialisable state
-│   ├── ObjectFactory.js       ← instantiates classes by type string
+│   ├── ObjectRegistry.js      ← singleton, registry-based class instantiation
+│   ├── registry.js            ← barrel: imports all classes to trigger registration
 │   └── DataManager.js         ← singleton, central registry and persistence
 ├── zui/
 │   ├── config/                ← LayoutPresets, UIDefinitions
@@ -60,7 +61,7 @@ utils.js                       ← general-purpose utility functions
 
 ### Layers
 
-**data-management/** — Object lifecycle and persistence. `StateObject` is the base class for all serialisable state. `ObjectFactory` instantiates the correct class by type string. `DataManager` is the central registry that creates, stores, and serialises everything.
+**dataManagement/** — Object lifecycle and persistence. `StateObject` is the base class for all serialisable state. `ObjectRegistry` is a singleton with a type registry — classes register themselves via `objectRegistry.register("TYPE", Class)` and the registry instantiates them by type string with a simple map lookup. `registry.js` is a barrel that imports all constructable classes so their registration side effects run at startup. `DataManager` is the central registry that creates, stores, and serialises everything.
 
 **zui/** — The zoomable UI framework. `ZoomableElement` is the base for anything on a stage (positioning, drag/drop, coordinate conversion). `ZoomableObject` and `FlippableObject` extend it with SVG rendering. `Stage` is a container with its own `ViewPort` (pan/zoom) and `StageZIndexManager` (layering). `RootObject` is the top-level container wrapping the browser window. `config/` holds `LayoutPresets` and `UIDefinitions`.
 
@@ -69,7 +70,8 @@ utils.js                       ← general-purpose utility functions
 ### Key concepts
 
 - **ES Modules** — all files use `import`/`export`. No globals. The browser resolves the dependency graph from `main.js`.
-- **Singletons** — `svgLoader` (from `assets/SVGLoader.js`) and `dataManager` (from `data-management/DataManager.js`) are module-level instances, imported where needed.
+- **Singletons** — `svgLoader` (from `assets/SVGLoader.js`), `dataManager` (from `dataManagement/DataManager.js`), and `objectRegistry` (from `dataManagement/ObjectRegistry.js`) are module-level instances, imported where needed.
+- **Object registry** — each class self-registers with `objectRegistry.register("TYPE", Class)` at module level. The barrel `dataManagement/registry.js` imports all classes to ensure registration runs before any `create()` call. To add a new type: create the class, add a `register` call, and add one import to `registry.js`.
 - **State/behaviour split** — every object has a `StateObject` subclass (`XxxSO`) holding serialisable state, and a live class holding logic.
 - **Layout presets** — objects use `LayoutPresets.WORLD`, `.SCREEN`, or `.SCREEN_RELATIVE` to define how they position and size themselves. See `zui/config/LayoutPresets.js` for details.
 - **DataManager** — central registry and factory. Owns `rootObject`. Single entry point for creating, retrieving, saving, and loading objects.
@@ -77,7 +79,7 @@ utils.js                       ← general-purpose utility functions
 
 ## Startup sequence
 
-1. Modules load: `main.js` imports `svgLoader` and `dataManager` (both instantiated at module level)
+1. Modules load: `main.js` imports `svgLoader`, `dataManager`, and `registry.js` (which triggers all class registrations with `objectFactory`)
 2. `DOMContentLoaded` fires → `svgLoader.loadAll()` parses all SVG data
 3. `RootObjectSO` is created and passed to `dataManager.createObject()` → `RootObject` is built (viewport + z-index manager)
 4. `dataManager.rootObject` is set

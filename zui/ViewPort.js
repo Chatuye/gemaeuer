@@ -1,5 +1,6 @@
-import { StateObject } from '../data-management/StateObject.js';
-import { dataManager } from '../data-management/DataManager.js';
+import { StateObject } from '../dataManagement/StateObject.js';
+import { dataManager } from '../dataManagement/DataManager.js';
+import { objectRegistry } from '../dataManagement/ObjectRegistry.js';
 
 
 
@@ -108,3 +109,5 @@ export class ViewPort {
         return this.stateObject.y;
     }
 }
+
+objectRegistry.register("VIEWPORT", ViewPort);

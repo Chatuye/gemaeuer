@@ -1,5 +1,6 @@
-import { StateObject } from '../data-management/StateObject.js';
-import { dataManager } from '../data-management/DataManager.js';
+import { StateObject } from '../dataManagement/StateObject.js';
+import { dataManager } from '../dataManagement/DataManager.js';
+import { objectRegistry } from '../dataManagement/ObjectRegistry.js';
 
 
 
@@ -67,3 +68,5 @@ export class StageZIndexManager {
         return this.layers;
     }
 }
+
+objectRegistry.register("STAGEZINDEXMANAGER", StageZIndexManager);

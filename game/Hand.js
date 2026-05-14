@@ -1,6 +1,7 @@
-import { StateObject } from '../data-management/StateObject.js';
+import { StateObject } from '../dataManagement/StateObject.js';
 import { LayoutPresets } from '../zui/config/LayoutPresets.js';
-import { dataManager } from '../data-management/DataManager.js';
+import { dataManager } from '../dataManagement/DataManager.js';
+import { objectRegistry } from '../dataManagement/ObjectRegistry.js';
 
 
 
@@ -172,3 +173,5 @@ export class Hand {
 		}
 	}
 }
+
+objectRegistry.register("HAND", Hand);

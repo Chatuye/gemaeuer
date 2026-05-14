@@ -2,7 +2,7 @@ import { UIDefinitions } from './config/UIDefinitions.js';
 import { ZoomableElementSO, ZoomableElement } from './ZoomableElement.js';
 import { ViewPortSO } from './ViewPort.js';
 import { StageZIndexManagerSO } from './StageZIndexManager.js';
-import { dataManager } from '../data-management/DataManager.js';
+import { dataManager } from '../dataManagement/DataManager.js';
 
 
 

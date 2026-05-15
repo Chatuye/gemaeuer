@@ -6,7 +6,7 @@ import { eventBus } from '../core/EventBus.js';
 
 
 
-export class HandSO extends StateObject {
+export class HandState extends StateObject {
     constructor() {
         super();
         
@@ -21,11 +21,11 @@ export class HandSO extends StateObject {
 }
 
 export class Hand {
-    constructor(stateObject) {
-		this.stateObject = stateObject;
+    constructor(state) {
+		this.state = state;
         dataManager.registerObject(this);    
 
-        this.stage = dataManager.getObject(this.stateObject.stage.referenceId);
+        this.stage = dataManager.getObject(this.state.stage.referenceId);
 		this.cards = new Array();
 
         let d = this.calculateCoordinates();
@@ -43,8 +43,8 @@ export class Hand {
 		this.interactionY = 0;
 		this.calculateInteractionY();
 
-        for(let i = 0; i < this.stateObject.cards.length; i++) {
-			this.cards.push(dataManager.getObject(this.stateObject.cards[i]));
+        for(let i = 0; i < this.state.cards.length; i++) {
+			this.cards.push(dataManager.getObject(this.state.cards[i]));
 		}		
 		this.positionCards();
 
@@ -84,7 +84,7 @@ export class Hand {
 	}
 
 	getCardScreenDimensions() {
-		let cD = this.stage.getScreenDimensionsOfChild(LayoutPresets.SCREEN.dimensionsBehaviour, LayoutPresets.SCREEN.dimensionsType, this.stateObject.cardWidth, this.stateObject.cardHeight, LayoutPresets.SCREEN.scaleWithWindowSize);
+		let cD = this.stage.getScreenDimensionsOfChild(LayoutPresets.SCREEN.dimensionsBehaviour, LayoutPresets.SCREEN.dimensionsType, this.state.cardWidth, this.state.cardHeight, LayoutPresets.SCREEN.scaleWithWindowSize);
 		return cD;
 	}
 
@@ -145,11 +145,11 @@ export class Hand {
 
 	addCard(card) {
 		this.stage.zManager.remove(card);
-		card.stateObject.zIndex = 1;
+		card.state.zIndex = 1;
 		this.stage.zManager.set(card);
 
 		this.getCards().push(card);
-		this.stateObject.cards.push(card.stateObject.objectId);
+		this.state.cards.push(card.state.objectId);
 		
 		this.positionCards();
 	}
@@ -157,8 +157,8 @@ export class Hand {
 		let i = this.getCards().indexOf(card);
 		this.getCards().splice(i, 1);
 
-		i = this.stateObject.cards.indexOf(card.stateObject.objectId);
-		this.stateObject.cards.splice(i, 1);
+		i = this.state.cards.indexOf(card.state.objectId);
+		this.state.cards.splice(i, 1);
 	}
 
 	calculateInteractionY() {

@@ -1,13 +1,13 @@
 import { LayoutPresets } from '../zui/config/LayoutPresets.js';
-import { StageSO, Stage } from '../zui/Stage.js';
-import { TileSO } from './Tile.js';
+import { StageState, Stage } from '../zui/Stage.js';
+import { TileState } from './Tile.js';
 import { dataManager } from '../core/DataManager.js';
 import { objectRegistry } from '../core/ObjectRegistry.js';
 import { eventBus } from '../core/EventBus.js';
 
 
 
-export class GameStageSO extends StageSO {
+export class GameStageState extends StageState {
     constructor() {
         super();
 
@@ -18,10 +18,10 @@ export class GameStageSO extends StageSO {
 }
 
 export class GameStage extends Stage {
-	constructor(stateObject) {
-        super(stateObject);
+	constructor(state) {
+        super(state);
 
-        this.hand = dataManager.getObject(this.stateObject.hand);
+        this.hand = dataManager.getObject(this.state.hand);
 
         this.div.addEventListener("contextmenu", this.onContextMenu.bind(this), { passive: false });
         this.div.addEventListener("mousemove", this.onMouseMove.bind(this));
@@ -38,7 +38,7 @@ export class GameStage extends Stage {
 
     registerHand(hand) {
         this.hand = hand;
-        this.stateObject.hand = hand.stateObject.objectId;
+        this.state.hand = hand.state.objectId;
     }
 
     onMouseMove(e) {
@@ -64,18 +64,18 @@ export class GameStage extends Stage {
         let x = cursorOnVP.x;
         let y = cursorOnVP.y;
 
-        let tileSO = new TileSO();
-        Object.assign(tileSO, LayoutPresets.WORLD);
-        tileSO.parent.referenceId = this.stateObject.objectId;
-        tileSO.x = x;
-        tileSO.y = y;
-        tileSO.facing = "BACK";
-        tileSO.svg01Key = "tileFront";
-        tileSO.svg02Key = "tileBack";
-        tileSO.zIndex = 0;
-        tileSO.value = Math.floor((Math.random()*9))+1;
+        let tileState = new TileState();
+        Object.assign(tileState, LayoutPresets.WORLD);
+        tileState.parent.referenceId = this.state.objectId;
+        tileState.x = x;
+        tileState.y = y;
+        tileState.facing = "BACK";
+        tileState.svg01Key = "tileFront";
+        tileState.svg02Key = "tileBack";
+        tileState.zIndex = 0;
+        tileState.value = Math.floor((Math.random()*9))+1;
 
-        let tile = dataManager.createObject(tileSO);
+        let tile = dataManager.createObject(tileState);
         this.registerChild(tile);
     }
     onContextMenu(e) {
@@ -91,19 +91,19 @@ export class GameStage extends Stage {
         let vSD = this.viewPort.getScreenDimensions();
         let q = vSD.width/vSD.height;
         
-        let gameStageSO = new GameStageSO();
-        Object.assign(gameStageSO, LayoutPresets.WORLD);
-        gameStageSO.parent.referenceId = this.stateObject.objectId;
-        gameStageSO.x = x;
-        gameStageSO.y = y;
-        gameStageSO.width = 400;
-        gameStageSO.height = 400;
+        let gameStageState = new GameStageState();
+        Object.assign(gameStageState, LayoutPresets.WORLD);
+        gameStageState.parent.referenceId = this.state.objectId;
+        gameStageState.x = x;
+        gameStageState.y = y;
+        gameStageState.width = 400;
+        gameStageState.height = 400;
 
-        let gameStage = dataManager.createObject(gameStageSO);
-        gameStage.viewPort.stateObject.type = "ABSOLUTE";
-        gameStage.viewPort.stateObject.width = 400;
-        gameStage.viewPort.stateObject.height = 400;
-        gameStage.viewPort.stateObject.scaleWithWindowSize = false;
+        let gameStage = dataManager.createObject(gameStageState);
+        gameStage.viewPort.state.type = "ABSOLUTE";
+        gameStage.viewPort.state.width = 400;
+        gameStage.viewPort.state.height = 400;
+        gameStage.viewPort.state.scaleWithWindowSize = false;
         gameStage.viewPort.calculateScale();
 
         this.registerChild(gameStage);

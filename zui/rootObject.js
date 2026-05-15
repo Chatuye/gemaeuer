@@ -1,18 +1,18 @@
 import { StateObject } from '../core/StateObject.js';
 import { UIDefinitions } from './config/UIDefinitions.js';
 import { LayoutPresets } from './config/LayoutPresets.js';
-import { ViewPortSO } from './ViewPort.js';
-import { StageZIndexManagerSO } from './StageZIndexManager.js';
-import { GameStageSO } from '../game/GameStage.js';
-import { HandSO } from '../game/Hand.js';
-import { DeckSO } from '../game/Deck.js';
+import { ViewPortState } from './ViewPort.js';
+import { StageZIndexManagerState } from './StageZIndexManager.js';
+import { GameStageState } from '../game/GameStage.js';
+import { HandState } from '../game/Hand.js';
+import { DeckState } from '../game/Deck.js';
 import { svgLoader } from '../assets/SVGLoader.js';
 import { dataManager } from '../core/DataManager.js';
 import { objectRegistry } from '../core/ObjectRegistry.js';
 
 
 
-export class RootObjectSO extends StateObject {
+export class RootObjectState extends StateObject {
     constructor() {
         super();
 
@@ -25,35 +25,35 @@ export class RootObjectSO extends StateObject {
 }
 
 export class RootObject {
-	constructor(stateObject) {
-        this.stateObject = stateObject;
+	constructor(state) {
+        this.state = state;
         dataManager.registerObject(this);
 
         //this.div = document.getElementsByTagName('body')[0];
         this.div = document.getElementById("content");
         this.boundingClientRect = this.div.getBoundingClientRect();
 
-        if(this.stateObject.viewPort == -1) {
-            let viewPortSO = new ViewPortSO();
+        if(this.state.viewPort == -1) {
+            let viewPortState = new ViewPortState();
 
-            viewPortSO.parent.referenceId = this.stateObject.objectId;
-            this.viewPort = dataManager.createObject(viewPortSO);
-            this.stateObject.viewPort = this.viewPort.stateObject.objectId;
+            viewPortState.parent.referenceId = this.state.objectId;
+            this.viewPort = dataManager.createObject(viewPortState);
+            this.state.viewPort = this.viewPort.state.objectId;
         } else {
-            this.viewPort = dataManager.getObject(this.stateObject.viewPort);
+            this.viewPort = dataManager.getObject(this.state.viewPort);
         }
 
-        if(this.stateObject.zManager == -1) {
-            let stageZIndexManagerSO = new StageZIndexManagerSO()
-            this.zManager = dataManager.createObject(stageZIndexManagerSO);
-            this.stateObject.zManager = this.zManager.stateObject.objectId;
+        if(this.state.zManager == -1) {
+            let stageZIndexManagerState = new StageZIndexManagerState()
+            this.zManager = dataManager.createObject(stageZIndexManagerState);
+            this.state.zManager = this.zManager.state.objectId;
         } else {
-            this.zManager = dataManager.getObject(this.stateObject.zManager);
+            this.zManager = dataManager.getObject(this.state.zManager);
         }
         this.pickedUpChild = null;
         this.children = new Array();
-        for(let i = 0; i < this.stateObject.children.length; i++) {
-			this.children.push(dataManager.getObject(this.stateObject.children[i]));
+        for(let i = 0; i < this.state.children.length; i++) {
+			this.children.push(dataManager.getObject(this.state.children[i]));
 		}
 
         window.addEventListener("resize",this.update.bind(this));
@@ -71,7 +71,7 @@ export class RootObject {
     }
     registerChild(child) {
         this.children.push(child);
-        this.stateObject.children.push(child.stateObject.objectId);
+        this.state.children.push(child.state.objectId);
     }
     clearAll() {
         document.getElementById("menu-new").removeEventListener("click", this.onNew);
@@ -92,33 +92,33 @@ export class RootObject {
     }
 
     createGameStage() {
-        let gameStageSO = new GameStageSO();
-        gameStageSO.parent.referenceId = this.stateObject.objectId;
-        Object.assign(gameStageSO, LayoutPresets.SCREEN_RELATIVE);
-        gameStageSO.x = 0;
-        gameStageSO.y = 0;
-        gameStageSO.width = 1;
-        gameStageSO.height = 1;
+        let gameStageState = new GameStageState();
+        gameStageState.parent.referenceId = this.state.objectId;
+        Object.assign(gameStageState, LayoutPresets.SCREEN_RELATIVE);
+        gameStageState.x = 0;
+        gameStageState.y = 0;
+        gameStageState.width = 1;
+        gameStageState.height = 1;
         
-        let gameStage = dataManager.createObject(gameStageSO);
+        let gameStage = dataManager.createObject(gameStageState);
         this.registerChild(gameStage);
         
-        let handSO = new HandSO();
-        handSO.stage.referenceId = gameStage.stateObject.objectId;
+        let handState = new HandState();
+        handState.stage.referenceId = gameStage.state.objectId;
         let cardDims = svgLoader.getDimensions("card");
-        handSO.cardWidth = cardDims.width;
-        handSO.cardHeight = cardDims.height;
-        let hand = dataManager.createObject(handSO);
+        handState.cardWidth = cardDims.width;
+        handState.cardHeight = cardDims.height;
+        let hand = dataManager.createObject(handState);
         gameStage.registerHand(hand);
 
-        let deckSO = new DeckSO();
-        deckSO.parent.referenceId = gameStage.stateObject.objectId;
-        Object.assign(deckSO, LayoutPresets.SCREEN);
-        deckSO.x = 10;
-        deckSO.y = 10;
-        deckSO.svg01Key = "cardBack";
-        deckSO.zIndex = 2;
-        gameStage.registerChild(dataManager.createObject(deckSO));
+        let deckState = new DeckState();
+        deckState.parent.referenceId = gameStage.state.objectId;
+        Object.assign(deckState, LayoutPresets.SCREEN);
+        deckState.x = 10;
+        deckState.y = 10;
+        deckState.svg01Key = "cardBack";
+        deckState.zIndex = 2;
+        gameStage.registerChild(dataManager.createObject(deckState));
     }
 }
 

@@ -4,7 +4,7 @@ import { objectRegistry } from '../core/ObjectRegistry.js';
 
 
 
-export class ViewPortSO extends StateObject {
+export class ViewPortState extends StateObject {
     constructor() {
         super();
         
@@ -24,56 +24,56 @@ export class ViewPortSO extends StateObject {
 }
 
 export class ViewPort {
-    constructor(stateObject) {
-        this.stateObject = stateObject;
+    constructor(state) {
+        this.state = state;
         dataManager.registerObject(this);
 
-        this.parent = dataManager.getObject(this.stateObject.parent.referenceId);
+        this.parent = dataManager.getObject(this.state.parent.referenceId);
         this.calculateScale();
     }
     
     pan(dX, dY, callback) {
-        this.stateObject.x -= dX;
-        this.stateObject.y -= dY;
+        this.state.x -= dX;
+        this.state.y -= dY;
         if(callback) this.calculateScale(callback);
     }
     zoom(dX, dY, dW, dH, callback) {
         let w = 0;
         let h = 0;
-        if(this.stateObject.type == "ABSOLUTE") {
-            w = this.stateObject.width + dW;
-            h = this.stateObject.height + dH;
-        } else if (this.stateObject.type == "RELATIVE") {
+        if(this.state.type == "ABSOLUTE") {
+            w = this.state.width + dW;
+            h = this.state.height + dH;
+        } else if (this.state.type == "RELATIVE") {
             let sD = this.getScreenDimensions()
-            w = ((this.stateObject.width * sD.width) + dW)/sD.width;
-            h = ((this.stateObject.height * sD.height) + dH)/sD.height;
+            w = ((this.state.width * sD.width) + dW)/sD.width;
+            h = ((this.state.height * sD.height) + dH)/sD.height;
         }
 
         if((w > 0) && (h > 0)) {
-            if(this.stateObject.scaleWithWindowSize) {
+            if(this.state.scaleWithWindowSize) {
                 let uiScale = this.parent.getUIScale(true);
                 dX /= uiScale.scaleX;
                 dY /= uiScale.scaleY;
             }
     
-            this.stateObject.x -= dX;
-            this.stateObject.y -= dY;
-            this.stateObject.width = w;
-            this.stateObject.height = h;
+            this.state.x -= dX;
+            this.state.y -= dY;
+            this.state.width = w;
+            this.state.height = h;
             if(callback) this.calculateScale(callback);
         }
     }
     getDimensions() {
-        let w = this.stateObject.width;
-        let h = this.stateObject.height;
-        if(this.stateObject.scaleWithWindowSize) {
+        let w = this.state.width;
+        let h = this.state.height;
+        if(this.state.scaleWithWindowSize) {
             let uiScale = this.parent.getUIScale(true);
             w /= uiScale.scaleX;
             h /= uiScale.scaleY;
         }
         
         let sD = this.getScreenDimensions();
-        if(this.stateObject.type == "RELATIVE") {
+        if(this.state.type == "RELATIVE") {
             w *= sD.width;
             h *= sD.height;
         }
@@ -90,23 +90,23 @@ export class ViewPort {
 
     calculateScale(callback) {
         let d = this.getDimensions();
-        this.stateObject.scaleX = d.screenDimensions.width/d.width;
-        this.stateObject.scaleY = d.screenDimensions.height/d.height;
+        this.state.scaleX = d.screenDimensions.width/d.width;
+        this.state.scaleY = d.screenDimensions.height/d.height;
 
         if(callback) callback();
     }
 
     getScaleX() {
-        return this.stateObject.scaleX;
+        return this.state.scaleX;
     }
     getScaleY() {
-        return this.stateObject.scaleY;
+        return this.state.scaleY;
     }
     getX() {
-        return this.stateObject.x;
+        return this.state.x;
     }
     getY() {
-        return this.stateObject.y;
+        return this.state.y;
     }
 }
 

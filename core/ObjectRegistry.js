@@ -34,23 +34,23 @@ class ObjectRegistry {
     /**
      * Instantiate a live object from a StateObject.
      * Assigns an objectId if the state doesn't have one yet, then looks up
-     * the constructor by `stateObject.objectType` and calls `new`.
+     * the constructor by `state.objectType` and calls `new`.
      *
-     * @param {StateObject} stateObject — serialisable state with an `objectType` field
+     * @param {StateObject} state — serialisable state with an `objectType` field
      * @returns {object|null} the instantiated object, or null if the type is unknown
      */
-    create(stateObject) {
-        if(stateObject.objectId == -1) {
-			stateObject.objectId = this.numObjects;
+    create(state) {
+        if(state.objectId == -1) {
+			state.objectId = this.numObjects;
 		}
         this.numObjects += 1;
 
-        const Constructor = this.registry.get(stateObject.objectType);
+        const Constructor = this.registry.get(state.objectType);
         if(!Constructor) {
-            console.log("ERROR: Unknown object type: "+stateObject.objectType);
+            console.log("ERROR: Unknown object type: "+state.objectType);
             return null;
         }
-        return new Constructor(stateObject);
+        return new Constructor(state);
     }
 }
 

@@ -4,7 +4,7 @@ import { objectRegistry } from '../core/ObjectRegistry.js';
 
 
 
-export class StageZIndexManagerSO extends StateObject {
+export class StageZIndexManagerState extends StateObject {
     constructor() {
         super();
         
@@ -15,8 +15,8 @@ export class StageZIndexManagerSO extends StateObject {
 }
 
 export class StageZIndexManager {
-    constructor(stateObject) {
-        this.stateObject = stateObject;
+    constructor(state) {
+        this.state = state;
         dataManager.registerObject(this);
 
         this.layers = new Array();
@@ -62,7 +62,7 @@ export class StageZIndexManager {
     }
 
     getMaxLayerSize() {
-        return this.stateObject.maxLayerSize;
+        return this.state.maxLayerSize;
     }
     getLayers() {
         return this.layers;

@@ -1,9 +1,9 @@
-import { FlippableObjectSO, FlippableObject } from '../zui/FlippableObject.js';
+import { FlippableObjectState, FlippableObject } from '../zui/FlippableObject.js';
 import { objectRegistry } from '../core/ObjectRegistry.js';
 
 
 
-export class TileSO extends FlippableObjectSO {
+export class TileState extends FlippableObjectState {
     constructor() {
         super();
 
@@ -14,10 +14,10 @@ export class TileSO extends FlippableObjectSO {
 }
 
 export class Tile extends FlippableObject {
-	constructor(stateObject) {
-        super(stateObject);
+	constructor(state) {
+        super(state);
         
-        this.svgFront.getElementById("text").firstChild.innerHTML = this.stateObject.value;
+        this.svgFront.getElementById("text").firstChild.innerHTML = this.state.value;
     }
 }
 

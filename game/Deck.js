@@ -1,13 +1,13 @@
 import { LayoutPresets } from '../zui/config/LayoutPresets.js';
-import { ZoomableObjectSO, ZoomableObject } from '../zui/ZoomableObject.js';
-import { CardSO } from './Card.js';
+import { ZoomableObjectState, ZoomableObject } from '../zui/ZoomableObject.js';
+import { CardState } from './Card.js';
 import { dataManager } from '../core/DataManager.js';
 import { objectRegistry } from '../core/ObjectRegistry.js';
 import { eventBus } from '../core/EventBus.js';
 
 
 
-export class DeckSO extends ZoomableObjectSO {
+export class DeckState extends ZoomableObjectState {
     constructor() {
         super();
 
@@ -16,22 +16,22 @@ export class DeckSO extends ZoomableObjectSO {
 }
 
 export class Deck extends ZoomableObject {
-    constructor(stateObject) {
-        super(stateObject);
+    constructor(state) {
+        super(state);
     }
 
     onMouseUp(e) {
         if(!this.pickedUp) {
-            let cardSO = new CardSO();
-            cardSO.parent.referenceId = this.parent.stateObject.objectId;
-            Object.assign(cardSO, LayoutPresets.SCREEN);
-            cardSO.x = this.stateObject.x;
-            cardSO.y = this.stateObject.y;
-            cardSO.facing = "FRONT";
-            cardSO.svg01Key = "card";
-            cardSO.svg02Key = "cardBack";
+            let cardState = new CardState();
+            cardState.parent.referenceId = this.parent.state.objectId;
+            Object.assign(cardState, LayoutPresets.SCREEN);
+            cardState.x = this.state.x;
+            cardState.y = this.state.y;
+            cardState.facing = "FRONT";
+            cardState.svg01Key = "card";
+            cardState.svg02Key = "cardBack";
 
-            let card = dataManager.createObject(cardSO);
+            let card = dataManager.createObject(cardState);
             this.parent.registerChild(card);
             eventBus.emit('card:drawn', { card });
         }

@@ -74,7 +74,7 @@ utils.js                       ← general-purpose utility functions
 - **Singletons** — `svgLoader` (from `assets/SVGLoader.js`), `dataManager` (from `core/DataManager.js`), `objectRegistry` (from `core/ObjectRegistry.js`), and `eventBus` (from `core/EventBus.js`) are module-level instances, imported where needed.
 - **Object registry** — each class self-registers with `objectRegistry.register("TYPE", Class)` at module level. The barrel `core/registry.js` imports all classes to ensure registration runs before any `create()` call. To add a new type: create the class, add a `register` call, and add one import to `registry.js`.
 - **Event bus** — objects communicate via named events through a global `eventBus` singleton (`core/EventBus.js`). See `events.md` for the full event vocabulary and interaction flows.
-- **State/behaviour split** — every object has a `StateObject` subclass (`XxxSO`) holding serialisable state, and a live class holding logic.
+- **State/behaviour split** — every object has a `StateObject` subclass (`XxxState`) holding serialisable state, and a live class holding logic.
 - **Layout presets** — objects use `LayoutPresets.WORLD`, `.SCREEN`, or `.SCREEN_RELATIVE` to define how they position and size themselves. See `zui/config/LayoutPresets.js` for details.
 - **DataManager** — central registry and factory. Owns `rootObject`. Single entry point for creating, retrieving, saving, and loading objects.
 - **SVG data** — raw SVG strings live in `assets/svgData/` as module exports. The barrel file `index.js` re-exports all. Add new SVGs there.
@@ -83,6 +83,6 @@ utils.js                       ← general-purpose utility functions
 
 1. Modules load: `main.js` imports `svgLoader`, `dataManager`, and `registry.js` (which triggers all class registrations with `objectRegistry`)
 2. `DOMContentLoaded` fires → `svgLoader.loadAll()` parses all SVG data
-3. `RootObjectSO` is created and passed to `dataManager.createObject()` → `RootObject` is built (viewport + z-index manager)
+3. `RootObjectState` is created and passed to `dataManager.createObject()` → `RootObject` is built (viewport + z-index manager)
 4. `dataManager.rootObject` is set
 5. User clicks **New** to create a `GameStage` with a `Hand` and `Deck`

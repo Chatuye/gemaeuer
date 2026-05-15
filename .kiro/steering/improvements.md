@@ -6,12 +6,12 @@ inclusion: manual
 
 ## Completed
 
-1. **Rename DataObject → StateObject** — all classes, properties, and files renamed to `StateObject` / `stateObject` / `XxxSO`.
+1. **Rename DataObject → StateObject** — all classes, properties, and files renamed to `StateObject` / `state` / `XxxState`.
 2. **Layout presets** — created `zui/config/LayoutPresets.js` with `WORLD`, `SCREEN`, `SCREEN_RELATIVE`. Applied across all object creation sites. Moved `UIDefinitions.js` to `zui/config/`.
 3. **README** — full architecture documentation with interaction reference, coordinate system explanation, and startup sequence.
 4. **ES Modules** — all files converted to `import`/`export`. Single entry point `<script type="module" src="main.js">`. No bundler.
-5. **Remove globals** — `dataManager`, `rootObject`, `svgLoader`, `cardDimensions`, and `randomHexColorCode` eliminated. `svgLoader` and `dataManager` are module-level singletons. `rootObject` is a property on `dataManager`. `cardDimensions` replaced by `HandSO.cardWidth`/`cardHeight`. `randomHexColorCode` moved to `utils.js`.
-6. **cardDimensions removal** — `SVGLoader` gained a generic `getDimensions(key)` method. The special-case card logic was removed. Card dimensions are stored in `HandSO` and set at creation time.
+5. **Remove globals** — `dataManager`, `rootObject`, `svgLoader`, `cardDimensions`, and `randomHexColorCode` eliminated. `svgLoader` and `dataManager` are module-level singletons. `rootObject` is a property on `dataManager`. `cardDimensions` replaced by `HandState.cardWidth`/`cardHeight`. `randomHexColorCode` moved to `utils.js`.
+6. **cardDimensions removal** — `SVGLoader` gained a generic `getDimensions(key)` method. The special-case card logic was removed. Card dimensions are stored in `HandState` and set at creation time.
 7. **SVG data as modules** — `svgData/` files export their SVG strings. Barrel file `svgData/index.js` re-exports all. Filenames and keys converted to camelCase.
 8. **Object registry** — replaced the `ObjectFactory` switch statement with a registry pattern. `objectRegistry` is a module-level singleton (`core/ObjectRegistry.js`). Each class self-registers via `objectRegistry.register("TYPE", Class)`. Barrel file `core/registry.js` imports all classes to trigger registration. The registry has zero knowledge of specific types.
 9. **Rename `dataManagement/` → `core/`** — folder renamed to reflect its broader role as foundational infrastructure (singletons, base classes, event bus). All imports updated.

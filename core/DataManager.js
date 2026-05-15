@@ -12,15 +12,15 @@ import { objectRegistry } from './ObjectRegistry.js';
 class DataManager {
     constructor() {
         this.rootObject = null;
-        this.stateObjects = new Map();
+        this.states = new Map();
         this.objects = new Map();
 
         this.createSaveButton();
         this.createLoadButton();
     }
 
-    createObject(stateObject) {
-        let newObject = objectRegistry.create(stateObject);
+    createObject(state) {
+        let newObject = objectRegistry.create(state);
         
         return newObject;
     }
@@ -32,7 +32,7 @@ class DataManager {
             if(this.objects.has(id)) {
                 return this.objects.get(id);
             } else {
-                return objectRegistry.create(this.stateObjects.get(id));
+                return objectRegistry.create(this.states.get(id));
             }
         } else {
             console.log("ERROR: Unkown object id: "+id);
@@ -40,8 +40,8 @@ class DataManager {
     }
 
     registerObject(object) {
-        this.stateObjects.set(object.stateObject.objectId, object.stateObject)
-        this.objects.set(object.stateObject.objectId, object);
+        this.states.set(object.state.objectId, object.state)
+        this.objects.set(object.state.objectId, object);
     }
 
     createSaveButton() {
@@ -73,14 +73,14 @@ class DataManager {
     }
 
     restoreData(data) {
-        this.stateObjects = new Map();
+        this.states = new Map();
         this.objects = new Map();
         objectRegistry.numObjects = 0;
 
         this.rootObject.clearAll();
         
-        this.stateObjects = data.stateObjects;
-        this.rootObject = this.createObject(this.stateObjects.get(data.rootObject));
+        this.states = data.states;
+        this.rootObject = this.createObject(this.states.get(data.rootObject));
 
         this.fileInput.value = null;
     }
@@ -93,8 +93,8 @@ class DataManager {
     }
     gatherData() {
         let data = {
-            rootObject: this.rootObject.stateObject.objectId,
-            stateObjects: this.stateObjects
+            rootObject: this.rootObject.state.objectId,
+            states: this.states
         }
 
         return data;

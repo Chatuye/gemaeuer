@@ -1,11 +1,11 @@
 import { LayoutPresets } from '../zui/config/LayoutPresets.js';
-import { FlippableObjectSO, FlippableObject } from '../zui/FlippableObject.js';
+import { FlippableObjectState, FlippableObject } from '../zui/FlippableObject.js';
 import { objectRegistry } from '../core/ObjectRegistry.js';
 import { eventBus } from '../core/EventBus.js';
 
 
 
-export class CardSO extends FlippableObjectSO {
+export class CardState extends FlippableObjectState {
     constructor() {
         super();
         
@@ -14,8 +14,8 @@ export class CardSO extends FlippableObjectSO {
 }
 
 export class Card extends FlippableObject {
-    constructor(stateObject) {
-        super(stateObject);
+    constructor(state) {
+        super(state);
 
         this.setDefaultStyle();
 
@@ -26,12 +26,12 @@ export class Card extends FlippableObject {
             let relX = cursorOnDiv.x / this.getScreenDimensions().width;
             let relY = cursorOnDiv.y / this.getScreenDimensions().height;
 
-            Object.assign(this.stateObject, LayoutPresets.WORLD);
+            Object.assign(this.state, LayoutPresets.WORLD);
 
             let cursorOnParent = this.parent.convertScreenPosToDivPos(this.cursorX - (this.getScreenDimensions().width * relX), this.cursorY - (this.getScreenDimensions().height * relY));
             let cursorOnParentVP = this.parent.convertDivPosToViewPortPos(cursorOnParent.x, cursorOnParent.y);
-            this.stateObject.x = cursorOnParentVP.x;
-            this.stateObject.y = cursorOnParentVP.y;
+            this.state.x = cursorOnParentVP.x;
+            this.state.y = cursorOnParentVP.y;
 
             this.resizeDiv();
             this.repositionDiv();
@@ -54,10 +54,10 @@ export class Card extends FlippableObject {
         let relY = cursorOnDiv.y/this.getScreenDimensions().height;
         
         this.div.style.transform = "none";
-        Object.assign(this.stateObject, LayoutPresets.SCREEN);
+        Object.assign(this.state, LayoutPresets.SCREEN);
 
-        this.stateObject.x = cursorOnParent.x - (this.getScreenDimensions().width * relX);
-        this.stateObject.y = cursorOnParent.y - (this.getScreenDimensions().height * relY);
+        this.state.x = cursorOnParent.x - (this.getScreenDimensions().width * relX);
+        this.state.y = cursorOnParent.y - (this.getScreenDimensions().height * relY);
 
         this.resizeDiv();
         this.repositionDiv();

@@ -1,12 +1,12 @@
 import { UIDefinitions } from './config/UIDefinitions.js';
-import { ZoomableElementSO, ZoomableElement } from './ZoomableElement.js';
-import { ViewPortSO } from './ViewPort.js';
-import { StageZIndexManagerSO } from './StageZIndexManager.js';
+import { ZoomableElementState, ZoomableElement } from './ZoomableElement.js';
+import { ViewPortState } from './ViewPort.js';
+import { StageZIndexManagerState } from './StageZIndexManager.js';
 import { dataManager } from '../core/DataManager.js';
 
 
 
-export class StageSO extends ZoomableElementSO {
+export class StageState extends ZoomableElementState {
     constructor() {
         super();
 
@@ -19,27 +19,27 @@ export class StageSO extends ZoomableElementSO {
 }
 
 export class Stage extends ZoomableElement {
-	constructor(stateObject) {
-        super(stateObject);
+	constructor(state) {
+        super(state);
 
 
-        if(this.stateObject.viewPort == -1) {
-            let viewPortSO = new ViewPortSO();
+        if(this.state.viewPort == -1) {
+            let viewPortState = new ViewPortState();
 
-            if(this.parent.stateObject.objectType === "ROOTOBJECT") viewPortSO.scaleWithWindowSize = true;
-            viewPortSO.parent.referenceId = this.stateObject.objectId;
-            this.viewPort = dataManager.createObject(viewPortSO);
-            this.stateObject.viewPort = this.viewPort.stateObject.objectId;
+            if(this.parent.state.objectType === "ROOTOBJECT") viewPortState.scaleWithWindowSize = true;
+            viewPortState.parent.referenceId = this.state.objectId;
+            this.viewPort = dataManager.createObject(viewPortState);
+            this.state.viewPort = this.viewPort.state.objectId;
         } else {
-            this.viewPort = dataManager.getObject(this.stateObject.viewPort);
+            this.viewPort = dataManager.getObject(this.state.viewPort);
         }
 
-        if(this.stateObject.zManager == -1) {
-            let stageZIndexManagerSO = new StageZIndexManagerSO()
-            this.zManager = dataManager.createObject(stageZIndexManagerSO);
-            this.stateObject.zManager = this.zManager.stateObject.objectId;
+        if(this.state.zManager == -1) {
+            let stageZIndexManagerState = new StageZIndexManagerState()
+            this.zManager = dataManager.createObject(stageZIndexManagerState);
+            this.state.zManager = this.zManager.state.objectId;
         } else {
-            this.zManager = dataManager.getObject(this.stateObject.zManager);
+            this.zManager = dataManager.getObject(this.state.zManager);
         }
 
 
@@ -50,8 +50,8 @@ export class Stage extends ZoomableElement {
 
         this.div.addEventListener("wheel", this.onWheel.bind(this), { passive: false });
 
-        for(let i = 0; i < this.stateObject.children.length; i++) {
-			this.children.push(dataManager.getObject(this.stateObject.children[i]));
+        for(let i = 0; i < this.state.children.length; i++) {
+			this.children.push(dataManager.getObject(this.state.children[i]));
 		}
     }
 
@@ -88,7 +88,7 @@ export class Stage extends ZoomableElement {
     }
     registerChild(child) {
         this.children.push(child);
-        this.stateObject.children.push(child.stateObject.objectId);
+        this.state.children.push(child.state.objectId);
     }
 
 

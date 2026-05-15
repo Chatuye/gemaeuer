@@ -1,9 +1,9 @@
-import { ZoomableElementSO, ZoomableElement } from './ZoomableElement.js';
+import { ZoomableElementState, ZoomableElement } from './ZoomableElement.js';
 import { svgLoader } from '../assets/SVGLoader.js';
 
 
 
-export class ZoomableObjectSO extends ZoomableElementSO {
+export class ZoomableObjectState extends ZoomableElementState {
     constructor() {
         super();
         
@@ -14,12 +14,12 @@ export class ZoomableObjectSO extends ZoomableElementSO {
 }
 
 export class ZoomableObject extends ZoomableElement {
-    constructor(stateObject) {
-        let mySVG = svgLoader.clone(stateObject.svg01Key);
-        stateObject.width = mySVG.getAttribute("width"); 
-        stateObject.height = mySVG.getAttribute("height");
+    constructor(state) {
+        let mySVG = svgLoader.clone(state.svg01Key);
+        state.width = mySVG.getAttribute("width"); 
+        state.height = mySVG.getAttribute("height");
 
-        super(stateObject);
+        super(state);
         this.svg = mySVG;
 
         this.div.style.backgroundColor = "rgba(0, 0, 0, 0.0)";

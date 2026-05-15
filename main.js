@@ -1,7 +1,7 @@
 import { svgLoader } from './assets/SVGLoader.js';
 import { dataManager } from './core/DataManager.js';
 import './core/registry.js';
-import { RootObjectSO } from './zui/rootObject.js';
+import { RootObjectState } from './zui/rootObject.js';
 
 
 
@@ -10,8 +10,8 @@ function onBodyLoad() {
 }
 
 function onSVGsLoaded() {
-	let rootObjectSO = new RootObjectSO();
-	dataManager.rootObject = dataManager.createObject(rootObjectSO);
+	let rootObjectState = new RootObjectState();
+	dataManager.rootObject = dataManager.createObject(rootObjectState);
 }
 
 

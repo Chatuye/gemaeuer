@@ -1,4 +1,4 @@
-import { StateObject } from '../dataManagement/StateObject.js';
+import { StateObject } from '../core/StateObject.js';
 import { UIDefinitions } from './config/UIDefinitions.js';
 import { LayoutPresets } from './config/LayoutPresets.js';
 import { ViewPortSO } from './ViewPort.js';
@@ -7,8 +7,8 @@ import { GameStageSO } from '../game/GameStage.js';
 import { HandSO } from '../game/Hand.js';
 import { DeckSO } from '../game/Deck.js';
 import { svgLoader } from '../assets/SVGLoader.js';
-import { dataManager } from '../dataManagement/DataManager.js';
-import { objectRegistry } from '../dataManagement/ObjectRegistry.js';
+import { dataManager } from '../core/DataManager.js';
+import { objectRegistry } from '../core/ObjectRegistry.js';
 
 
 

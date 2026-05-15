@@ -1,5 +1,5 @@
 import { FlippableObjectSO, FlippableObject } from '../zui/FlippableObject.js';
-import { objectRegistry } from '../dataManagement/ObjectRegistry.js';
+import { objectRegistry } from '../core/ObjectRegistry.js';
 
 
 

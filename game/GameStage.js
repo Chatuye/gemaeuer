@@ -1,8 +1,9 @@
 import { LayoutPresets } from '../zui/config/LayoutPresets.js';
 import { StageSO, Stage } from '../zui/Stage.js';
 import { TileSO } from './Tile.js';
-import { dataManager } from '../dataManagement/DataManager.js';
-import { objectRegistry } from '../dataManagement/ObjectRegistry.js';
+import { dataManager } from '../core/DataManager.js';
+import { objectRegistry } from '../core/ObjectRegistry.js';
+import { eventBus } from '../core/EventBus.js';
 
 
 
@@ -24,6 +25,15 @@ export class GameStage extends Stage {
 
         this.div.addEventListener("contextmenu", this.onContextMenu.bind(this), { passive: false });
         this.div.addEventListener("mousemove", this.onMouseMove.bind(this));
+
+        this.onCardDropped = ({ card }) => {
+            if (this.hand && this.hand.mode === "RAISED") {
+                eventBus.emit('card:droppedInHand', { card });
+            } else {
+                eventBus.emit('card:droppedOnStage', { card });
+            }
+        };
+        eventBus.on('card:dropped', this.onCardDropped);
     }
 
     registerHand(hand) {
@@ -38,9 +48,9 @@ export class GameStage extends Stage {
         if(this.hand) {
             let cursorOnDiv = this.convertScreenPosToDivPos(e.clientX, e.clientY);
             if(cursorOnDiv.y >= this.hand.interactionY) {
-                this.hand.raise();
+                eventBus.emit('cursor:enteredHandZone', { stage: this });
             } else {
-                this.hand.lower();
+                eventBus.emit('cursor:leftHandZone', { stage: this });
             }
         }
     }
@@ -100,9 +110,12 @@ export class GameStage extends Stage {
     }
 
     onParentChange() {
-        if(this.hand) this.hand.onParentChange();
+        super.onParentChange();
+        eventBus.emit('layout:changed', { stage: this });
+    }
 
-        super.onParentChange();        
+    destroy() {
+        eventBus.off('card:dropped', this.onCardDropped);
     }
 
 }

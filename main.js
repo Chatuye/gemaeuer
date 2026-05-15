@@ -1,6 +1,6 @@
 import { svgLoader } from './assets/SVGLoader.js';
-import { dataManager } from './dataManagement/DataManager.js';
-import './dataManagement/registry.js';
+import { dataManager } from './core/DataManager.js';
+import './core/registry.js';
 import { RootObjectSO } from './zui/rootObject.js';
 
 

@@ -1,7 +1,8 @@
-import { StateObject } from '../dataManagement/StateObject.js';
+import { StateObject } from '../core/StateObject.js';
 import { LayoutPresets } from '../zui/config/LayoutPresets.js';
-import { dataManager } from '../dataManagement/DataManager.js';
-import { objectRegistry } from '../dataManagement/ObjectRegistry.js';
+import { dataManager } from '../core/DataManager.js';
+import { objectRegistry } from '../core/ObjectRegistry.js';
+import { eventBus } from '../core/EventBus.js';
 
 
 
@@ -46,6 +47,26 @@ export class Hand {
 			this.cards.push(dataManager.getObject(this.stateObject.cards[i]));
 		}		
 		this.positionCards();
+
+        this.onCardDrawn = ({ card }) => this.addCard(card);
+        this.onCardGrabbed = ({ card }) => {
+            if (this.getCards().includes(card)) {
+                this.removeCard(card);
+            }
+        };
+        this.onCardDroppedInHand = ({ card }) => {
+            this.addCard(card);
+        };
+        this.onCursorEnteredHandZone = () => this.raise();
+        this.onCursorLeftHandZone = () => this.lower();
+        this.onLayoutChanged = () => this.onParentChange();
+
+        eventBus.on('card:drawn', this.onCardDrawn);
+        eventBus.on('card:grabbed', this.onCardGrabbed);
+        eventBus.on('card:droppedInHand', this.onCardDroppedInHand);
+        eventBus.on('cursor:enteredHandZone', this.onCursorEnteredHandZone);
+        eventBus.on('cursor:leftHandZone', this.onCursorLeftHandZone);
+        eventBus.on('layout:changed', this.onLayoutChanged);
     }
 
 	getCards() {
@@ -78,8 +99,8 @@ export class Hand {
 		if(this.getCards().length > 0) {
 			let l = this.getCards().length;
 			
-            if(this.stage.pickedUpChild == this)
-				if(this.stage.pickedUpChild.hand==this) l--;
+            if(this.getCards().includes(this.stage.pickedUpChild))
+				l--;
 			
             let middle = 0;
 			if ((l % 2) == 1)
@@ -123,7 +144,6 @@ export class Hand {
 	}
 
 	addCard(card) {
-		card.setHand(this);
 		this.stage.zManager.remove(card);
 		card.stateObject.zIndex = 1;
 		this.stage.zManager.set(card);
@@ -134,8 +154,6 @@ export class Hand {
 		this.positionCards();
 	}
 	removeCard(card) {
-		card.setHand(null);
-
 		let i = this.getCards().indexOf(card);
 		this.getCards().splice(i, 1);
 
@@ -171,6 +189,15 @@ export class Hand {
 			this.interactionY = this.interactionYLowered;
 			this.positionCards();
 		}
+	}
+
+	destroy() {
+		eventBus.off('card:drawn', this.onCardDrawn);
+		eventBus.off('card:grabbed', this.onCardGrabbed);
+		eventBus.off('card:droppedInHand', this.onCardDroppedInHand);
+		eventBus.off('cursor:enteredHandZone', this.onCursorEnteredHandZone);
+		eventBus.off('cursor:leftHandZone', this.onCursorLeftHandZone);
+		eventBus.off('layout:changed', this.onLayoutChanged);
 	}
 }
 

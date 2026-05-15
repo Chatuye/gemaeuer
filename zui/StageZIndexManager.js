@@ -1,6 +1,6 @@
-import { StateObject } from '../dataManagement/StateObject.js';
-import { dataManager } from '../dataManagement/DataManager.js';
-import { objectRegistry } from '../dataManagement/ObjectRegistry.js';
+import { StateObject } from '../core/StateObject.js';
+import { dataManager } from '../core/DataManager.js';
+import { objectRegistry } from '../core/ObjectRegistry.js';
 
 
 

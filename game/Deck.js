@@ -1,8 +1,9 @@
 import { LayoutPresets } from '../zui/config/LayoutPresets.js';
 import { ZoomableObjectSO, ZoomableObject } from '../zui/ZoomableObject.js';
 import { CardSO } from './Card.js';
-import { dataManager } from '../dataManagement/DataManager.js';
-import { objectRegistry } from '../dataManagement/ObjectRegistry.js';
+import { dataManager } from '../core/DataManager.js';
+import { objectRegistry } from '../core/ObjectRegistry.js';
+import { eventBus } from '../core/EventBus.js';
 
 
 
@@ -32,7 +33,7 @@ export class Deck extends ZoomableObject {
 
             let card = dataManager.createObject(cardSO);
             this.parent.registerChild(card);
-            this.parent.hand.addCard(card);
+            eventBus.emit('card:drawn', { card });
         }
 
         super.onMouseUp(e);

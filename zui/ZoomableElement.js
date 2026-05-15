@@ -1,7 +1,7 @@
-import { StateObject } from '../dataManagement/StateObject.js';
+import { StateObject } from '../core/StateObject.js';
 import { LayoutPresets } from './config/LayoutPresets.js';
 import { randomHexColorCode } from '../utils.js';
-import { dataManager } from '../dataManagement/DataManager.js';
+import { dataManager } from '../core/DataManager.js';
 
 
 
@@ -79,7 +79,7 @@ export class ZoomableElement {
 		this.cursorY = e.clientY;
 
         if(this.stateObject.positionType == "ABSOLUTE")
-            this.picking = window.setTimeout(this.pickUp.bind(this), 200);
+            this.picking = window.setTimeout(this.grabbed.bind(this), 200);
 
 		this.addedMouseMove = this.onMouseMove.bind(this);
 		this.addedMouseUp = this.onMouseUp.bind(this);
@@ -130,7 +130,7 @@ export class ZoomableElement {
         this.stateObject.y = y;
         this.repositionDiv();
     }
-    pickUp() {
+    grabbed() {
         this.parent.pickedUpChild = this;
         this.picking = null;
         this.pickedUp = true;

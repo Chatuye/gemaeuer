@@ -1,4 +1,13 @@
-class GameStageDO extends StageDO {
+import { LayoutPresets } from '../zui/config/LayoutPresets.js';
+import { StageState, Stage } from '../zui/Stage.js';
+import { TileState } from './Tile.js';
+import { dataManager } from '../core/DataManager.js';
+import { objectRegistry } from '../core/ObjectRegistry.js';
+import { eventBus } from '../core/EventBus.js';
+
+
+
+export class GameStageState extends StageState {
     constructor() {
         super();
 
@@ -8,19 +17,28 @@ class GameStageDO extends StageDO {
     }
 }
 
-class GameStage extends Stage {
-	constructor(dataObject) {
-        super(dataObject);
+export class GameStage extends Stage {
+	constructor(state) {
+        super(state);
 
-        this.hand = dataManager.getObject(this.dataObject.hand);
+        this.hand = dataManager.getObject(this.state.hand);
 
         this.div.addEventListener("contextmenu", this.onContextMenu.bind(this), { passive: false });
         this.div.addEventListener("mousemove", this.onMouseMove.bind(this));
+
+        this.onCardDropped = ({ card }) => {
+            if (this.hand && this.hand.mode === "RAISED") {
+                eventBus.emit('card:droppedInHand', { card });
+            } else {
+                eventBus.emit('card:droppedOnStage', { card });
+            }
+        };
+        eventBus.on('card:dropped', this.onCardDropped);
     }
 
     registerHand(hand) {
         this.hand = hand;
-        this.dataObject.hand = hand.dataObject.objectId;
+        this.state.hand = hand.state.objectId;
     }
 
     onMouseMove(e) {
@@ -30,9 +48,9 @@ class GameStage extends Stage {
         if(this.hand) {
             let cursorOnDiv = this.convertScreenPosToDivPos(e.clientX, e.clientY);
             if(cursorOnDiv.y >= this.hand.interactionY) {
-                this.hand.raise();
+                eventBus.emit('cursor:enteredHandZone', { stage: this });
             } else {
-                this.hand.lower();
+                eventBus.emit('cursor:leftHandZone', { stage: this });
             }
         }
     }
@@ -46,24 +64,18 @@ class GameStage extends Stage {
         let x = cursorOnVP.x;
         let y = cursorOnVP.y;
 
-        let tileDO = new TileDO();
-        tileDO.parent.referenceId = this.dataObject.objectId;
-        tileDO.x = x;
-        tileDO.y = y;
-        tileDO.facing = "BACK";
+        let tileState = new TileState();
+        Object.assign(tileState, LayoutPresets.WORLD);
+        tileState.parent.referenceId = this.state.objectId;
+        tileState.x = x;
+        tileState.y = y;
+        tileState.facing = "BACK";
+        tileState.svg01Key = "tileFront";
+        tileState.svg02Key = "tileBack";
+        tileState.zIndex = 0;
+        tileState.value = Math.floor((Math.random()*9))+1;
 
-        tileDO.positionBehaviour = "ZOOM";
-        tileDO.positionType = "ABSOLUTE";
-        tileDO.dimensionsBehaviour = "ZOOM";
-        tileDO.dimensionsType = "ABSOLUTE";
-        tileDO.uiScaling = true;
-        tileDO.svg01Key = "tile-front";
-        tileDO.svg02Key = "tile-back";
-        tileDO.zIndex = 0;
-        tileDO.uiScaling = false;
-        tileDO.value = Math.floor((Math.random()*9))+1;
-
-        let tile = dataManager.createObject(tileDO);
+        let tile = dataManager.createObject(tileState);
         this.registerChild(tile);
     }
     onContextMenu(e) {
@@ -79,32 +91,33 @@ class GameStage extends Stage {
         let vSD = this.viewPort.getScreenDimensions();
         let q = vSD.width/vSD.height;
         
-        let gameStageDO = new GameStageDO();
-        gameStageDO.parent.referenceId = this.dataObject.objectId;
-        gameStageDO.positionBehaviour = "ZOOM";
-        gameStageDO.positionType = "ABSOLUTE";
-        gameStageDO.x = x;
-        gameStageDO.y = y;
-        gameStageDO.dimensionsBehaviour = "ZOOM";
-        gameStageDO.dimensionsType = "ABSOLUTE";
-        gameStageDO.width = 400;
-        gameStageDO.height = 400;
-        gameStageDO.uiScaling = false;
+        let gameStageState = new GameStageState();
+        Object.assign(gameStageState, LayoutPresets.WORLD);
+        gameStageState.parent.referenceId = this.state.objectId;
+        gameStageState.x = x;
+        gameStageState.y = y;
+        gameStageState.width = 400;
+        gameStageState.height = 400;
 
-        let gameStage = dataManager.createObject(gameStageDO);
-        gameStage.viewPort.dataObject.type = "ABSOLUTE";
-        gameStage.viewPort.dataObject.width = 400;
-        gameStage.viewPort.dataObject.height = 400;
-        gameStage.viewPort.dataObject.uiScaling = false;
+        let gameStage = dataManager.createObject(gameStageState);
+        gameStage.viewPort.state.type = "ABSOLUTE";
+        gameStage.viewPort.state.width = 400;
+        gameStage.viewPort.state.height = 400;
+        gameStage.viewPort.state.scaleWithWindowSize = false;
         gameStage.viewPort.calculateScale();
 
         this.registerChild(gameStage);
     }
 
     onParentChange() {
-        if(this.hand) this.hand.onParentChange();
+        super.onParentChange();
+        eventBus.emit('layout:changed', { stage: this });
+    }
 
-        super.onParentChange();        
+    destroy() {
+        eventBus.off('card:dropped', this.onCardDropped);
     }
 
 }
+
+objectRegistry.register("GAMESTAGE", GameStage);

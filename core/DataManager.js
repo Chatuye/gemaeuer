@@ -1,15 +1,26 @@
+/**
+ * DataManager — central registry for all game objects.
+ *
+ * Singleton instance exported as `dataManager`. Handles object creation,
+ * retrieval, registration, and save/load serialization.
+ */
+
+import { objectRegistry } from './ObjectRegistry.js';
+
+
+
 class DataManager {
     constructor() {
-        this.dataObjects = new Map();
+        this.rootObject = null;
+        this.states = new Map();
         this.objects = new Map();
-        this.objectFactory = new ObjectFactory();
 
         this.createSaveButton();
         this.createLoadButton();
     }
 
-    createObject(dataObject) {
-        let newObject = this.objectFactory.createObject(dataObject);
+    createObject(state) {
+        let newObject = objectRegistry.create(state);
         
         return newObject;
     }
@@ -21,7 +32,7 @@ class DataManager {
             if(this.objects.has(id)) {
                 return this.objects.get(id);
             } else {
-                return this.objectFactory.createObject(this.dataObjects.get(id));
+                return objectRegistry.create(this.states.get(id));
             }
         } else {
             console.log("ERROR: Unkown object id: "+id);
@@ -29,8 +40,8 @@ class DataManager {
     }
 
     registerObject(object) {
-        this.dataObjects.set(object.dataObject.objectId, object.dataObject)
-        this.objects.set(object.dataObject.objectId, object);
+        this.states.set(object.state.objectId, object.state)
+        this.objects.set(object.state.objectId, object);
     }
 
     createSaveButton() {
@@ -62,15 +73,14 @@ class DataManager {
     }
 
     restoreData(data) {
-        this.dataObjects = new Map();
+        this.states = new Map();
         this.objects = new Map();
-        this.objectFactory = new ObjectFactory();
+        objectRegistry.numObjects = 0;
 
-        rootObject.clearAll();
+        this.rootObject.clearAll();
         
-        this.dataObjects = data.dataObjects;
-        rootObject = this.createObject(this.dataObjects.get(data.rootObject));
-
+        this.states = data.states;
+        this.rootObject = this.createObject(this.states.get(data.rootObject));
 
         this.fileInput.value = null;
     }
@@ -83,8 +93,8 @@ class DataManager {
     }
     gatherData() {
         let data = {
-            rootObject: rootObject.dataObject.objectId,
-            dataObjects: this.dataObjects
+            rootObject: this.rootObject.state.objectId,
+            states: this.states
         }
 
         return data;
@@ -121,3 +131,5 @@ class DataManager {
         URL.revokeObjectURL(url);      
     }
 }
+
+export const dataManager = new DataManager();

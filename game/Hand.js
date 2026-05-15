@@ -1,21 +1,31 @@
-class HandDO extends DataObject {
+import { StateObject } from '../core/StateObject.js';
+import { LayoutPresets } from '../zui/config/LayoutPresets.js';
+import { dataManager } from '../core/DataManager.js';
+import { objectRegistry } from '../core/ObjectRegistry.js';
+import { eventBus } from '../core/EventBus.js';
+
+
+
+export class HandState extends StateObject {
     constructor() {
         super();
         
         this.objectType = "HAND";
 
         this.stage = { referenceId: -1 };
+        this.cardWidth = 0;
+        this.cardHeight = 0;
 
 		this.cards = new Array();
     }
 }
 
-class Hand {
-    constructor(dataObject) {
-		this.dataObject = dataObject;
+export class Hand {
+    constructor(state) {
+		this.state = state;
         dataManager.registerObject(this);    
 
-        this.stage = dataManager.getObject(this.dataObject.stage.referenceId);
+        this.stage = dataManager.getObject(this.state.stage.referenceId);
 		this.cards = new Array();
 
         let d = this.calculateCoordinates();
@@ -33,10 +43,30 @@ class Hand {
 		this.interactionY = 0;
 		this.calculateInteractionY();
 
-        for(let i = 0; i < this.dataObject.cards.length; i++) {
-			this.cards.push(dataManager.getObject(this.dataObject.cards[i]));
+        for(let i = 0; i < this.state.cards.length; i++) {
+			this.cards.push(dataManager.getObject(this.state.cards[i]));
 		}		
 		this.positionCards();
+
+        this.onCardDrawn = ({ card }) => this.addCard(card);
+        this.onCardGrabbed = ({ card }) => {
+            if (this.getCards().includes(card)) {
+                this.removeCard(card);
+            }
+        };
+        this.onCardDroppedInHand = ({ card }) => {
+            this.addCard(card);
+        };
+        this.onCursorEnteredHandZone = () => this.raise();
+        this.onCursorLeftHandZone = () => this.lower();
+        this.onLayoutChanged = () => this.onParentChange();
+
+        eventBus.on('card:drawn', this.onCardDrawn);
+        eventBus.on('card:grabbed', this.onCardGrabbed);
+        eventBus.on('card:droppedInHand', this.onCardDroppedInHand);
+        eventBus.on('cursor:enteredHandZone', this.onCursorEnteredHandZone);
+        eventBus.on('cursor:leftHandZone', this.onCursorLeftHandZone);
+        eventBus.on('layout:changed', this.onLayoutChanged);
     }
 
 	getCards() {
@@ -54,7 +84,7 @@ class Hand {
 	}
 
 	getCardScreenDimensions() {
-		let cD = this.stage.getScreenDimensionsOfChild(cardDimensions.behaviour, cardDimensions.type, cardDimensions.width, cardDimensions.height, cardDimensions.uiScaling);
+		let cD = this.stage.getScreenDimensionsOfChild(LayoutPresets.SCREEN.dimensionsBehaviour, LayoutPresets.SCREEN.dimensionsType, this.state.cardWidth, this.state.cardHeight, LayoutPresets.SCREEN.scaleWithWindowSize);
 		return cD;
 	}
 
@@ -69,8 +99,8 @@ class Hand {
 		if(this.getCards().length > 0) {
 			let l = this.getCards().length;
 			
-            if(this.stage.pickedUpChild == this)
-				if(this.stage.pickedUpChild.hand==this) l--;
+            if(this.getCards().includes(this.stage.pickedUpChild))
+				l--;
 			
             let middle = 0;
 			if ((l % 2) == 1)
@@ -114,24 +144,21 @@ class Hand {
 	}
 
 	addCard(card) {
-		card.setHand(this);
 		this.stage.zManager.remove(card);
-		card.dataObject.zIndex = 1;
+		card.state.zIndex = 1;
 		this.stage.zManager.set(card);
 
 		this.getCards().push(card);
-		this.dataObject.cards.push(card.dataObject.objectId);
+		this.state.cards.push(card.state.objectId);
 		
 		this.positionCards();
 	}
 	removeCard(card) {
-		card.setHand(null);
-
 		let i = this.getCards().indexOf(card);
 		this.getCards().splice(i, 1);
 
-		i = this.dataObject.cards.indexOf(card.dataObject.objectId);
-		this.dataObject.cards.splice(i, 1);
+		i = this.state.cards.indexOf(card.state.objectId);
+		this.state.cards.splice(i, 1);
 	}
 
 	calculateInteractionY() {
@@ -163,4 +190,15 @@ class Hand {
 			this.positionCards();
 		}
 	}
+
+	destroy() {
+		eventBus.off('card:drawn', this.onCardDrawn);
+		eventBus.off('card:grabbed', this.onCardGrabbed);
+		eventBus.off('card:droppedInHand', this.onCardDroppedInHand);
+		eventBus.off('cursor:enteredHandZone', this.onCursorEnteredHandZone);
+		eventBus.off('cursor:leftHandZone', this.onCursorLeftHandZone);
+		eventBus.off('layout:changed', this.onLayoutChanged);
+	}
 }
+
+objectRegistry.register("HAND", Hand);

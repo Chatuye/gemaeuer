@@ -4,42 +4,13 @@
 	<meta charset="ISO-8859-1">
 	<title>Gem&auml;uer</title>
 
-	<script> var svgData = new Array(); </script>
-	<script src="./assets/svgData/card.js"></script>
-	<script src="./assets/svgData/cardBack.js"></script>
-	<script src="./assets/svgData/tile-front.js"></script>
-	<script src="./assets/svgData/tile-back.js"></script>
-
-	<script src="./assets/UIDefinitions.js"></script>
-	<script src="./assets/SVGLoader.js"></script>
-	
-	<script src="main.js"></script>
-	
-	<script src="./data-management/DataObject.js"></script>
-	<script src="./data-management/ObjectFactory.js"></script>
-	<script src="./data-management/DataManager.js"></script>
-	
-	<script src="./zui/rootObject.js"></script>
-	<script src="./zui/ViewPort.js"></script>
-	<script src="./zui/ZoomableElement.js"></script>
-	<script src="./zui/ZoomableObject.js"></script>
-	<script src="./zui/FlippableObject.js"></script>
-	<script src="./zui/Stage.js"></script>
-	<script src="./zui/StageZIndexManager.js"></script>
-
-	<script src="./game/GameStage.js"></script>
-	<script src="./game/Tile.js"></script>
-	<script src="./game/Card.js"></script>
-	<script src="./game/Deck.js"></script>
-	<script src="./game/Hand.js"></script>
-
-
+	<script type="module" src="main.js"></script>
 
 	<link rel="shortcut icon" href="#">
 	<link rel="stylesheet" type="text/css" href="main.css">	
 </head>
 
-<body onload="onBodyLoad()">
+<body>
 	<div id="menu" class="menu"><div id="menu-new">New</div><div id="menu-save">Save</div><div id="menu-load"></div></div>
 	<div id="content" class="content"></div>
 </body>

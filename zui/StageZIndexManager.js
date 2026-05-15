@@ -1,4 +1,10 @@
-class StageZIndexManagerDO extends DataObject {
+import { StateObject } from '../core/StateObject.js';
+import { dataManager } from '../core/DataManager.js';
+import { objectRegistry } from '../core/ObjectRegistry.js';
+
+
+
+export class StageZIndexManagerState extends StateObject {
     constructor() {
         super();
         
@@ -8,9 +14,9 @@ class StageZIndexManagerDO extends DataObject {
     }
 }
 
-class StageZIndexManager {
-    constructor(dataObject) {
-        this.dataObject = dataObject;
+export class StageZIndexManager {
+    constructor(state) {
+        this.state = state;
         dataManager.registerObject(this);
 
         this.layers = new Array();
@@ -56,10 +62,11 @@ class StageZIndexManager {
     }
 
     getMaxLayerSize() {
-        return this.dataObject.maxLayerSize;
+        return this.state.maxLayerSize;
     }
     getLayers() {
         return this.layers;
     }
 }
-      
+
+objectRegistry.register("STAGEZINDEXMANAGER", StageZIndexManager);

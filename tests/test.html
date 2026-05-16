@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Renderer Property Tests</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 2rem;
+            background: #1a1a2e;
+            color: #eee;
+        }
+        h1 { color: #e0e0e0; }
+        .pass { color: #4caf50; }
+        .fail { color: #f44336; }
+        .summary {
+            font-size: 1.2rem;
+            margin: 1rem 0;
+            padding: 1rem;
+            border-radius: 4px;
+        }
+        .summary.all-pass { background: #1b5e20; }
+        .summary.has-fail { background: #b71c1c; }
+        .failure-list {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #2a2a3e;
+            border-radius: 4px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .failure-item {
+            margin: 0.3rem 0;
+            padding: 0.2rem 0;
+            border-bottom: 1px solid #333;
+        }
+    </style>
+</head>
+<body>
+    <!-- Stub elements required by DataManager (imported transitively via Renderer) -->
+    <div id="menu-save" style="display:none;"></div>
+    <div id="menu-load" style="display:none;"></div>
+
+    <!-- Content div required by Renderer's getUIScale / getRootBounds -->
+    <div id="content" style="width: 1920px; height: 1080px; position: absolute; top: 0; left: 0; visibility: hidden;"></div>
+
+    <h1>Renderer Property Tests</h1>
+    <div id="output">Running tests...</div>
+
+    <script type="module">
+        import { results as setStateResults } from './renderer.setState.test.js';
+        import { results as computeBoundsResults } from './renderer.computeBounds.test.js';
+
+        const allResults = [
+            { name: 'setState dirty-flag management', results: setStateResults },
+            { name: 'Layout computation correctness', results: computeBoundsResults }
+        ];
+
+        const output = document.getElementById('output');
+        const totalPassed = allResults.reduce((sum, r) => sum + r.results.passed, 0);
+        const totalFailed = allResults.reduce((sum, r) => sum + r.results.failed, 0);
+        const allPassed = totalFailed === 0;
+
+        let html = `<div class="summary ${allPassed ? 'all-pass' : 'has-fail'}">`;
+        html += `<span class="pass">✓ Passed: ${totalPassed}</span> | `;
+        html += `<span class="fail">✗ Failed: ${totalFailed}</span>`;
+        html += `</div>`;
+
+        for (const { name, results } of allResults) {
+            html += `<h2>${name}</h2>`;
+            html += `<p class="${results.failed === 0 ? 'pass' : 'fail'}">`;
+            html += `Passed: ${results.passed}, Failed: ${results.failed}</p>`;
+
+            if (results.failures.length > 0) {
+                html += `<div class="failure-list">`;
+                html += `<h3 class="fail">Failures:</h3>`;
+                results.failures.forEach((f, i) => {
+                    html += `<div class="failure-item">${i + 1}. ${f}</div>`;
+                });
+                html += `</div>`;
+            }
+        }
+
+        output.innerHTML = html;
+    </script>
+</body>
+</html>

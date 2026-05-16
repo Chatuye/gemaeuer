@@ -6,6 +6,7 @@
  */
 
 import { objectRegistry } from './ObjectRegistry.js';
+import { renderer } from '../rendering/Renderer.js';
 
 
 
@@ -72,11 +73,21 @@ class DataManager {
         reader.readAsText(this.fileInput.files[0]);
     }
 
+    /**
+     * Restore game state from a parsed save file.
+     *
+     * IMPORTANT: renderer.clear() must be called before recreating objects.
+     * Without it, stale Renderer entries from the previous session persist.
+     * Since setState skips writes when the value equals the current state
+     * (loaded from save), changedFields would stay empty and visual properties
+     * (rotation, filter, zIndex) would never be applied to the fresh DOM elements.
+     */
     restoreData(data) {
         this.states = new Map();
         this.objects = new Map();
         objectRegistry.numObjects = 0;
 
+        renderer.clear();
         this.rootObject.clearAll();
         
         this.states = data.states;

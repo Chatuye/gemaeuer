@@ -4,6 +4,7 @@ import { TileState } from './Tile.js';
 import { dataManager } from '../core/DataManager.js';
 import { objectRegistry } from '../core/ObjectRegistry.js';
 import { eventBus } from '../core/EventBus.js';
+import { renderer } from '../rendering/Renderer.js';
 
 
 
@@ -23,10 +24,16 @@ export class GameStage extends Stage {
 
         this.hand = dataManager.getObject(this.state.hand);
 
+        // contextmenu is not forwarded by Renderer — keep as direct listener
         this.div.addEventListener("contextmenu", this.onContextMenu.bind(this), { passive: false });
-        this.div.addEventListener("mousemove", this.onMouseMove.bind(this));
+        // mousemove for hand zone detection needs bubbling from children
+        this.div.addEventListener("mousemove", this._onDivMouseMove.bind(this));
 
         this.onCardDropped = ({ card }) => {
+            // Only handle cards that belong to this stage — prevents cross-stage
+            // interference when multiple GameStages exist (e.g., stage 1 emitting
+            // card:droppedOnStage for a card that stage 2 should handle as droppedInHand)
+            if (card.parent !== this) return;
             if (this.hand && this.hand.mode === "RAISED") {
                 eventBus.emit('card:droppedInHand', { card });
             } else {
@@ -42,9 +49,14 @@ export class GameStage extends Stage {
     }
 
     onMouseMove(e) {
-        if(this.addedMouseMove)
-            super.onMouseMove(e);
+        super.onMouseMove(e);
+    }
 
+    _onDivMouseMove(e) {
+        this._checkHandZone(e);
+    }
+
+    _checkHandZone(e) {
         if(this.hand) {
             let cursorOnDiv = this.convertScreenPosToDivPos(e.clientX, e.clientY);
             if(cursorOnDiv.y >= this.hand.interactionY) {

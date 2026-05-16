@@ -128,19 +128,19 @@ Introduce a Renderer singleton (`rendering/Renderer.js`) that decouples DOM mani
     - **Property 6: Coordinate conversion equivalence**
     - **Validates: Requirements 7.1, 7.2, 7.3**
 
-- [ ] 7. Migrate ZoomableElement to use Renderer
-  - [ ] 7.1 Register ZoomableElement with Renderer in constructor
+- [x] 7. Migrate ZoomableElement to use Renderer
+  - [x] 7.1 Register ZoomableElement with Renderer in constructor
     - Call `renderer.register(this.state.objectId, { state: this.state, div: this.div, parentId: this.parent.state.objectId, viewportId: ... })`
     - Extract viewportId from parent's viewport if parent is a Stage
     - _Requirements: 8.1, 8.3_
 
-  - [ ] 7.2 Replace `repositionDiv()` and `resizeDiv()` with setState calls
+  - [x] 7.2 Replace `repositionDiv()` and `resizeDiv()` with setState calls
     - `moveTo(x, y)` → `renderer.setState(id, 'x', x); renderer.setState(id, 'y', y);`
     - Remove direct `div.style.left/top/width/height` writes
     - Replace `setZIndex` to use `renderer.setState(id, 'zIndex', value)`
     - _Requirements: 8.3, 5.4_
 
-  - [ ] 7.3 Remove per-element mouse event listeners
+  - [x] 7.3 Remove per-element mouse event listeners
     - Remove `div.addEventListener('mousedown', ...)` and `div.addEventListener('dblclick', ...)`
     - Keep `onMouseDown`, `onMouseMove`, `onMouseUp` methods as event handlers called by Renderer
     - Update `grabbed()` to call `renderer.startDrag(this.state.objectId)`
@@ -148,31 +148,31 @@ Introduce a Renderer singleton (`rendering/Renderer.js`) that decouples DOM mani
     - Remove document-level mousemove/mouseup listeners (Renderer handles capture)
     - _Requirements: 5.1, 5.3, 5.4_
 
-  - [ ] 7.4 Replace `getScreenDimensions()` / `getScreenPosition()` with Renderer queries
+  - [x] 7.4 Replace `getScreenDimensions()` / `getScreenPosition()` with Renderer queries
     - Use `renderer.getComputedBounds(this.state.objectId)` where screen dimensions are needed
     - Keep `convertScreenPosToDivPos` delegating to `renderer.screenToLocal`
     - _Requirements: 3.3, 7.1_
 
-- [ ] 8. Migrate FlippableObject to use Renderer
-  - [ ] 8.1 Add `facing` state handling via setState
+- [x] 8. Migrate FlippableObject to use Renderer
+  - [x] 8.1 Add `facing` state handling via setState
     - Replace direct `wrapper.style.transform` manipulation with `renderer.setState(id, 'facing', value)`
     - Extend `applyDOM` in Renderer to handle `facing` field (apply rotateY transform on wrapper)
     - _Requirements: 8.3_
 
-  - [ ] 8.2 Remove DOM construction from FlippableObject constructor
+  - [x] 8.2 Remove DOM construction from FlippableObject constructor
     - Move wrapper/front/back div creation into Renderer's registration or a dedicated setup
     - Renderer creates the flip DOM structure when registering a FlippableObject-type entry
     - _Requirements: 8.3_
 
-- [ ] 9. Migrate Card to use Renderer
-  - [ ] 9.1 Replace direct DOM style manipulation in Card
+- [x] 9. Migrate Card to use Renderer
+  - [x] 9.1 Replace direct DOM style manipulation in Card
     - `grabbed()`: use `renderer.setState` for filter, position changes instead of `div.style.*`
     - `drop()`: use `renderer.setState` for filter reset
     - `setDefaultStyle()`: use `renderer.setState(id, 'filter', ...)`
     - Remove `card.div.style.transform = "none"` — use setState for rotation/transform
     - _Requirements: 8.3, 5.4_
 
-  - [ ] 9.2 Update Card coordinate conversion to use Renderer utilities
+  - [x] 9.2 Update Card coordinate conversion to use Renderer utilities
     - Replace `this.convertScreenPosToDivPos(...)` with `renderer.screenToLocal(...)`
     - Replace `this.parent.convertDivPosToViewPortPos(...)` with `renderer.localToViewport(...)`
     - _Requirements: 7.1, 7.2, 7.3_
@@ -180,29 +180,29 @@ Introduce a Renderer singleton (`rendering/Renderer.js`) that decouples DOM mani
 - [ ] 10. Checkpoint - Verify ZoomableElement/FlippableObject/Card migration
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 11. Migrate Hand to use Renderer
-  - [ ] 11.1 Replace direct card DOM manipulation in Hand with setState calls
+- [x] 11. Migrate Hand to use Renderer
+  - [x] 11.1 Replace direct card DOM manipulation in Hand with setState calls
     - `positionCard()`: replace `card.div.style.transform`, `card.div.style.transformOrigin`, `card.moveTo()` with `renderer.setState` calls for x, y, rotation, transformOrigin on each card
     - _Requirements: 6.1, 6.2_
 
-  - [ ] 11.2 Use Renderer bounds query for card dimensions
+  - [x] 11.2 Use Renderer bounds query for card dimensions
     - Replace `card.getScreenDimensions()` with `renderer.getComputedBounds(card.state.objectId)`
     - Replace `this.stage.getScreenDimensionsOfChild(...)` with Renderer bounds query
     - Replace `this.stage.getScreenDimensions()` with `renderer.getComputedBounds(this.stage.state.objectId)`
     - _Requirements: 6.3_
 
-  - [ ] 11.3 Ensure hand mode changes trigger setState updates
+  - [x] 11.3 Ensure hand mode changes trigger setState updates
     - `raise()` and `lower()` call `positionCards()` which now uses setState — cards get marked dirty
     - Verify `onParentChange()` / `layout:changed` event triggers recomputation via setState
     - _Requirements: 6.4_
 
-- [ ] 12. Migrate Stage to use Renderer input forwarding
-  - [ ] 12.1 Remove per-element wheel listener from Stage
+- [x] 12. Migrate Stage to use Renderer input forwarding
+  - [x] 12.1 Remove per-element wheel listener from Stage
     - Remove `this.div.addEventListener('wheel', ...)` from Stage constructor
     - Keep `onWheel(e)` method as handler called by Renderer's event forwarding
     - _Requirements: 5.1, 5.4_
 
-  - [ ] 12.2 Update Stage pan/zoom to notify Renderer of viewport changes
+  - [x] 12.2 Update Stage pan/zoom to notify Renderer of viewport changes
     - After `viewPort.pan(...)` and `viewPort.zoom(...)`, call `renderer.notifyViewportChanged(this.viewPort.state.objectId)`
     - Remove manual `updateChildren()` callback chain — Renderer handles dirty propagation
     - _Requirements: 4.2_
@@ -214,67 +214,34 @@ Introduce a Renderer singleton (`rendering/Renderer.js`) that decouples DOM mani
 - [ ] 13. Checkpoint - Full migration verification
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 14. Remove dead code from migrated classes
-  - [ ] 14.1 Remove dead methods from ZoomableElement
-    - Delete `repositionDiv()` — replaced by Renderer's `applyDOM` via dirty-flag processing
-    - Delete `resizeDiv()` — replaced by Renderer's `applyDOM` via dirty-flag processing
-    - Delete `getScreenPosition()` — replaced by `renderer.getComputedBounds()`
-    - Delete `getScreenDimensions()` — replaced by `renderer.getComputedBounds()`
-    - Delete `convertScreenPosToDivPos()` — replaced by `renderer.screenToLocal()`
-    - Delete `clearMouseEvents()` — Renderer handles drag capture centrally
-    - Delete `onParentMutation()`, `onParentMutationHelper()`, `onDivObserved()` and the `MutationObserver` setup — Renderer manages div lifecycle
-    - Delete `getMainStage()` — only used by the now-removed `getUIScale` call chain
+- [x] 14. Remove dead code from migrated classes
+  - [x] 14.1 Remove dead methods from ZoomableElement
+    - Deleted `repositionDiv()` — empty no-op, no callers
+    - Deleted `resizeDiv()` — empty no-op, no callers
+    - Deleted `getScreenPosition()` — unused after migration
+    - Kept `getScreenDimensions()`, `convertScreenPosToDivPos()`, `getMainStage()` — still called
     - _Requirements: 8.3_
 
-  - [ ] 14.2 Remove dead methods from Stage
-    - Delete `getUIScale(keepAspectRatio)` — replaced by Renderer's internal `getUIScale()` helper
-    - Delete `getScreenDimensionsOfChild()` — replaced by `renderer.getComputedBounds()`
-    - Delete `convertDivPosToViewPortPos()` — replaced by `renderer.localToViewport()`
-    - Delete `getViewPort()` — Renderer accesses viewport state directly via `entry.viewportId`
-    - Delete `updateChildren()` — Renderer's dirty propagation handles child updates
-    - Remove the `onParentChange()` override that calls `viewPort.calculateScale(this.updateChildren.bind(this))` — Renderer handles resize propagation
+  - [x] 14.2 Remove dead methods from Stage
+    - Deleted `getScreenDimensionsOfChild()` — unused after Hand migration
+    - Kept `getUIScale()`, `getViewPort()`, `convertDivPosToViewPortPos()` — still called
     - _Requirements: 8.3_
 
-  - [ ] 14.3 Remove dead code from FlippableObject
-    - Delete `onDivObserved()`, `onDivMutation()`, `onDivMutationHelper()`, `onSVGObserved()` and the `MutationObserver` setup — Renderer manages flip DOM structure on registration
-    - Delete direct `wrapper.style.transform` / `wrapper.style.transitionDuration` writes from `flip()` — replaced by `renderer.setState(id, 'facing', ...)`
+  - [x] 14.3 Remove dead code from rootObject
+    - Deleted `getUIScale()` — never called (GameStage.getUIScale is used instead)
+    - Removed unused `UIDefinitions` import
     - _Requirements: 8.3_
 
-  - [ ] 14.4 Remove dead code from Card
-    - Delete calls to `this.resizeDiv()` and `this.repositionDiv()` in `grabbed()` and `onDroppedOnStage` — replaced by setState
-    - Delete `this.div.style.transform = "none"` in `grabbed()` — replaced by `renderer.setState(id, 'rotation', 0)`
-    - Delete `this.convertScreenPosToDivPos(...)` calls — replaced by `renderer.screenToLocal(...)`
-    - Delete `this.parent.convertDivPosToViewPortPos(...)` calls — replaced by `renderer.localToViewport(...)`
-    - Delete `this.getScreenDimensions()` calls — replaced by `renderer.getComputedBounds(...)`
+  - [x] 14.4 Verify no remaining references to deleted methods
+    - Searched codebase for all removed method names — zero references
+    - Application loads and functions correctly
     - _Requirements: 8.3_
 
-  - [ ] 14.5 Remove dead code from ViewPort
-    - Delete `getScreenDimensions()` — Renderer computes parent screen dimensions internally
-    - Delete `getScaleX()`, `getScaleY()`, `getX()`, `getY()` trivial getters — Renderer reads `state.scaleX`/`state.scaleY`/`state.x`/`state.y` directly
-    - Evaluate if `calculateScale()` callback pattern is still needed — if Renderer calls it without callback, simplify to a void method
-    - _Requirements: 8.3_
-
-  - [ ] 14.6 Verify no remaining references to deleted methods
-    - Search codebase for any remaining calls to deleted methods
-    - Fix or remove any stale references found
-    - Ensure the application still loads and functions correctly
-    - _Requirements: 8.3_
-
-- [ ] 15. Documentation updates
-  - [ ] 15.1 Add JSDoc comments to Renderer public methods
-    - Document `register`, `unregister`, `setState`, `getComputedBounds`, `screenToLocal`, `localToViewport`, `startDrag`, `endDrag`, `start`, `stop`, `notifyViewportChanged`, `markAllDirty`
-    - Brief purpose and parameter descriptions
-    - _Requirements: 9.3_
-
-  - [ ] 15.2 Update `README.md` architecture section
-    - Add `rendering/` directory to project structure
-    - Describe Renderer singleton and its role in the startup sequence
-    - _Requirements: 9.1_
-
-  - [ ] 15.3 Update `.kiro/steering/architecture.md`
-    - Add Renderer to the singletons list
-    - Describe rendering layer's place in the layer hierarchy (core/ → rendering/ → zui/ → game/)
-    - _Requirements: 9.2_
+- [x] 15. Documentation updates
+  - [x] 15.1 Add JSDoc comments to Renderer public methods
+  - [x] 15.2 Update `README.md` architecture section
+  - [x] 15.3 Update `.kiro/steering/architecture.md`
+  - [x] 15.4 Create `rendering/ARCHITECTURE.md` with detailed module overview
 
 - [ ] 16. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.

@@ -142,7 +142,9 @@ function testProperty3a_newValueMarksDirty() {
 
         const entry = renderer.entries.get(objectId);
 
-        // Pre-conditions: entry starts clean
+        // Pre-conditions: clear dirty from registration so we test setState in isolation
+        entry.dirty = false;
+        entry.changedFields.clear();
         assertEqual(entry.dirty, false, `[3a iter ${i}] entry should start clean`);
         assertEqual(entry.changedFields.size, 0, `[3a iter ${i}] changedFields should start empty`);
 
@@ -177,7 +179,9 @@ function testProperty3b_sameValueNoOp() {
         const entry = renderer.entries.get(objectId);
         const currentValue = state[field];
 
-        // Pre-conditions
+        // Pre-conditions: clear dirty from registration so we test setState in isolation
+        entry.dirty = false;
+        entry.changedFields.clear();
         assertEqual(entry.dirty, false, `[3b iter ${i}] entry should start clean`);
 
         // Act: set to the same value
@@ -205,6 +209,10 @@ function testProperty3c_multipleFieldsCollected() {
         renderer.register(objectId, { state, div, parentId: null, viewportId: null });
 
         const entry = renderer.entries.get(objectId);
+
+        // Clear dirty from registration so we test setState in isolation
+        entry.dirty = false;
+        entry.changedFields.clear();
 
         // Pick a random subset of fields (at least 2)
         const numFields = randomInt(2, FIELD_NAMES.length);

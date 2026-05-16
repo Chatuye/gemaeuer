@@ -5,6 +5,22 @@
  * dirty objects, computes screen bounds, and applies DOM updates each frame.
  *
  * The Renderer does NOT use EventBus — dirty tracking is entirely internal.
+ *
+ * Key architectural details:
+ * - Bounds are relative to the parent container, NOT the page. screenToLocal()
+ *   walks the parent chain to compute absolute page position.
+ * - entry.viewportId is the viewport used for THIS object's layout (its parent's
+ *   viewport). localToViewport() uses the stage's OWN viewport for coordinate
+ *   conversion — these are different viewports.
+ * - On first render (firstRender flag), ALL visual properties are applied
+ *   unconditionally to sync fresh DOM elements with potentially loaded state.
+ * - getComputedBounds() returns CACHED bounds from the last tick. If the entry
+ *   is dirty (layout preset just changed), bounds are stale. Use
+ *   getScreenDimensions() on the object for synchronous fresh computation.
+ * - Viewport scale recalculation is NOT handled by the Renderer — it's a logical
+ *   operation triggered by Stage.notifyChildStages() which propagates recursively.
+ * - renderer.clear() must be called before restoring from a save file to prevent
+ *   stale entries from interfering with recreated objects.
  */
 
 import { dataManager } from '../core/DataManager.js';
@@ -139,35 +155,43 @@ function applyDOM(entry) {
     div.style.width = b.width + 'px';
     div.style.height = b.height + 'px';
 
-    // Conditional — these currently only change via explicit setState calls.
-    if (entry.changedFields.has('zIndex')) {
+    // On first render, apply all visual properties unconditionally to sync
+    // the fresh DOM element with the (potentially loaded) state.
+    // On subsequent frames, only apply fields that changed via setState.
+    const applyAll = entry.firstRender;
+
+    if (applyAll || entry.changedFields.has('zIndex')) {
         div.style.zIndex = s.zIndex;
     }
-    if (entry.changedFields.has('rotation')) {
+    if (applyAll || entry.changedFields.has('rotation') || entry.changedFields.has('transformOrigin')) {
         div.style.transformOrigin = s.transformOrigin || '50% 50%';
         div.style.transform = s.rotation ? `rotate(${s.rotation}rad)` : 'none';
     }
-    if (entry.changedFields.has('filter')) {
+    if (applyAll || entry.changedFields.has('filter')) {
         div.style.setProperty('-webkit-filter', s.filter || 'none');
     }
+
+    entry.firstRender = false;
 }
 
 class Renderer {
     constructor() {
-        this.entries = new Map();   // objectId → entry
+        this.entries = new Map();      // objectId → entry
+        this.childrenOf = new Map();   // parentId → Set of child objectIds
         this.rootEl = null;
         this.running = false;
         this.frameId = null;
-        this.dragTarget = null;     // objectId of object being dragged, or null
+        this.dragTarget = null;        // objectId of object being dragged, or null
     }
 
     /**
      * Register an object with the Renderer for managed DOM updates.
+     * Also maintains the childrenOf index for O(k) child lookup in tick().
      * @param {number} objectId — unique identifier for the object
      * @param {object} options
      * @param {object} options.state — reference to the object's StateObject
      * @param {HTMLElement} options.div — the DOM element the Renderer manages
-     * @param {number|null} options.parentId — objectId of parent (for layout computation)
+     * @param {number|null} options.parentId — objectId of parent (for layout computation and childrenOf index)
      * @param {number|null} options.viewportId — objectId of the governing viewport
      */
     register(objectId, { state, div, parentId, viewportId }) {
@@ -175,7 +199,8 @@ class Renderer {
             objectId,
             state,
             div,
-            dirty: false,
+            dirty: true,
+            firstRender: true,
             changedFields: new Set(),
             bounds: { x: 0, y: 0, width: 0, height: 0 },
             layoutPreset: {
@@ -191,10 +216,16 @@ class Renderer {
 
         div.setAttribute('data-object-id', objectId);
         this.entries.set(objectId, entry);
+
+        // Maintain children index
+        const pid = entry.parentId;
+        if (!this.childrenOf.has(pid)) this.childrenOf.set(pid, new Set());
+        this.childrenOf.get(pid).add(objectId);
     }
 
     /**
-     * Unregister an object — removes its entry and cleans up the data attribute.
+     * Unregister an object — removes its entry, cleans up the data attribute,
+     * and removes it from the childrenOf index.
      * No-op if the objectId is not registered.
      * @param {number} objectId — identifier of the object to remove
      */
@@ -203,7 +234,22 @@ class Renderer {
         if (!entry) return;
 
         entry.div.removeAttribute('data-object-id');
+        this.childrenOf.get(entry.parentId)?.delete(objectId);
         this.entries.delete(objectId);
+    }
+
+    /**
+     * Remove all entries and clean up. Used during save/load restore to
+     * wipe stale entries before objects are recreated. Also clears the
+     * childrenOf index.
+     */
+    clear() {
+        for (const [, entry] of this.entries) {
+            entry.div.removeAttribute('data-object-id');
+        }
+        this.entries.clear();
+        this.childrenOf.clear();
+        this.dragTarget = null;
     }
 
     /**
@@ -248,8 +294,9 @@ class Renderer {
 
     /**
      * Main render loop. Iterates entries in registration order (parent-first),
-     * computes bounds for dirty entries, propagates dirty to children if bounds
-     * changed, applies DOM updates, and clears dirty state.
+     * computes bounds for dirty entries, propagates dirty to children via the
+     * childrenOf index (O(k) per parent instead of O(n) full scan), applies
+     * DOM updates, and clears dirty state.
      */
     tick() {
         for (const [id, entry] of this.entries) {
@@ -260,8 +307,11 @@ class Renderer {
 
             // If bounds changed, mark children dirty so they recompute next
             if (boundsChanged(oldBounds, entry.bounds)) {
-                for (const [, child] of this.entries) {
-                    if (child.parentId === id) child.dirty = true;
+                const children = this.childrenOf.get(id);
+                if (children) {
+                    for (const childId of children) {
+                        this.entries.get(childId).dirty = true;
+                    }
                 }
             }
 
@@ -355,27 +405,47 @@ class Renderer {
 
     /**
      * Convert screen (client) coordinates to local coordinates relative to
-     * an object's computed bounds. Accounts for the root element's page offset
-     * (e.g., menu bar above the content div) so that client coordinates from
-     * MouseEvents are correctly mapped to container-relative bounds.
+     * an object's computed bounds.
+     *
+     * IMPORTANT: Walks up the parent chain to compute the object's absolute
+     * page position. This is necessary because bounds.x/y are relative to the
+     * parent container, not the page. For nested objects (e.g., tile inside a
+     * nested stage), all ancestor offsets must be accumulated.
+     *
      * @param {number} clientX — screen X coordinate (e.g. from MouseEvent)
      * @param {number} clientY — screen Y coordinate (e.g. from MouseEvent)
      * @param {number} objectId — identifier of the target object
      * @returns {{ x: number, y: number } | null} local coordinates, or null if objectId unknown
      */
     screenToLocal(clientX, clientY, objectId) {
-        const bounds = this.entries.get(objectId)?.bounds;
-        if (!bounds) return null;
+        const entry = this.entries.get(objectId);
+        if (!entry) return null;
+
+        // Accumulate absolute position by walking up parent chain
+        let absX = 0;
+        let absY = 0;
+        let current = entry;
+        while (current) {
+            absX += current.bounds.x;
+            absY += current.bounds.y;
+            current = current.parentId != null ? this.entries.get(current.parentId) : null;
+        }
+
         const rootRect = this.rootEl.getBoundingClientRect();
         return {
-            x: clientX - rootRect.left - bounds.x,
-            y: clientY - rootRect.top - bounds.y
+            x: clientX - rootRect.left - absX,
+            y: clientY - rootRect.top - absY
         };
     }
 
     /**
-     * Convert local coordinates within a stage object to viewport (world)
-     * coordinates using the stage's associated viewport.
+     * Convert local coordinates within a stage to viewport (world) coordinates.
+     *
+     * IMPORTANT: Uses the stage's OWN viewport (stageObj.viewPort), NOT
+     * entry.viewportId. entry.viewportId is the viewport that positions the
+     * stage itself on screen (its parent's viewport). The stage's own viewport
+     * is what its children use for world-to-screen mapping.
+     *
      * @param {number} localX — X position relative to the stage's bounds
      * @param {number} localY — Y position relative to the stage's bounds
      * @param {number} stageObjectId — identifier of the stage object
@@ -384,8 +454,11 @@ class Renderer {
     localToViewport(localX, localY, stageObjectId) {
         const entry = this.entries.get(stageObjectId);
         if (!entry) return null;
-        const vp = dataManager.getObject(entry.viewportId);
-        if (!vp) return null;
+        // Use the stage's own viewport (stored on the live object), not entry.viewportId
+        // which is the viewport used for the stage's own layout computation.
+        const stageObj = dataManager.getObject(stageObjectId);
+        if (!stageObj?.viewPort) return null;
+        const vp = stageObj.viewPort;
         const b = entry.bounds;
         const relX = localX / b.width;
         const relY = localY / b.height;
@@ -457,17 +530,27 @@ class Renderer {
 
     /**
      * Internal wheel handler. Hit-tests and forwards to the owning
-     * game object's onWheel method.
+     * game object's onWheel method. If the hit object doesn't handle wheel,
+     * bubbles up through parents until a handler is found (mimics DOM bubbling).
      * @param {WheelEvent} e
      */
     _onWheel(e) {
         const target = document.elementFromPoint(e.clientX, e.clientY);
-        const objectId = target?.closest('[data-object-id]')
-            ?.getAttribute('data-object-id');
-        if (objectId == null) return;
+        const el = target?.closest('[data-object-id]');
+        if (!el) return;
 
-        const obj = dataManager.getObject(Number(objectId));
-        if (obj?.onWheel) obj.onWheel(e);
+        // Walk up the object hierarchy until we find one with onWheel
+        let objectId = Number(el.getAttribute('data-object-id'));
+        while (objectId != null) {
+            const obj = dataManager.getObject(objectId);
+            if (obj?.onWheel) {
+                obj.onWheel(e);
+                return;
+            }
+            // Bubble to parent
+            const entry = this.entries.get(objectId);
+            objectId = entry?.parentId;
+        }
     }
 
     // --- Drag Capture ---

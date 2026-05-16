@@ -2,6 +2,7 @@ import { StateObject } from '../core/StateObject.js';
 import { LayoutPresets } from './config/LayoutPresets.js';
 import { randomHexColorCode } from '../utils.js';
 import { dataManager } from '../core/DataManager.js';
+import { renderer } from '../rendering/Renderer.js';
 
 
 
@@ -33,15 +34,9 @@ export class ZoomableElement {
         this.div = document.createElement("div");
         this.div.style.position = "absolute";
 		this.div.style.backgroundColor = randomHexColorCode();
-        this.parentObserver = new MutationObserver(this.onParentMutation.bind(this));
-		this.parentObserver.observe(this.parent.div, { attributes: false, childList: true, characterData: false });	
 		this.parent.div.appendChild(this.div);
         
-        
-        this.div.addEventListener("mousedown", this.onMouseDown.bind(this), { passive: false });
-        this.div.addEventListener("dblclick", this.onDoubleClick.bind(this), { passive: false });   
 		
-        
         this.cursorX = 0;
 		this.cursorY = 0;
         this.picking = null;
@@ -49,24 +44,18 @@ export class ZoomableElement {
         this.pickedUpChild = null;
 
 
+        // Register with the Renderer BEFORE zManager.set (which calls setZIndex → renderer.setState)
+        renderer.register(this.state.objectId, {
+            state: this.state,
+            div: this.div,
+            parentId: this.parent.state.objectId,
+            viewportId: this.parent.viewPort?.state?.objectId ?? null
+        });
+
         this.parent.zManager.set(this);
     }
 
 
-
-	onParentMutation(mutations) {
-		mutations.forEach(this.onParentMutationHelper.bind(this))
-	}
-	onParentMutationHelper(mutation) {
-		if(Array.from(mutation.addedNodes).includes(this.div)) {
-			this.onDivObserved();
-		}
-	}
-	onDivObserved() {
-        this.parentObserver.disconnect();
-		this.repositionDiv();
-        this.resizeDiv();
-	}
 
     onDoubleClick(e) {
         e.stopPropagation();
@@ -78,13 +67,11 @@ export class ZoomableElement {
 		this.cursorX = e.clientX;
 		this.cursorY = e.clientY;
 
+        // Start drag capture immediately so mousemove/mouseup are forwarded during picking phase
+        renderer.startDrag(this.state.objectId);
+
         if(this.state.positionType == "ABSOLUTE")
             this.picking = window.setTimeout(this.grabbed.bind(this), 200);
-
-		this.addedMouseMove = this.onMouseMove.bind(this);
-		this.addedMouseUp = this.onMouseUp.bind(this);
-		document.addEventListener("mouseup", this.addedMouseUp);
-		document.addEventListener("mousemove", this.addedMouseMove);
 	}
 	onMouseMove(e) {
         if(this.picking) {
@@ -113,39 +100,37 @@ export class ZoomableElement {
         }
         if(this.pickedUp) this.drop(e.clientX, e.clientY);
 
-        this.clearMouseEvents();
-	}
-    clearMouseEvents() {
-		if(this.addedMouseMove) {
-			document.removeEventListener("mousemove", this.addedMouseMove);
-			document.removeEventListener("mouseup", this.addedMouseUp);
-			this.addedMouseMove = null;
-			this.addedMouseUp = null;
-		}
+        renderer.endDrag();
 	}
 
 
     moveTo(x, y) {
-        this.state.x = x;
-        this.state.y = y;
-        this.repositionDiv();
+        renderer.setState(this.state.objectId, 'x', x);
+        renderer.setState(this.state.objectId, 'y', y);
     }
     grabbed() {
         this.parent.pickedUpChild = this;
         this.picking = null;
         this.pickedUp = true;
-		this.div.style.setProperty("-webkit-filter", "drop-shadow(0px 0px 4px rgba(0, 0, 0, 1.0)) drop-shadow(0px 0px 24px rgba(255, 255, 255, 0.33)");
+		renderer.setState(this.state.objectId, 'filter', "drop-shadow(0px 0px 4px rgba(0, 0, 0, 1.0)) drop-shadow(0px 0px 24px rgba(255, 255, 255, 0.33))");
    
         if(this.parent.zManager) {
-            //this.div.style.zIndex += 3*this.parent.zManager.getMaxLayerSize();
-            //this.parent.zManager.remove(this.getZLayer(), this);
             this.parent.zManager.remove(this);
             this.state.zIndex = 3;
             this.parent.zManager.set(this);
         }
     }
+    /**
+     * Called when an object is dropped. Clears the picked-up state and resets
+     * visual style.
+     *
+     * IMPORTANT: Must clear parent.pickedUpChild so that Hand.positionCards()
+     * correctly counts all cards in the fan. Without this, the fan layout
+     * would miscalculate positions after a card is returned to the hand.
+     */
     drop() {
         this.pickedUp = false;
+        this.parent.pickedUpChild = null;
 		this.setDefaultStyle();
         
         if(this.parent.zManager) {
@@ -153,43 +138,36 @@ export class ZoomableElement {
             this.state.zIndex = 0;
             this.parent.zManager.set(this);
         }
-
     }
     setDefaultStyle() {
-		this.div.style.setProperty("-webkit-filter", "drop-shadow(0px 0px 0px rgba(0, 0, 0, 1.0))");
+		renderer.setState(this.state.objectId, 'filter', "drop-shadow(0px 0px 0px rgba(0, 0, 0, 1.0))");
     }
 
 
 
     onParentChange() {
-        this.repositionDiv();
-        this.resizeDiv();
-    }
-
-    
-
-    repositionDiv() {
-        let sP = this.getScreenPosition();
-        let x = sP.x;
-        let y = sP.y;
-
-        this.div.style.left = x + "px";
-        this.div.style.top = y + "px";
-    }
-    resizeDiv() {
-        let sD = this.getScreenDimensions();        
-        let w = sD.width;
-        let h = sD.height;
-
-        this.div.style.width = w + "px";
-        this.div.style.height = h + "px";
+        renderer.markAllDirty();
     }
 
 
+    /**
+     * Get screen dimensions for this object.
+     *
+     * IMPORTANT: Only uses cached Renderer bounds if the entry is NOT dirty.
+     * After a layout preset change (updateLayoutPreset), the entry is dirty
+     * and cached bounds are STALE (computed with the old preset). In that case,
+     * falls through to synchronous computation using the current state fields.
+     * This is critical for Card.grabbed() and Card.onDroppedOnStage() which
+     * need fresh dimensions immediately after a preset swap.
+     */
     getScreenDimensions() {
+        let bounds = renderer.getComputedBounds(this.state.objectId);
+        let entry = renderer.entries.get(this.state.objectId);
+        // Only use cached bounds if entry is NOT dirty (bounds are fresh)
+        if (bounds && !entry?.dirty && (bounds.width !== 0 || bounds.height !== 0)) return { width: bounds.width, height: bounds.height };
+        // Compute directly (entry is dirty or before first frame tick)
         let width = 0;
         let height = 0;
-
         if(this.state.dimensionsType == "RELATIVE") {
             width = this.state.width * this.parent.getScreenDimensions().width;
             height = this.state.height * this.parent.getScreenDimensions().height;
@@ -206,36 +184,12 @@ export class ZoomableElement {
                 height *= uiScale.scaleY;
             }
         }
-        
         return {width: width, height: height};
     }
-    getScreenPosition() {
-        let x = this.state.x;
-        let y = this.state.y;
 
-        if(this.state.positionType == "RELATIVE") {
-            let pSD = this.parent.getScreenDimensions();
-            x *= pSD.width;
-            y *= pSD.height;
-        } else if(this.state.positionType == "ABSOLUTE") {
-            if(this.state.positionBehaviour == "ZOOM") {
-                x -= this.parent.getViewPort().getX();
-                x *= this.parent.getViewPort().getScaleX();
-                y -= this.parent.getViewPort().getY();
-                y *= this.parent.getViewPort().getScaleY();
-            }
-        }
 
-        return {x: x, y: y}
-    }
-/*    getZLayer() {
-        let layer = Math.floor(this.state.zIndex/this.parent.zManager.getMaxLayerSize());
-
-        return layer;
-    }*/
     setZIndex(index) {
-        this.state.zIndex = index;
-        this.div.style.zIndex = index;
+        renderer.setState(this.state.objectId, 'zIndex', index);
     }    
     getZIndex() {
         return this.state.zIndex;
@@ -249,6 +203,9 @@ export class ZoomableElement {
 
 
     convertScreenPosToDivPos(x, y) {
+        let result = renderer.screenToLocal(x, y, this.state.objectId);
+        if (result) return result;
+        // Fallback
         let cursorXOnDiv = Math.round(x - this.div.getBoundingClientRect().left);
 		let cursorYOnDiv = Math.round(y - this.div.getBoundingClientRect().top);
         return { x: cursorXOnDiv, y: cursorYOnDiv};

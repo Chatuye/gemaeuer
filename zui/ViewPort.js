@@ -61,6 +61,7 @@ export class ViewPort {
             this.state.width = w;
             this.state.height = h;
             if(callback) this.calculateScale(callback);
+            else this.calculateScale();
         }
     }
     getDimensions() {

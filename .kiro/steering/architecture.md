@@ -14,3 +14,4 @@
 - Event system: objects communicate via named events on the `eventBus`. See `events.md` for the full vocabulary and interaction flows.
 - Input handling: centralized on the Renderer's root element. Hit testing via `data-object-id` attributes. Wheel events bubble up the object hierarchy. Drag capture via `startDrag`/`endDrag`.
 - Viewport propagation: `Stage.notifyChildStages()` recursively triggers `onParentChange()` on nested stages, which recalculates viewport scales. The Renderer only handles DOM dirty propagation, not viewport logic.
+- Rendering deep-dive: see `rendering/rendering.architecture.md` for the full rendering layer documentation (data flow, layout computation, input handling, viewport propagation, save/load integration, and public API).

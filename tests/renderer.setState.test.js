@@ -1,15 +1,13 @@
 /**
  * Property Test: setState dirty-flag management
- * Validates: Requirements 2.1, 2.2, 2.3
+ * Feature: renderer-transitions, Property 13: Simplified setState — dirty flag only
+ * Validates: Requirements 8.5
  *
  * Property statement:
- * For any registered object and any renderable field:
- * (a) calling setState with a new value SHALL mark the object dirty and add the field to changedFields
- * (b) calling setState with the current value SHALL NOT mark it dirty
- * (c) calling setState multiple times within one frame SHALL result in exactly one processing pass
- *     with all changed fields collected
- *
- * Also tests: unregistered objectId → no error thrown, no effect
+ * For any registered object and any state field:
+ * (a) calling setState with a new value SHALL set node.dirty = true and update the state field
+ * (b) calling setState with the current value SHALL NOT modify the render node
+ * (c) calling setState on an unregistered objectId SHALL not throw an error and have no effect
  */
 
 import { renderer } from '../rendering/Renderer.js';
@@ -49,13 +47,6 @@ function randomFloat(min, max) {
 
 function randomChoice(arr) {
     return arr[Math.floor(Math.random() * arr.length)];
-}
-
-function randomString(len) {
-    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-    let s = '';
-    for (let i = 0; i < len; i++) s += chars[Math.floor(Math.random() * chars.length)];
-    return s;
 }
 
 // Renderable fields and their value generators
@@ -100,9 +91,9 @@ function createMockDiv() {
     return div;
 }
 
-// --- Helper: clean up renderer entries between tests ---
+// --- Helper: clean up renderer renderNodes between tests ---
 function cleanup() {
-    for (const [id] of renderer.entries) {
+    for (const [id] of renderer.renderNodes) {
         renderer.unregister(id);
     }
 }
@@ -112,10 +103,10 @@ function cleanup() {
 const NUM_ITERATIONS = 100;
 
 /**
- * **Validates: Requirements 2.1**
- * Property 3a: setState with a new value marks the object dirty and adds field to changedFields
+ * **Validates: Requirements 8.5**
+ * Property 13a: setState with a new value sets node.dirty = true and updates the state field
  */
-function testProperty3a_newValueMarksDirty() {
+function testProperty13a_newValueMarksDirty() {
     for (let i = 0; i < NUM_ITERATIONS; i++) {
         cleanup();
 
@@ -140,29 +131,29 @@ function testProperty3a_newValueMarksDirty() {
         // Skip if we couldn't generate a different value (extremely unlikely)
         if (newValue === currentValue) continue;
 
-        const entry = renderer.entries.get(objectId);
+        const node = renderer.renderNodes.get(objectId);
 
         // Pre-conditions: clear dirty from registration so we test setState in isolation
-        entry.dirty = false;
-        entry.changedFields.clear();
-        assertEqual(entry.dirty, false, `[3a iter ${i}] entry should start clean`);
-        assertEqual(entry.changedFields.size, 0, `[3a iter ${i}] changedFields should start empty`);
+        node.dirty = false;
+        assertEqual(node.dirty, false, `[13a iter ${i}] render node should start clean`);
 
         // Act
         renderer.setState(objectId, field, newValue);
 
         // Post-conditions
-        assertEqual(entry.dirty, true, `[3a iter ${i}] entry.dirty should be true after setState('${field}', ${JSON.stringify(newValue)})`);
-        assert(entry.changedFields.has(field), `[3a iter ${i}] changedFields should contain '${field}'`);
-        assertEqual(entry.state[field], newValue, `[3a iter ${i}] state.${field} should be updated to new value`);
+        assertEqual(node.dirty, true, `[13a iter ${i}] node.dirty should be true after setState('${field}', ${JSON.stringify(newValue)})`);
+        assertEqual(node.state[field], newValue, `[13a iter ${i}] state.${field} should be updated to new value`);
+
+        // Verify no changedFields property exists on render node (removed by design)
+        assertEqual(node.changedFields, undefined, `[13a iter ${i}] render node should not have changedFields property`);
     }
 }
 
 /**
- * **Validates: Requirements 2.2**
- * Property 3b: setState with the current value does NOT mark dirty
+ * **Validates: Requirements 8.5**
+ * Property 13b: setState with the current value does NOT modify the render node
  */
-function testProperty3b_sameValueNoOp() {
+function testProperty13b_sameValueNoOp() {
     for (let i = 0; i < NUM_ITERATIONS; i++) {
         cleanup();
 
@@ -176,29 +167,27 @@ function testProperty3b_sameValueNoOp() {
 
         renderer.register(objectId, { state, div, parentId: null, viewportId: null });
 
-        const entry = renderer.entries.get(objectId);
+        const node = renderer.renderNodes.get(objectId);
         const currentValue = state[field];
 
         // Pre-conditions: clear dirty from registration so we test setState in isolation
-        entry.dirty = false;
-        entry.changedFields.clear();
-        assertEqual(entry.dirty, false, `[3b iter ${i}] entry should start clean`);
+        node.dirty = false;
+        assertEqual(node.dirty, false, `[13b iter ${i}] render node should start clean`);
 
         // Act: set to the same value
         renderer.setState(objectId, field, currentValue);
 
         // Post-conditions
-        assertEqual(entry.dirty, false, `[3b iter ${i}] entry.dirty should remain false when setting same value for '${field}'`);
-        assertEqual(entry.changedFields.size, 0, `[3b iter ${i}] changedFields should remain empty`);
-        assertEqual(entry.state[field], currentValue, `[3b iter ${i}] state.${field} should be unchanged`);
+        assertEqual(node.dirty, false, `[13b iter ${i}] node.dirty should remain false when setting same value for '${field}'`);
+        assertEqual(node.state[field], currentValue, `[13b iter ${i}] state.${field} should be unchanged`);
     }
 }
 
 /**
- * **Validates: Requirements 2.3**
- * Property 3c: Multiple setState calls within one frame collect all changed fields, dirty once
+ * **Validates: Requirements 8.5**
+ * Property 13c: Multiple setState calls within one frame all set dirty, state reflects last write
  */
-function testProperty3c_multipleFieldsCollected() {
+function testProperty13c_multipleFieldsDirtyOnce() {
     for (let i = 0; i < NUM_ITERATIONS; i++) {
         cleanup();
 
@@ -208,11 +197,10 @@ function testProperty3c_multipleFieldsCollected() {
 
         renderer.register(objectId, { state, div, parentId: null, viewportId: null });
 
-        const entry = renderer.entries.get(objectId);
+        const node = renderer.renderNodes.get(objectId);
 
         // Clear dirty from registration so we test setState in isolation
-        entry.dirty = false;
-        entry.changedFields.clear();
+        node.dirty = false;
 
         // Pick a random subset of fields (at least 2)
         const numFields = randomInt(2, FIELD_NAMES.length);
@@ -238,25 +226,19 @@ function testProperty3c_multipleFieldsCollected() {
             }
         }
 
-        // Post-conditions: dirty once, all fields collected
-        assertEqual(entry.dirty, true, `[3c iter ${i}] entry.dirty should be true after multiple setState calls`);
+        // Post-conditions: dirty is true, all state fields updated
+        assertEqual(node.dirty, true, `[13c iter ${i}] node.dirty should be true after multiple setState calls`);
 
         for (const field of fieldsToChange) {
-            if (newValues[field] !== state[field]) {
-                // The value was already written by setState above, so check changedFields
-                assert(entry.changedFields.has(field), `[3c iter ${i}] changedFields should contain '${field}'`);
+            if (newValues[field] !== undefined) {
+                assertEqual(node.state[field], newValues[field], `[13c iter ${i}] state.${field} should reflect the new value`);
             }
-        }
-
-        // Verify all changed fields are in the set (no duplicates, just presence)
-        for (const field of entry.changedFields) {
-            assert(fieldsToChange.includes(field), `[3c iter ${i}] changedFields should only contain fields we changed, found '${field}'`);
         }
     }
 }
 
 /**
- * Property 3 additional: unregistered objectId → no error, no effect
+ * Property 13 additional: unregistered objectId → no error, no effect
  */
 function testUnregisteredObjectId_noError() {
     for (let i = 0; i < NUM_ITERATIONS; i++) {
@@ -276,23 +258,23 @@ function testUnregisteredObjectId_noError() {
 
         assert(!threw, `[unregistered iter ${i}] setState on unregistered id ${unregisteredId} should not throw`);
 
-        // Verify no entry was created
-        assertEqual(renderer.entries.has(unregisteredId), false, `[unregistered iter ${i}] no entry should be created for unregistered id`);
+        // Verify no render node was created
+        assertEqual(renderer.renderNodes.has(unregisteredId), false, `[unregistered iter ${i}] no render node should be created for unregistered id`);
     }
 }
 
 // --- Run all tests ---
-console.log('=== Property Test: setState dirty-flag management ===');
+console.log('=== Property Test: setState dirty-flag management (Property 13) ===');
 console.log(`Running ${NUM_ITERATIONS} iterations per property...\n`);
 
-testProperty3a_newValueMarksDirty();
-console.log(`  3a (new value marks dirty): done`);
+testProperty13a_newValueMarksDirty();
+console.log(`  13a (new value marks dirty): done`);
 
-testProperty3b_sameValueNoOp();
-console.log(`  3b (same value no-op): done`);
+testProperty13b_sameValueNoOp();
+console.log(`  13b (same value no-op): done`);
 
-testProperty3c_multipleFieldsCollected();
-console.log(`  3c (multiple fields collected): done`);
+testProperty13c_multipleFieldsDirtyOnce();
+console.log(`  13c (multiple fields, dirty once): done`);
 
 testUnregisteredObjectId_noError();
 console.log(`  unregistered objectId: done`);

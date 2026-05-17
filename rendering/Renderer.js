@@ -9,18 +9,19 @@
  * Key architectural details:
  * - Bounds are relative to the parent container, NOT the page. screenToLocal()
  *   walks the parent chain to compute absolute page position.
- * - entry.viewportId is the viewport used for THIS object's layout (its parent's
+ * - renderNode.viewportId is the viewport used for THIS object's layout (its parent's
  *   viewport). localToViewport() uses the stage's OWN viewport for coordinate
  *   conversion — these are different viewports.
- * - On first render (firstRender flag), ALL visual properties are applied
- *   unconditionally to sync fresh DOM elements with potentially loaded state.
- * - getComputedBounds() returns CACHED bounds from the last tick. If the entry
+ * - All visual properties (zIndex, transform, transformOrigin, filter) are written
+ *   unconditionally on every dirty frame. Properties owned by an active transition
+ *   are skipped (guarded) to avoid interfering with CSS animations.
+ * - getComputedBounds() returns CACHED bounds from the last tick. If the render node
  *   is dirty (layout preset just changed), bounds are stale. Use
  *   getScreenDimensions() on the object for synchronous fresh computation.
  * - Viewport scale recalculation is NOT handled by the Renderer — it's a logical
  *   operation triggered by Stage.notifyChildStages() which propagates recursively.
  * - renderer.clear() must be called before restoring from a save file to prevent
- *   stale entries from interfering with recreated objects.
+ *   stale render nodes from interfering with recreated objects.
  */
 
 import { dataManager } from '../core/DataManager.js';
@@ -32,7 +33,7 @@ const _warnedViewportIds = new Set();
 
 /**
  * Get the bounding rect of the root rendering surface as a fallback
- * when a parent entry is not found in the entries map.
+ * when a parent render node is not found in the renderNodes map.
  */
 function getRootBounds() {
     const el = document.getElementById('content');
@@ -54,29 +55,29 @@ function getUIScale() {
 }
 
 /**
- * Compute screen-pixel bounds for a registered entry based on its layout preset,
+ * Compute screen-pixel bounds for a registered render node based on its layout preset,
  * parent bounds, and viewport state.
  *
- * @param {object} entry — the renderer entry for the object
- * @param {Map} entries — the full entries map (for parent lookup)
+ * @param {object} node — the render node for the object
+ * @param {Map} renderNodes — the full renderNodes map (for parent lookup)
  * @returns {{ x: number, y: number, width: number, height: number }}
  */
-function computeBounds(entry, entries) {
-    const s = entry.state;
-    const lp = entry.layoutPreset;
-    const parentBounds = entries.get(entry.parentId)?.bounds
+function computeBounds(node, renderNodes) {
+    const s = node.state;
+    const lp = node.layoutPreset;
+    const parentBounds = renderNodes.get(node.parentId)?.bounds
         ?? getRootBounds();
 
     // Resolve viewport state (if applicable)
     let vp = null;
-    if (entry.viewportId != null) {
-        const vpObj = dataManager.getObject(entry.viewportId);
+    if (node.viewportId != null) {
+        const vpObj = dataManager.getObject(node.viewportId);
         if (vpObj) {
             vp = vpObj.state;
         } else {
-            if (!_warnedViewportIds.has(entry.viewportId)) {
-                console.warn(`[Renderer] computeBounds: viewport ${entry.viewportId} not found — treating as identity`);
-                _warnedViewportIds.add(entry.viewportId);
+            if (!_warnedViewportIds.has(node.viewportId)) {
+                console.warn(`[Renderer] computeBounds: viewport ${node.viewportId} not found — treating as identity`);
+                _warnedViewportIds.add(node.viewportId);
             }
             vp = { x: 0, y: 0, scaleX: 1, scaleY: 1 };
         }
@@ -129,25 +130,23 @@ function boundsChanged(a, b) {
 }
 
 /**
- * Apply DOM style updates for a dirty entry.
+ * Apply DOM style updates for a dirty render node.
  *
  * Position and dimensions are ALWAYS written because bounds can change for
- * reasons not tracked in changedFields (viewport pan, window resize, parent
- * moved). Only the computed result (boundsChanged) reliably detects this,
- * and since tick() already recomputes bounds unconditionally for dirty entries,
- * we simply always write them.
+ * reasons not tracked by setState (viewport pan, window resize, parent moved).
  *
- * zIndex, rotation, and filter are conditional because they only change when
- * explicitly set via setState — external factors currently don't affect them.
- * If the architecture evolves to support inherited transforms (e.g., nested 
- * rotated containers), these would need to become unconditional too.
+ * All visual properties (zIndex, transform, transformOrigin, filter) are written
+ * unconditionally on every dirty frame. Properties currently owned by an active
+ * transition on this element are skipped to avoid interfering with the CSS
+ * transition in progress.
  *
- * @param {object} entry — the renderer entry for the object
+ * @param {object} node — the render node for the object
+ * @param {Map<HTMLElement, object>} transitions — active transitions map (targetEl → ActiveTransition)
  */
-function applyDOM(entry) {
-    const div = entry.div;
-    const b = entry.bounds;
-    const s = entry.state;
+function applyDOM(node, transitions) {
+    const div = node.div;
+    const b = node.bounds;
+    const s = node.state;
 
     // Always write — bounds depend on viewport/parent/resize, not just own state
     div.style.left = b.x + 'px';
@@ -155,29 +154,29 @@ function applyDOM(entry) {
     div.style.width = b.width + 'px';
     div.style.height = b.height + 'px';
 
-    // On first render, apply all visual properties unconditionally to sync
-    // the fresh DOM element with the (potentially loaded) state.
-    // On subsequent frames, only apply fields that changed via setState.
-    const applyAll = entry.firstRender;
+    // Visual properties — skip if guarded by an active transition on this element.
+    // Note: The guard only checks transitions keyed by the render node's main div.
+    // Child-element transitions (e.g., wrapper inside FlippableObject) are keyed
+    // by the child element and won't interfere with the main div's writes.
+    const guarded = transitions.get(div)?.properties;
 
-    if (applyAll || entry.changedFields.has('zIndex')) {
+    if (!guarded?.has('zIndex')) {
         div.style.zIndex = s.zIndex;
     }
-    if (applyAll || entry.changedFields.has('rotation') || entry.changedFields.has('transformOrigin')) {
+    if (!guarded?.has('transform') && !guarded?.has('transformOrigin')) {
         div.style.transformOrigin = s.transformOrigin || '50% 50%';
         div.style.transform = s.rotation ? `rotate(${s.rotation}rad)` : 'none';
     }
-    if (applyAll || entry.changedFields.has('filter')) {
+    if (!guarded?.has('filter')) {
         div.style.setProperty('-webkit-filter', s.filter || 'none');
     }
-
-    entry.firstRender = false;
 }
 
 class Renderer {
     constructor() {
-        this.entries = new Map();      // objectId → entry
+        this.renderNodes = new Map();  // objectId → render node
         this.childrenOf = new Map();   // parentId → Set of child objectIds
+        this.transitions = new Map();  // targetEl → ActiveTransition
         this.rootEl = null;
         this.running = false;
         this.frameId = null;
@@ -195,13 +194,11 @@ class Renderer {
      * @param {number|null} options.viewportId — objectId of the governing viewport
      */
     register(objectId, { state, div, parentId, viewportId }) {
-        const entry = {
+        const node = {
             objectId,
             state,
             div,
             dirty: true,
-            firstRender: true,
-            changedFields: new Set(),
             bounds: { x: 0, y: 0, width: 0, height: 0 },
             layoutPreset: {
                 positionBehaviour: state.positionBehaviour,
@@ -215,39 +212,52 @@ class Renderer {
         };
 
         div.setAttribute('data-object-id', objectId);
-        this.entries.set(objectId, entry);
+        this.renderNodes.set(objectId, node);
 
         // Maintain children index
-        const pid = entry.parentId;
+        const pid = node.parentId;
         if (!this.childrenOf.has(pid)) this.childrenOf.set(pid, new Set());
         this.childrenOf.get(pid).add(objectId);
     }
 
     /**
-     * Unregister an object — removes its entry, cleans up the data attribute,
-     * and removes it from the childrenOf index.
+     * Unregister an object — removes its render node, cleans up the data attribute,
+     * and removes it from the childrenOf index. Also cancels any active
+     * transitions owned by this object (callbacks are NOT invoked).
      * No-op if the objectId is not registered.
      * @param {number} objectId — identifier of the object to remove
      */
     unregister(objectId) {
-        const entry = this.entries.get(objectId);
-        if (!entry) return;
+        const node = this.renderNodes.get(objectId);
+        if (!node) return;
 
-        entry.div.removeAttribute('data-object-id');
-        this.childrenOf.get(entry.parentId)?.delete(objectId);
-        this.entries.delete(objectId);
+        // Cancel any transitions on the main div or child elements owned by this object
+        this._cancelTransitionsForObject(objectId);
+
+        node.div.removeAttribute('data-object-id');
+        this.childrenOf.get(node.parentId)?.delete(objectId);
+        this.renderNodes.delete(objectId);
     }
 
     /**
-     * Remove all entries and clean up. Used during save/load restore to
-     * wipe stale entries before objects are recreated. Also clears the
+     * Remove all render nodes and clean up. Used during save/load restore to
+     * wipe stale render nodes before objects are recreated. Also cancels all
+     * active transitions (callbacks are NOT invoked) and clears the
      * childrenOf index.
      */
     clear() {
-        for (const [, entry] of this.entries) {
-            entry.div.removeAttribute('data-object-id');
+        // Cancel all active transitions
+        for (const [el, active] of this.transitions) {
+            el.removeEventListener('transitionend', active.listener);
+            el.style.transitionDuration = '';
+            el.style.transitionProperty = '';
         }
-        this.entries.clear();
+        this.transitions.clear();
+
+        for (const [, node] of this.renderNodes) {
+            node.div.removeAttribute('data-object-id');
+        }
+        this.renderNodes.clear();
         this.childrenOf.clear();
         this.dragTarget = null;
     }
@@ -261,17 +271,17 @@ class Renderer {
      * @param {number} objectId — identifier of the object
      */
     updateLayoutPreset(objectId) {
-        const entry = this.entries.get(objectId);
-        if (!entry) return;
+        const node = this.renderNodes.get(objectId);
+        if (!node) return;
 
-        entry.layoutPreset = {
-            positionBehaviour: entry.state.positionBehaviour,
-            positionType: entry.state.positionType,
-            dimensionsBehaviour: entry.state.dimensionsBehaviour,
-            dimensionsType: entry.state.dimensionsType,
-            scaleWithWindowSize: entry.state.scaleWithWindowSize
+        node.layoutPreset = {
+            positionBehaviour: node.state.positionBehaviour,
+            positionType: node.state.positionType,
+            dimensionsBehaviour: node.state.dimensionsBehaviour,
+            dimensionsType: node.state.dimensionsType,
+            scaleWithWindowSize: node.state.scaleWithWindowSize
         };
-        entry.dirty = true;
+        node.dirty = true;
     }
 
     /**
@@ -282,42 +292,40 @@ class Renderer {
      * @param {*} value — new value for the field
      */
     setState(objectId, field, value) {
-        const entry = this.entries.get(objectId);
-        if (!entry) return;
+        const node = this.renderNodes.get(objectId);
+        if (!node) return;
 
-        if (entry.state[field] === value) return;
+        if (node.state[field] === value) return;
 
-        entry.state[field] = value;
-        entry.dirty = true;
-        entry.changedFields.add(field);
+        node.state[field] = value;
+        node.dirty = true;
     }
 
     /**
-     * Main render loop. Iterates entries in registration order (parent-first),
-     * computes bounds for dirty entries, propagates dirty to children via the
+     * Main render loop. Iterates render nodes in registration order (parent-first),
+     * computes bounds for dirty nodes, propagates dirty to children via the
      * childrenOf index (O(k) per parent instead of O(n) full scan), applies
      * DOM updates, and clears dirty state.
      */
     tick() {
-        for (const [id, entry] of this.entries) {
-            if (!entry.dirty) continue;
+        for (const [id, node] of this.renderNodes) {
+            if (!node.dirty) continue;
 
-            const oldBounds = { ...entry.bounds };
-            entry.bounds = computeBounds(entry, this.entries);
+            const oldBounds = { ...node.bounds };
+            node.bounds = computeBounds(node, this.renderNodes);
 
             // If bounds changed, mark children dirty so they recompute next
-            if (boundsChanged(oldBounds, entry.bounds)) {
+            if (boundsChanged(oldBounds, node.bounds)) {
                 const children = this.childrenOf.get(id);
                 if (children) {
                     for (const childId of children) {
-                        this.entries.get(childId).dirty = true;
+                        this.renderNodes.get(childId).dirty = true;
                     }
                 }
             }
 
-            applyDOM(entry);
-            entry.dirty = false;
-            entry.changedFields.clear();
+            applyDOM(node, this.transitions);
+            node.dirty = false;
         }
 
         if (this.running) this.frameId = requestAnimationFrame(() => this.tick());
@@ -373,22 +381,31 @@ class Renderer {
      * @param {number} viewportId — objectId of the viewport that changed
      */
     notifyViewportChanged(viewportId) {
-        for (const [, entry] of this.entries) {
-            if (entry.viewportId !== viewportId) continue;
-            if (entry.layoutPreset.positionBehaviour === 'ZOOM' ||
-                entry.layoutPreset.dimensionsBehaviour === 'ZOOM') {
-                entry.dirty = true;
+        for (const [, node] of this.renderNodes) {
+            if (node.viewportId !== viewportId) continue;
+            if (node.layoutPreset.positionBehaviour === 'ZOOM' ||
+                node.layoutPreset.dimensionsBehaviour === 'ZOOM') {
+                node.dirty = true;
             }
         }
     }
 
     /**
-     * Mark all registered entries as dirty. Used on window resize since
+     * Mark a single render node as dirty by objectId.
+     * @param {number} objectId — identifier of the object to mark dirty
+     */
+    markDirty(objectId) {
+        const node = this.renderNodes.get(objectId);
+        if (node) node.dirty = true;
+    }
+
+    /**
+     * Mark all registered render nodes as dirty. Used on window resize since
      * resize affects all layout modes.
      */
     markAllDirty() {
-        for (const [, entry] of this.entries) {
-            entry.dirty = true;
+        for (const [, node] of this.renderNodes) {
+            node.dirty = true;
         }
     }
 
@@ -398,9 +415,9 @@ class Renderer {
      * @returns {{ x: number, y: number, width: number, height: number } | null}
      */
     getComputedBounds(objectId) {
-        const entry = this.entries.get(objectId);
-        if (!entry) return null;
-        return { ...entry.bounds };
+        const node = this.renderNodes.get(objectId);
+        if (!node) return null;
+        return { ...node.bounds };
     }
 
     /**
@@ -418,17 +435,17 @@ class Renderer {
      * @returns {{ x: number, y: number } | null} local coordinates, or null if objectId unknown
      */
     screenToLocal(clientX, clientY, objectId) {
-        const entry = this.entries.get(objectId);
-        if (!entry) return null;
+        const node = this.renderNodes.get(objectId);
+        if (!node) return null;
 
         // Accumulate absolute position by walking up parent chain
         let absX = 0;
         let absY = 0;
-        let current = entry;
+        let current = node;
         while (current) {
             absX += current.bounds.x;
             absY += current.bounds.y;
-            current = current.parentId != null ? this.entries.get(current.parentId) : null;
+            current = current.parentId != null ? this.renderNodes.get(current.parentId) : null;
         }
 
         const rootRect = this.rootEl.getBoundingClientRect();
@@ -442,7 +459,7 @@ class Renderer {
      * Convert local coordinates within a stage to viewport (world) coordinates.
      *
      * IMPORTANT: Uses the stage's OWN viewport (stageObj.viewPort), NOT
-     * entry.viewportId. entry.viewportId is the viewport that positions the
+     * renderNode.viewportId. renderNode.viewportId is the viewport that positions the
      * stage itself on screen (its parent's viewport). The stage's own viewport
      * is what its children use for world-to-screen mapping.
      *
@@ -452,14 +469,14 @@ class Renderer {
      * @returns {{ x: number, y: number } | null} viewport coordinates, or null if unknown
      */
     localToViewport(localX, localY, stageObjectId) {
-        const entry = this.entries.get(stageObjectId);
-        if (!entry) return null;
-        // Use the stage's own viewport (stored on the live object), not entry.viewportId
+        const node = this.renderNodes.get(stageObjectId);
+        if (!node) return null;
+        // Use the stage's own viewport (stored on the live object), not node.viewportId
         // which is the viewport used for the stage's own layout computation.
         const stageObj = dataManager.getObject(stageObjectId);
         if (!stageObj?.viewPort) return null;
         const vp = stageObj.viewPort;
-        const b = entry.bounds;
+        const b = node.bounds;
         const relX = localX / b.width;
         const relY = localY / b.height;
         const dims = vp.getDimensions();
@@ -548,8 +565,8 @@ class Renderer {
                 return;
             }
             // Bubble to parent
-            const entry = this.entries.get(objectId);
-            objectId = entry?.parentId;
+            const node = this.renderNodes.get(objectId);
+            objectId = node?.parentId;
         }
     }
 
@@ -569,6 +586,128 @@ class Renderer {
      */
     endDrag() {
         this.dragTarget = null;
+    }
+
+    // --- Transition API ---
+
+    /**
+     * Start a one-shot CSS transition on a target element within a registered object.
+     *
+     * The Renderer applies the specified CSS transition styles and guards the
+     * transitioning properties from being overwritten by applyDOM until the
+     * transition completes or is interrupted.
+     *
+     * This method is generic — it has no knowledge of specific animation types
+     * (flip, slide, fade). Game objects define what to animate; the Renderer
+     * provides the mechanism.
+     *
+     * @param {number} objectId — registered object that owns the element
+     * @param {HTMLElement|null} targetEl — child element to transition, or null for the render node's main div
+     * @param {object} descriptor — transition specification
+     * @param {number} descriptor.duration — duration in milliseconds
+     * @param {object} descriptor.properties — CSS property names (camelCase) → target value strings
+     * @param {function|null} [descriptor.onComplete] — callback invoked on natural completion only (not on interruption/unregister)
+     */
+    startTransition(objectId, targetEl, descriptor) {
+        const node = this.renderNodes.get(objectId);
+        if (!node) return;
+
+        // Default to render node's main div
+        const el = targetEl ?? node.div;
+
+        // Validate child element is within the managed subtree
+        if (el !== node.div && !node.div.contains(el)) return;
+
+        // No-op if no properties to transition
+        if (!descriptor.properties || Object.keys(descriptor.properties).length === 0) return;
+
+        // Cancel any existing transition on this element
+        this._cancelTransition(el);
+
+        // Build the set of guarded property names
+        const propertyNames = new Set(Object.keys(descriptor.properties));
+
+        // Set up transitionend listener — counts completed properties
+        let remaining = propertyNames.size;
+        const listener = (e) => {
+            // Only count properties we're tracking
+            if (!propertyNames.has(e.propertyName)) return;
+            remaining--;
+            if (remaining <= 0) {
+                this._completeTransition(el);
+            }
+        };
+        el.addEventListener('transitionend', listener);
+
+        // Store active transition
+        const active = {
+            objectId,
+            targetEl: el,
+            properties: propertyNames,
+            onComplete: descriptor.onComplete || null,
+            listener
+        };
+        this.transitions.set(el, active);
+
+        // Apply transition styles — the browser will interpolate from current computed values
+        el.style.transitionDuration = descriptor.duration + 'ms';
+        el.style.transitionProperty = [...propertyNames].join(', ');
+        for (const [prop, value] of Object.entries(descriptor.properties)) {
+            el.style[prop] = value;
+        }
+    }
+
+    /**
+     * Cancel an active transition on an element without invoking its callback.
+     * Removes the event listener and clears transition styles.
+     * No-op if no active transition exists on the element.
+     * @param {HTMLElement} el — the DOM element with an active transition
+     * @private
+     */
+    _cancelTransition(el) {
+        const active = this.transitions.get(el);
+        if (!active) return;
+
+        el.removeEventListener('transitionend', active.listener);
+        el.style.transitionDuration = '';
+        el.style.transitionProperty = '';
+        this.transitions.delete(el);
+        // Note: onComplete is NOT called on cancellation
+    }
+
+    /**
+     * Complete an active transition — removes tracking, clears transition styles,
+     * and invokes the onComplete callback if provided.
+     * @param {HTMLElement} el — the DOM element whose transition completed
+     * @private
+     */
+    _completeTransition(el) {
+        const active = this.transitions.get(el);
+        if (!active) return;
+
+        el.removeEventListener('transitionend', active.listener);
+        el.style.transitionDuration = '';
+        el.style.transitionProperty = '';
+        this.transitions.delete(el);
+
+        if (active.onComplete) active.onComplete();
+    }
+
+    /**
+     * Cancel all active transitions owned by a specific object.
+     * Used during unregister to clean up before removing the render node.
+     * @param {number} objectId — identifier of the owning object
+     * @private
+     */
+    _cancelTransitionsForObject(objectId) {
+        for (const [el, active] of this.transitions) {
+            if (active.objectId === objectId) {
+                el.removeEventListener('transitionend', active.listener);
+                el.style.transitionDuration = '';
+                el.style.transitionProperty = '';
+                this.transitions.delete(el);
+            }
+        }
     }
 }
 

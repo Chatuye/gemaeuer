@@ -146,15 +146,15 @@ export class ZoomableElement {
 
 
     onParentChange() {
-        renderer.markAllDirty();
+        renderer.markDirty(this.state.objectId);
     }
 
 
     /**
      * Get screen dimensions for this object.
      *
-     * IMPORTANT: Only uses cached Renderer bounds if the entry is NOT dirty.
-     * After a layout preset change (updateLayoutPreset), the entry is dirty
+     * IMPORTANT: Only uses cached Renderer bounds if the render node is NOT dirty.
+     * After a layout preset change (updateLayoutPreset), the render node is dirty
      * and cached bounds are STALE (computed with the old preset). In that case,
      * falls through to synchronous computation using the current state fields.
      * This is critical for Card.grabbed() and Card.onDroppedOnStage() which
@@ -162,10 +162,10 @@ export class ZoomableElement {
      */
     getScreenDimensions() {
         let bounds = renderer.getComputedBounds(this.state.objectId);
-        let entry = renderer.entries.get(this.state.objectId);
-        // Only use cached bounds if entry is NOT dirty (bounds are fresh)
-        if (bounds && !entry?.dirty && (bounds.width !== 0 || bounds.height !== 0)) return { width: bounds.width, height: bounds.height };
-        // Compute directly (entry is dirty or before first frame tick)
+        let node = renderer.renderNodes.get(this.state.objectId);
+        // Only use cached bounds if render node is NOT dirty (bounds are fresh)
+        if (bounds && !node?.dirty && (bounds.width !== 0 || bounds.height !== 0)) return { width: bounds.width, height: bounds.height };
+        // Compute directly (render node is dirty or before first frame tick)
         let width = 0;
         let height = 0;
         if(this.state.dimensionsType == "RELATIVE") {

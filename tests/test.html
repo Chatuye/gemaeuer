@@ -50,10 +50,14 @@
     <script type="module">
         import { results as setStateResults } from './renderer.setState.test.js';
         import { results as computeBoundsResults } from './renderer.computeBounds.test.js';
+        import { results as applyDOMResults } from './renderer.applyDOM.test.js';
+        import { results as transitionsResults } from './renderer.transitions.test.js';
 
         const allResults = [
-            { name: 'setState dirty-flag management', results: setStateResults },
-            { name: 'Layout computation correctness', results: computeBoundsResults }
+            { name: 'setState dirty-flag management (Property 13)', results: setStateResults },
+            { name: 'Layout computation correctness', results: computeBoundsResults },
+            { name: 'Unconditional applyDOM writes (Property 12)', results: applyDOMResults },
+            { name: 'Transition API (Properties 1–11)', results: transitionsResults }
         ];
 
         const output = document.getElementById('output');

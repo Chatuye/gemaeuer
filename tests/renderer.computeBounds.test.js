@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Property Test: Layout computation correctness
  * **Validates: Requirements 3.1, 3.2, 3.4**
  *
@@ -7,11 +7,11 @@
  * (positionBehaviour, positionType, dimensionsBehaviour, dimensionsType, scaleWithWindowSize),
  * state values (x, y, width, height), parent bounds, and viewport state, the Renderer's
  * `computeBounds` SHALL produce position and dimension values matching the formulas:
- *   ZOOM+ABSOLUTE position → (state.val - vp.val) * vp.scale
- *   FIXED+ABSOLUTE → state.val
- *   RELATIVE → state.val * parent.bound
- *   ZOOM+ABSOLUTE dimension → state.val * vp.scale
- *   FIXED+ABSOLUTE+scaleWithWindowSize → state.val * uiScale
+ *   ZOOM+ABSOLUTE position â†’ (state.val - vp.val) * vp.scale
+ *   FIXED+ABSOLUTE â†’ state.val
+ *   RELATIVE â†’ state.val * parent.bound
+ *   ZOOM+ABSOLUTE dimension â†’ state.val * vp.scale
+ *   FIXED+ABSOLUTE+scaleWithWindowSize â†’ state.val * uiScale
  */
 
 import { computeBounds, getUIScale } from '../rendering/Renderer.js';
@@ -37,7 +37,7 @@ function assertApprox(actual, expected, message, epsilon = 1e-6) {
         passed++;
     } else {
         failed++;
-        failures.push(`${message} — expected: ${expected}, got: ${actual} (diff: ${diff})`);
+        failures.push(`${message} â€” expected: ${expected}, got: ${actual} (diff: ${diff})`);
     }
 }
 
@@ -49,18 +49,18 @@ function randomFloat(min, max) {
 // --- Test helpers ---
 
 /**
- * Create a mock entries Map with a parent entry that has known bounds.
+ * Create a mock renderNodes Map with a parent render node that has known bounds.
  */
-function createEntriesWithParent(parentId, parentBounds) {
-    const entries = new Map();
-    entries.set(parentId, { bounds: parentBounds });
-    return entries;
+function createRenderNodesWithParent(parentId, parentBounds) {
+    const renderNodes = new Map();
+    renderNodes.set(parentId, { bounds: parentBounds });
+    return renderNodes;
 }
 
 /**
- * Create a mock entry for computeBounds testing.
+ * Create a mock render node for computeBounds testing.
  */
-function createEntry({ x, y, width, height, positionBehaviour, positionType, dimensionsBehaviour, dimensionsType, scaleWithWindowSize, parentId, viewportId }) {
+function createNode({ x, y, width, height, positionBehaviour, positionType, dimensionsBehaviour, dimensionsType, scaleWithWindowSize, parentId, viewportId }) {
     return {
         state: { x, y, width, height },
         layoutPreset: {
@@ -92,9 +92,9 @@ function testRelativePosition() {
         const parentId = 1;
 
         const parentBounds = { x: randomFloat(0, 500), y: randomFloat(0, 500), width: parentWidth, height: parentHeight };
-        const entries = createEntriesWithParent(parentId, parentBounds);
+        const renderNodes = createRenderNodesWithParent(parentId, parentBounds);
 
-        const entry = createEntry({
+        const node = createNode({
             x: stateX,
             y: stateY,
             width: randomFloat(0, 1),
@@ -108,7 +108,7 @@ function testRelativePosition() {
             viewportId: null
         });
 
-        const result = computeBounds(entry, entries);
+        const result = computeBounds(node, renderNodes);
 
         const expectedX = stateX * parentWidth;
         const expectedY = stateY * parentHeight;
@@ -144,9 +144,9 @@ function testZoomAbsolutePosition() {
         };
 
         const parentBounds = { x: 0, y: 0, width: 1920, height: 1080 };
-        const entries = createEntriesWithParent(parentId, parentBounds);
+        const renderNodes = createRenderNodesWithParent(parentId, parentBounds);
 
-        const entry = createEntry({
+        const node = createNode({
             x: stateX,
             y: stateY,
             width: randomFloat(10, 500),
@@ -160,7 +160,7 @@ function testZoomAbsolutePosition() {
             viewportId
         });
 
-        const result = computeBounds(entry, entries);
+        const result = computeBounds(node, renderNodes);
 
         const expectedX = (stateX - vpX) * vpScaleX;
         const expectedY = (stateY - vpY) * vpScaleY;
@@ -184,9 +184,9 @@ function testFixedAbsolutePosition() {
         const parentId = 1;
 
         const parentBounds = { x: randomFloat(0, 500), y: randomFloat(0, 500), width: randomFloat(100, 2000), height: randomFloat(100, 2000) };
-        const entries = createEntriesWithParent(parentId, parentBounds);
+        const renderNodes = createRenderNodesWithParent(parentId, parentBounds);
 
-        const entry = createEntry({
+        const node = createNode({
             x: stateX,
             y: stateY,
             width: randomFloat(10, 500),
@@ -200,7 +200,7 @@ function testFixedAbsolutePosition() {
             viewportId: null
         });
 
-        const result = computeBounds(entry, entries);
+        const result = computeBounds(node, renderNodes);
 
         assertApprox(result.x, stateX, `[FIXED+ABS pos iter ${i}] x should equal state.x(${stateX})`);
         assertApprox(result.y, stateY, `[FIXED+ABS pos iter ${i}] y should equal state.y(${stateY})`);
@@ -220,9 +220,9 @@ function testRelativeDimensions() {
         const parentId = 1;
 
         const parentBounds = { x: 0, y: 0, width: parentWidth, height: parentHeight };
-        const entries = createEntriesWithParent(parentId, parentBounds);
+        const renderNodes = createRenderNodesWithParent(parentId, parentBounds);
 
-        const entry = createEntry({
+        const node = createNode({
             x: randomFloat(0, 1),
             y: randomFloat(0, 1),
             width: stateWidth,
@@ -236,7 +236,7 @@ function testRelativeDimensions() {
             viewportId: null
         });
 
-        const result = computeBounds(entry, entries);
+        const result = computeBounds(node, renderNodes);
 
         const expectedWidth = stateWidth * parentWidth;
         const expectedHeight = stateHeight * parentHeight;
@@ -269,9 +269,9 @@ function testZoomAbsoluteDimensions() {
         };
 
         const parentBounds = { x: 0, y: 0, width: 1920, height: 1080 };
-        const entries = createEntriesWithParent(parentId, parentBounds);
+        const renderNodes = createRenderNodesWithParent(parentId, parentBounds);
 
-        const entry = createEntry({
+        const node = createNode({
             x: randomFloat(-5000, 5000),
             y: randomFloat(-5000, 5000),
             width: stateWidth,
@@ -285,7 +285,7 @@ function testZoomAbsoluteDimensions() {
             viewportId
         });
 
-        const result = computeBounds(entry, entries);
+        const result = computeBounds(node, renderNodes);
 
         const expectedWidth = stateWidth * vpScaleX;
         const expectedHeight = stateHeight * vpScaleY;
@@ -311,9 +311,9 @@ function testFixedAbsoluteScaleWithWindowSize() {
         const parentId = 1;
 
         const parentBounds = { x: 0, y: 0, width: 1920, height: 1080 };
-        const entries = createEntriesWithParent(parentId, parentBounds);
+        const renderNodes = createRenderNodesWithParent(parentId, parentBounds);
 
-        const entry = createEntry({
+        const node = createNode({
             x: randomFloat(0, 1000),
             y: randomFloat(0, 1000),
             width: stateWidth,
@@ -327,7 +327,7 @@ function testFixedAbsoluteScaleWithWindowSize() {
             viewportId: null
         });
 
-        const result = computeBounds(entry, entries);
+        const result = computeBounds(node, renderNodes);
 
         const expectedWidth = stateWidth * uiScale;
         const expectedHeight = stateHeight * uiScale;
@@ -349,7 +349,7 @@ function testAllLayoutPresetsCombined() {
         const parentId = 1;
         const viewportId = 999;
         const parentBounds = { x: randomFloat(0, 200), y: randomFloat(0, 200), width: randomFloat(400, 1920), height: randomFloat(300, 1080) };
-        const entries = createEntriesWithParent(parentId, parentBounds);
+        const renderNodes = createRenderNodesWithParent(parentId, parentBounds);
 
         const vpX = randomFloat(-2000, 2000);
         const vpY = randomFloat(-2000, 2000);
@@ -369,7 +369,7 @@ function testAllLayoutPresetsCombined() {
         const worldW = randomFloat(10, 500);
         const worldH = randomFloat(10, 500);
 
-        const worldEntry = createEntry({
+        const worldNode = createNode({
             x: worldX, y: worldY, width: worldW, height: worldH,
             positionBehaviour: 'ZOOM', positionType: 'ABSOLUTE',
             dimensionsBehaviour: 'ZOOM', dimensionsType: 'ABSOLUTE',
@@ -377,7 +377,7 @@ function testAllLayoutPresetsCombined() {
             parentId, viewportId
         });
 
-        const worldResult = computeBounds(worldEntry, entries);
+        const worldResult = computeBounds(worldNode, renderNodes);
         assertApprox(worldResult.x, (worldX - vpX) * vpScaleX, `[WORLD iter ${i}] x`);
         assertApprox(worldResult.y, (worldY - vpY) * vpScaleY, `[WORLD iter ${i}] y`);
         assertApprox(worldResult.width, worldW * vpScaleX, `[WORLD iter ${i}] width`);
@@ -390,7 +390,7 @@ function testAllLayoutPresetsCombined() {
         const screenH = randomFloat(10, 300);
         const uiScale = getUIScale();
 
-        const screenEntry = createEntry({
+        const screenNode = createNode({
             x: screenX, y: screenY, width: screenW, height: screenH,
             positionBehaviour: 'FIXED', positionType: 'ABSOLUTE',
             dimensionsBehaviour: 'FIXED', dimensionsType: 'ABSOLUTE',
@@ -398,7 +398,7 @@ function testAllLayoutPresetsCombined() {
             parentId, viewportId: null
         });
 
-        const screenResult = computeBounds(screenEntry, entries);
+        const screenResult = computeBounds(screenNode, renderNodes);
         assertApprox(screenResult.x, screenX, `[SCREEN iter ${i}] x`);
         assertApprox(screenResult.y, screenY, `[SCREEN iter ${i}] y`);
         assertApprox(screenResult.width, screenW * uiScale, `[SCREEN iter ${i}] width`);
@@ -410,7 +410,7 @@ function testAllLayoutPresetsCombined() {
         const relW = randomFloat(0, 1);
         const relH = randomFloat(0, 1);
 
-        const relEntry = createEntry({
+        const relNode = createNode({
             x: relX, y: relY, width: relW, height: relH,
             positionBehaviour: 'FIXED', positionType: 'RELATIVE',
             dimensionsBehaviour: 'FIXED', dimensionsType: 'RELATIVE',
@@ -418,7 +418,7 @@ function testAllLayoutPresetsCombined() {
             parentId, viewportId: null
         });
 
-        const relResult = computeBounds(relEntry, entries);
+        const relResult = computeBounds(relNode, renderNodes);
         assertApprox(relResult.x, relX * parentBounds.width, `[SCREEN_RELATIVE iter ${i}] x`);
         assertApprox(relResult.y, relY * parentBounds.height, `[SCREEN_RELATIVE iter ${i}] y`);
         assertApprox(relResult.width, relW * parentBounds.width, `[SCREEN_RELATIVE iter ${i}] width`);

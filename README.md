@@ -44,8 +44,8 @@ utils.js                       ← general-purpose utility functions
 │   ├── DataManager.js         ← singleton, central registry and persistence
 │   └── EventBus.js            ← singleton, global event bus for decoupled communication
 ├── rendering/
-│   ├── Renderer.js            ← singleton, render loop, dirty-flag DOM updates, input forwarding
-│   └── ARCHITECTURE.md        ← detailed module documentation with diagrams
+│   ├── Renderer.js            ← singleton, render loop, dirty-flag DOM updates, transitions, input forwarding
+│   └── rendering.architecture.md ← detailed module documentation with diagrams
 ├── zui/
 │   ├── config/                ← LayoutPresets, UIDefinitions
 │   ├── ZoomableElement.js     ← base: registers with Renderer, drag/drop, coordinates
@@ -67,7 +67,7 @@ utils.js                       ← general-purpose utility functions
 
 **core/** — Object lifecycle, persistence, and foundational infrastructure. `StateObject` is the base class for all serialisable state. `ObjectRegistry` is a singleton with a type registry — classes register themselves via `objectRegistry.register("TYPE", Class)` and the registry instantiates them by type string with a simple map lookup. `registry.js` is a barrel that imports all constructable classes so their registration side effects run at startup. `DataManager` is the central registry that creates, stores, and serialises everything. `EventBus` is the global event bus — objects emit named events and subscribe to each other without direct references.
 
-**rendering/** — The render loop and DOM update layer. The `Renderer` singleton owns a `requestAnimationFrame` loop that batches DOM writes. Game objects call `renderer.setState()` to mutate visual state; the Renderer computes screen bounds and applies styles once per frame. Also centralizes mouse input handling (hit testing, drag capture, wheel bubbling) and provides coordinate conversion utilities (`screenToLocal`, `localToViewport`). See `rendering/ARCHITECTURE.md` for detailed diagrams.
+**rendering/** — The render loop and DOM update layer. The `Renderer` singleton owns a `requestAnimationFrame` loop that batches DOM writes. Game objects call `renderer.setState()` to mutate visual state; the Renderer computes screen bounds and applies styles once per frame. Game objects can also trigger one-shot CSS transitions via `renderer.startTransition()` without directly manipulating the DOM — the Renderer guards transitioning properties from being overwritten by the dirty-flag loop. Also centralizes mouse input handling (hit testing, drag capture, wheel bubbling) and provides coordinate conversion utilities (`screenToLocal`, `localToViewport`). See `rendering/rendering.architecture.md` for detailed diagrams.
 
 **zui/** — The zoomable UI framework. `ZoomableElement` is the base for anything on a stage (positioning, drag/drop, coordinate conversion). `ZoomableObject` and `FlippableObject` extend it with SVG rendering. `Stage` is a container with its own `ViewPort` (pan/zoom) and `StageZIndexManager` (layering). `RootObject` is the top-level container wrapping the browser window. `config/` holds `LayoutPresets` and `UIDefinitions`.
 

@@ -77,10 +77,8 @@ class DataManager {
      * Restore game state from a parsed save file.
      *
      * IMPORTANT: renderer.clear() must be called before recreating objects.
-     * Without it, stale Renderer entries from the previous session persist.
-     * Since setState skips writes when the value equals the current state
-     * (loaded from save), changedFields would stay empty and visual properties
-     * (rotation, filter, zIndex) would never be applied to the fresh DOM elements.
+     * Without it, stale Renderer render nodes from the previous session persist
+     * and active transitions would leak event listeners.
      */
     restoreData(data) {
         this.states = new Map();

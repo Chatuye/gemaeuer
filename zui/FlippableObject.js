@@ -1,5 +1,6 @@
 import { ZoomableElementState, ZoomableElement } from './ZoomableElement.js';
 import { svgLoader } from '../assets/SVGLoader.js';
+import { renderer } from '../rendering/Renderer.js';
 
 
 
@@ -55,15 +56,16 @@ export class FlippableObject extends ZoomableElement {
     }
 
 	flip(d) {
-		if(this.state.facing == "FRONT") {
-			this.wrapper.style.transitionDuration = d+"ms";
-			this.wrapper.style.transform = "rotateY(180deg)";
-			this.state.facing = "BACK";
-		} else {
-			this.wrapper.style.transitionDuration = d+"ms";
-			this.wrapper.style.transform = "none";
-			this.state.facing = "FRONT";
-		}
+		const targetTransform = this.state.facing === "FRONT"
+			? "rotateY(180deg)"
+			: "none";
+		this.state.facing = this.state.facing === "FRONT" ? "BACK" : "FRONT";
+
+		renderer.startTransition(this.state.objectId, this.wrapper, {
+			duration: d,
+			properties: { transform: targetTransform },
+			onComplete: null
+		});
 	}
 
 	onMouseUp(e) {

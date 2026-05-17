@@ -33,7 +33,7 @@ export class Card extends FlippableObject {
             Object.assign(this.state, LayoutPresets.WORLD);
             renderer.updateLayoutPreset(this.state.objectId);
 
-            // Get new WORLD dimensions (entry is dirty, so getScreenDimensions computes fresh)
+            // Get new WORLD dimensions (render node is dirty, so getScreenDimensions computes fresh)
             let newDims = this.getScreenDimensions();
 
             // Compute card's top-left screen position using new WORLD dimensions
@@ -59,7 +59,7 @@ export class Card extends FlippableObject {
      * Swaps layout from current preset to SCREEN so the card follows the cursor
      * in screen space. Key detail: relX/relY are computed from OLD bounds (before
      * swap), but the new position uses NEW dimensions (after swap via
-     * getScreenDimensions which computes fresh when entry is dirty). This ensures
+     * getScreenDimensions which computes fresh when render node is dirty). This ensures
      * the cursor stays at the same relative position on the card even when the
      * card changes size (e.g., WORLD with viewport zoom → SCREEN with uiScale).
      */

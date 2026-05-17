@@ -13,7 +13,9 @@ import { renderer } from '../rendering/Renderer.js';
 class DataManager {
     constructor() {
         this.rootObject = null;
-        this.states = new Map();
+        /** Plain object keyed by ID — serialized directly to JSON on save. */
+        this.states = {};
+        /** Runtime-only cache of live objects — never serialized. */
         this.objects = new Map();
 
         this.createSaveButton();
@@ -33,7 +35,7 @@ class DataManager {
             if(this.objects.has(id)) {
                 return this.objects.get(id);
             } else {
-                return objectRegistry.create(this.states.get(id));
+                return objectRegistry.create(this.states[id]);
             }
         } else {
             console.log("ERROR: Unkown object id: "+id);
@@ -41,7 +43,7 @@ class DataManager {
     }
 
     registerObject(object) {
-        this.states.set(object.state.objectId, object.state)
+        this.states[object.state.objectId] = object.state;
         this.objects.set(object.state.objectId, object);
     }
 
@@ -68,7 +70,7 @@ class DataManager {
         reader.addEventListener("load", (event) => {
             const result = event.target.result;
 
-            this.restoreData(JSON.parse(result, this.mapReviver));
+            this.restoreData(JSON.parse(result));
         });
         reader.readAsText(this.fileInput.files[0]);
     }
@@ -81,7 +83,7 @@ class DataManager {
      * and active transitions would leak event listeners.
      */
     restoreData(data) {
-        this.states = new Map();
+        this.states = {};
         this.objects = new Map();
         objectRegistry.numObjects = 0;
 
@@ -89,43 +91,25 @@ class DataManager {
         this.rootObject.clearAll();
         
         this.states = data.states;
-        this.rootObject = this.createObject(this.states.get(data.rootObject));
+        this.rootObject = this.createObject(this.states[data.rootObject]);
 
         this.fileInput.value = null;
     }
 
     save() {
         let data = this.gatherData()      
-        let json = JSON.stringify(data, this.mapReplacer);
+        let json = JSON.stringify(data);
 
         this.downloadFile(json);
     }
     gatherData() {
         let data = {
+            version: 0,
             rootObject: this.rootObject.state.objectId,
             states: this.states
         }
 
         return data;
-    }
-    
-    mapReplacer(key, value) {
-        if(value instanceof Map) {
-            return {
-                dataType: 'Map',
-                value: Array.from(value.entries())
-            };
-        } else {
-            return value;
-        }
-    }
-    mapReviver(key, value) {
-        if(typeof value === 'object' && value !== null) {
-            if (value.dataType === 'Map') {
-                return new Map(value.value);
-            }
-        }
-        return value;
     }
 
     downloadFile(json) {

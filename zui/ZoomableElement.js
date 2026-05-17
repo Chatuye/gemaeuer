@@ -1,3 +1,18 @@
+/**
+ * ZoomableElement — base class for all visual objects in the ZUI layer.
+ *
+ * ZUI objects are inherently visual: they own a DOM element and cannot exist
+ * without one. Their coordinate math (positioning, hit testing, screen
+ * dimensions) depends on rendered layout — bounding rects, viewport scale,
+ * and parent geometry are all derived from the live DOM.
+ *
+ * The design contract:
+ *   - ZoomableElementState (StateObject subclass) holds serialisable state.
+ *   - ZoomableElement (this class) IS the rendered representation.
+ *   - Construction creates the DOM element and registers with the Renderer.
+ *   - There is no "headless" mode — if you have a ZoomableElement, it's on screen.
+ */
+
 import { StateObject } from '../core/StateObject.js';
 import { LayoutPresets } from './config/LayoutPresets.js';
 import { randomHexColorCode } from '../utils.js';

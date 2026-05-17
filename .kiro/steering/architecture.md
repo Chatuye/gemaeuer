@@ -2,6 +2,7 @@
 
 - Four layers: `core/` → `rendering/` → `zui/` → `game/`
 - State/behaviour split: every object has a `StateObject` subclass (serialisable state) and a live class (behaviour). The StateObject is the single source of truth — any mutation that affects an object's persistent state must be written to its StateObject so that serialization always reflects the current state without additional synchronization. 
+- ZUI objects (`zui/` layer) are inherently visual — they own a DOM element and cannot exist without one. Their coordinate math depends on rendered layout (bounding rects, viewport scale). The StateObject subclass holds serialisable state; the live class *is* the rendered representation.
 - Rendering separation: game objects mutate state via `renderer.setState()`, the Renderer applies DOM changes once per frame via `requestAnimationFrame`. Objects never write to `div.style.*` directly (except FlippableObject's CSS transition for flip animation).
 - Coordinate system: position and dimensions controlled by `positionBehaviour` (ZOOM/FIXED), `positionType` (ABSOLUTE/RELATIVE), `dimensionsBehaviour`, `dimensionsType`, and `scaleWithWindowSize`
 - Layout presets: `WORLD` (zooms with viewport), `SCREEN` (fixed, resolution-adaptive), `SCREEN_RELATIVE` (fixed, fraction of parent)

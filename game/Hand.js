@@ -1,8 +1,8 @@
 import { StateObject } from '../core/StateObject.js';
-import { LayoutPresets } from '../zui/config/LayoutPresets.js';
 import { dataManager } from '../core/DataManager.js';
 import { objectRegistry } from '../core/ObjectRegistry.js';
 import { eventBus } from '../core/EventBus.js';
+import { renderer } from '../rendering/Renderer.js';
 
 
 
@@ -48,18 +48,28 @@ export class Hand {
 		}		
 		this.positionCards();
 
-        this.onCardDrawn = ({ card }) => this.addCard(card);
+        // Event handlers filter by stage to prevent cross-stage interference
+        // when multiple GameStages exist simultaneously.
+        this.onCardDrawn = ({ card }) => {
+            if (card.parent === this.stage) this.addCard(card);
+        };
         this.onCardGrabbed = ({ card }) => {
             if (this.getCards().includes(card)) {
                 this.removeCard(card);
             }
         };
         this.onCardDroppedInHand = ({ card }) => {
-            this.addCard(card);
+            if (card.parent === this.stage) this.addCard(card);
         };
-        this.onCursorEnteredHandZone = () => this.raise();
-        this.onCursorLeftHandZone = () => this.lower();
-        this.onLayoutChanged = () => this.onParentChange();
+        this.onCursorEnteredHandZone = ({ stage }) => {
+            if (stage === this.stage) this.raise();
+        };
+        this.onCursorLeftHandZone = ({ stage }) => {
+            if (stage === this.stage) this.lower();
+        };
+        this.onLayoutChanged = ({ stage }) => {
+            if (stage === this.stage) this.onParentChange();
+        };
 
         eventBus.on('card:drawn', this.onCardDrawn);
         eventBus.on('card:grabbed', this.onCardGrabbed);
@@ -84,8 +94,13 @@ export class Hand {
 	}
 
 	getCardScreenDimensions() {
-		let cD = this.stage.getScreenDimensionsOfChild(LayoutPresets.SCREEN.dimensionsBehaviour, LayoutPresets.SCREEN.dimensionsType, this.state.cardWidth, this.state.cardHeight, LayoutPresets.SCREEN.scaleWithWindowSize);
-		return cD;
+		// SCREEN preset: FIXED + ABSOLUTE + scaleWithWindowSize
+		let w = this.state.cardWidth;
+		let h = this.state.cardHeight;
+		let uiScale = this.stage.getUIScale(true);
+		w *= uiScale.scaleX;
+		h *= uiScale.scaleY;
+		return { width: w, height: h };
 	}
 
     calculateCoordinates() {
@@ -115,13 +130,12 @@ export class Hand {
 	positionCard(card, pos, middle) {
 		let fromCenter = pos - middle;
 
-		//Rotate card
-		card.div.style.transform = "none";
+		// Rotate card via Renderer
 		let angle = fromCenter * 0.05;
-		card.div.style.transformOrigin = "50% 100%";
-		card.div.style.transform = "rotate(" + angle + "rad)";
+		renderer.setState(card.state.objectId, 'transformOrigin', '50% 100%');
+		renderer.setState(card.state.objectId, 'rotation', angle);
 
-		//Position card
+		// Position card — use card's getScreenDimensions for reliable bounds
         let cD = card.getScreenDimensions();
 		let anchorX = Math.round(cD.width / 2);
 		let anchorY = cD.height;
@@ -139,8 +153,8 @@ export class Hand {
 				console.log("ERROR: Unknown hand mode.");
 		}
 
-
-		card.moveTo(newX, newY);
+		renderer.setState(card.state.objectId, 'x', newX);
+		renderer.setState(card.state.objectId, 'y', newY);
 	}
 
 	addCard(card) {
@@ -162,11 +176,12 @@ export class Hand {
 	}
 
 	calculateInteractionY() {
-		let pD = this.stage.getScreenDimensions();
+		let d = this.stage.getScreenDimensions();
+		let pDHeight = d.height;
 		let cardHeight = this.cardDimensions.height;
 
-		this.interactionYLowered = pD.height - (cardHeight*this.relCardOffsetLowered);
-		this.interactionYRaised = pD.height - cardHeight - (cardHeight*(this.relCardOffsetRaised+(this.addRelCardOffsetRaisedPerCard*this.getCards().length)));
+		this.interactionYLowered = pDHeight - (cardHeight*this.relCardOffsetLowered);
+		this.interactionYRaised = pDHeight - cardHeight - (cardHeight*(this.relCardOffsetRaised+(this.addRelCardOffsetRaisedPerCard*this.getCards().length)));
 		if(this.mode == "LOWERED")
 			this.interactionY = this.interactionYLowered;
 		else if(this.mode == "RAISED") 

@@ -2,6 +2,17 @@
 
 All events emitted via the global `eventBus` singleton (`core/EventBus.js`).
 
+## Multi-Stage Filtering Rule
+
+**CRITICAL:** When multiple GameStages exist simultaneously, all event handlers
+must filter events to only process those belonging to their own stage. Without
+filtering, a card dropped on stage 2 would be processed by stage 1's handlers
+too, causing incorrect state changes.
+
+Every handler that receives a `{ card }` payload should check `card.parent === this.stage`
+(or `card.parent === this` for GameStage). Every handler that receives `{ stage }`
+should check `stage === this.stage`.
+
 ## Event types
 
 ### Card events
@@ -36,7 +47,7 @@ How events chain together during key interactions.
 ```
 Deck.onMouseUp()
   → emits card:drawn { card }
-    → Hand listens → addCard(card)
+    → Hand listens → if card.parent === this.stage: addCard(card)
 ```
 
 ### Grabbing a card from the hand
@@ -44,7 +55,7 @@ Deck.onMouseUp()
 ```
 Card.grabbed()
   → emits card:grabbed { card }
-    → Hand listens → removeCard(card) if card is in its collection
+    → Hand listens → if card is in its collection: removeCard(card)
 ```
 
 ### Dropping a card
@@ -52,9 +63,9 @@ Card.grabbed()
 ```
 Card.drop()
   → emits card:dropped { card }
-    → GameStage listens, checks hand.mode
+    → GameStage listens → if card.parent !== this: skip
       → RAISED: emits card:droppedInHand { card }
-        → Hand listens → addCard(card)
+        → Hand listens → if card.parent === this.stage: addCard(card)
       → LOWERED: emits card:droppedOnStage { card }
-        → Card listens → positions itself on world
+        → Card listens (self-filter: card !== this) → positions itself on world
 ```

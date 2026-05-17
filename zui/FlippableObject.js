@@ -1,5 +1,6 @@
 import { ZoomableElementState, ZoomableElement } from './ZoomableElement.js';
 import { svgLoader } from '../assets/SVGLoader.js';
+import { renderer } from '../rendering/Renderer.js';
 
 
 
@@ -37,7 +38,17 @@ export class FlippableObject extends ZoomableElement {
 
 		this.wrapperFront.appendChild(this.svgFront);
 		this.wrapperBack.appendChild(this.svgBack);
-		
+
+		// Append wrapper structure directly (no MutationObserver needed — Renderer handles positioning)
+		this.div.appendChild(this.wrapper);
+		this.wrapper.appendChild(this.wrapperFront);
+		this.wrapper.appendChild(this.wrapperBack);
+
+		this.svgFront.setAttribute("width", "100%");
+		this.svgFront.setAttribute("height", "100%");
+		this.svgBack.setAttribute("width", "100%");
+		this.svgBack.setAttribute("height", "100%");
+
 		if(this.state.facing == "BACK") {
 			this.state.facing = "FRONT";
 			this.flip(0);
@@ -45,41 +56,18 @@ export class FlippableObject extends ZoomableElement {
     }
 
 	flip(d) {
-		if(this.state.facing == "FRONT") {
-			this.wrapper.style.transitionDuration = d+"ms";
-			this.wrapper.style.transform = "rotateY(180deg)";
-			this.state.facing = "BACK";
-		} else {
-			this.wrapper.style.transitionDuration = d+"ms";
-			this.wrapper.style.transform = "none";
-			this.state.facing = "FRONT";
-		}
+		const targetTransform = this.state.facing === "FRONT"
+			? "rotateY(180deg)"
+			: "none";
+		this.state.facing = this.state.facing === "FRONT" ? "BACK" : "FRONT";
+
+		renderer.startTransition(this.state.objectId, this.wrapper, {
+			duration: d,
+			properties: { transform: targetTransform },
+			onComplete: null
+		});
 	}
 
-	onDivObserved() {
-        super.onDivObserved();
-		this.divObserver = new MutationObserver(this.onDivMutation.bind(this));
-		this.divObserver.observe(this.div, { attributes: false, childList: true, characterData: false });
-		this.div.appendChild(this.wrapper);
-	}
-	onDivMutation(mutations) {
-		mutations.forEach(this.onDivMutationHelper.bind(this))
-	}
-	onDivMutationHelper(mutation) {
-		if(Array.from(mutation.addedNodes).includes(this.wrapper)) {
-			this.parentObserver.disconnect();
-			this.onSVGObserved();
-		}
-	}
-	onSVGObserved() {
-		this.wrapper.appendChild(this.wrapperFront);
-		this.wrapper.appendChild(this.wrapperBack);
-
-        this.svgFront.setAttribute("width", "100%");
-        this.svgFront.setAttribute("height", "100%");
-        this.svgBack.setAttribute("width", "100%");
-        this.svgBack.setAttribute("height", "100%");
-    }
 	onMouseUp(e) {
 		if(!this.pickedUp)
 			this.flip(800);

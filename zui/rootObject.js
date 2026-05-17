@@ -1,5 +1,4 @@
 import { StateObject } from '../core/StateObject.js';
-import { UIDefinitions } from './config/UIDefinitions.js';
 import { LayoutPresets } from './config/LayoutPresets.js';
 import { ViewPortState } from './ViewPort.js';
 import { StageZIndexManagerState } from './StageZIndexManager.js';
@@ -9,6 +8,7 @@ import { DeckState } from '../game/Deck.js';
 import { svgLoader } from '../assets/SVGLoader.js';
 import { dataManager } from '../core/DataManager.js';
 import { objectRegistry } from '../core/ObjectRegistry.js';
+import { renderer } from '../rendering/Renderer.js';
 
 
 
@@ -29,7 +29,6 @@ export class RootObject {
         this.state = state;
         dataManager.registerObject(this);
 
-        //this.div = document.getElementsByTagName('body')[0];
         this.div = document.getElementById("content");
         this.boundingClientRect = this.div.getBoundingClientRect();
 
@@ -64,6 +63,8 @@ export class RootObject {
 
     update() {
         this.boundingClientRect = this.div.getBoundingClientRect();
+        // Renderer handles markAllDirty on resize — but we still need to notify
+        // children for viewport recalculation (Hand, etc. listen to layout:changed)
         this.updateChildren();
     }
     updateChildren() {
@@ -83,12 +84,6 @@ export class RootObject {
     getScreenDimensions() {
         let clientRect = this.boundingClientRect;
         return clientRect;
-    }
-
-    getUIScale() {
-        let sX = this.boundingClientRect.width / UIDefinitions.baseWidth;
-        let sY = this.boundingClientRect.height / UIDefinitions.baseHeight;
-        return {scaleX: sX, scaleY: sY}
     }
 
     createGameStage() {

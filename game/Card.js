@@ -43,8 +43,7 @@ export class Card extends FlippableObject {
 
             let cursorOnParent = renderer.screenToLocal(cardTopLeftScreenX, cardTopLeftScreenY, this.parent.state.objectId);
             let cursorOnParentVP = renderer.localToViewport(cursorOnParent.x, cursorOnParent.y, this.parent.state.objectId);
-            renderer.setState(this.state.objectId, 'x', cursorOnParentVP.x);
-            renderer.setState(this.state.objectId, 'y', cursorOnParentVP.y);
+            renderer.setStateMulti(this.state.objectId, { x: cursorOnParentVP.x, y: cursorOnParentVP.y });
         };
         eventBus.on('card:droppedOnStage', this.onDroppedOnStage);
     }
@@ -86,8 +85,10 @@ export class Card extends FlippableObject {
 
         // Position card so cursor stays at same relative position
         let cursorOnParent = renderer.screenToLocal(this.cursorX, this.cursorY, this.parent.state.objectId);
-        renderer.setState(this.state.objectId, 'x', cursorOnParent.x - (newDims.width * relX));
-        renderer.setState(this.state.objectId, 'y', cursorOnParent.y - (newDims.height * relY));
+        renderer.setStateMulti(this.state.objectId, {
+            x: cursorOnParent.x - (newDims.width * relX),
+            y: cursorOnParent.y - (newDims.height * relY)
+        });
     }
     drop() {
         super.drop();

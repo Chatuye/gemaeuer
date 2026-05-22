@@ -132,8 +132,6 @@ export class Hand {
 
 		// Rotate card via Renderer
 		let angle = fromCenter * 0.05;
-		renderer.setState(card.state.objectId, 'transformOrigin', '50% 100%');
-		renderer.setState(card.state.objectId, 'rotation', angle);
 
 		// Position card — use card's getScreenDimensions for reliable bounds
         let cD = card.getScreenDimensions();
@@ -153,14 +151,17 @@ export class Hand {
 				console.log("ERROR: Unknown hand mode.");
 		}
 
-		renderer.setState(card.state.objectId, 'x', newX);
-		renderer.setState(card.state.objectId, 'y', newY);
+		renderer.setStateMulti(card.state.objectId, {
+			transformOrigin: '50% 100%',
+			rotation: angle,
+			x: newX,
+			y: newY
+		});
 	}
 
 	addCard(card) {
 		this.stage.zManager.remove(card);
-		card.state.zIndex = 1;
-		this.stage.zManager.set(card);
+		this.stage.zManager.set(card, 1);
 
 		this.getCards().push(card);
 		this.state.cards.push(card.state.objectId);

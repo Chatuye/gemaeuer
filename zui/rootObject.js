@@ -112,7 +112,7 @@ export class RootObject {
         deckState.x = 10;
         deckState.y = 10;
         deckState.svg01Key = "cardBack";
-        deckState.zIndex = 2;
+        deckState.layer = 2;
         gameStage.registerChild(dataManager.createObject(deckState));
     }
 }

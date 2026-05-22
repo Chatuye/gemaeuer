@@ -17,9 +17,6 @@ class DataManager {
         this.states = {};
         /** Runtime-only cache of live objects — never serialized. */
         this.objects = new Map();
-
-        this.createSaveButton();
-        this.createLoadButton();
     }
 
     createObject(state) {
@@ -47,34 +44,6 @@ class DataManager {
         this.objects.set(object.state.objectId, object);
     }
 
-    createSaveButton() {
-        document.getElementById("menu-save").addEventListener("click", this.save.bind(this));
-    }
-
-    createLoadButton() {
-        this.fileInput = document.createElement("input");
-        this.fileInput.type = "file";
-        this.fileInput.addEventListener("change", this.handleFile.bind(this));
-        this.fileInput.style.display = "none";
-        this.fileInput.id = "fileInput";
-        let fileInputLabel = document.createElement("label");
-        fileInputLabel.setAttribute("for", "fileInput");
-        fileInputLabel.style.display = "block";
-        fileInputLabel.innerHTML = "Load";
-        document.getElementById("menu-load").appendChild(this.fileInput);
-        document.getElementById("menu-load").appendChild(fileInputLabel);
-    }
-
-    handleFile() {
-        const reader = new FileReader();
-        reader.addEventListener("load", (event) => {
-            const result = event.target.result;
-
-            this.restoreData(JSON.parse(result));
-        });
-        reader.readAsText(this.fileInput.files[0]);
-    }
-
     /**
      * Restore game state from a parsed save file.
      *
@@ -92,12 +61,10 @@ class DataManager {
         
         this.states = data.states;
         this.rootObject = this.createObject(this.states[data.rootObject]);
-
-        this.fileInput.value = null;
     }
 
     save() {
-        let data = this.gatherData()      
+        let data = this.gatherData();
         let json = JSON.stringify(data);
 
         this.downloadFile(json);

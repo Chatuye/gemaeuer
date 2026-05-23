@@ -129,16 +129,13 @@ export class GameStage extends Stage {
     }
 
     destroy() {
-        for (const child of this.children) {
-            child.destroy();
-        }
         if (this.hand) this.hand.destroy();
 
         eventBus.off('card:dropped', this.onCardDropped);
         this.div.removeEventListener("contextmenu", this._boundContextMenu);
         this.div.removeEventListener("mousemove", this._boundDivMouseMove);
 
-        renderer.unregister(this.state.objectId);
+        super.destroy();
     }
 
 }

@@ -49,7 +49,8 @@ export class RootObject {
 			this.children.push(dataManager.getObject(this.state.children[i]));
 		}
 
-        window.addEventListener("resize",this.update.bind(this));
+        this._boundUpdate = this.update.bind(this);
+        window.addEventListener("resize", this._boundUpdate);
     }
 
     update() {
@@ -65,10 +66,12 @@ export class RootObject {
         this.children.push(child);
         this.state.children.push(child.state.objectId);
     }
-    clearAll() {
-        for(let i = 0; i < this.children.length; i++) {
-			this.div.removeChild(this.children[i].div);
-		}
+    destroy() {
+        for (let i = 0; i < this.children.length; i++) {
+            this.children[i].destroy();
+            this.div.removeChild(this.children[i].div);
+        }
+        window.removeEventListener("resize", this._boundUpdate);
     }
 
     getScreenDimensions() {

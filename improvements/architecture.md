@@ -4,8 +4,8 @@ Identified issues ordered by severity. Issues #2 and #4 are the most likely to c
 
 | # | Issue | Severity | Effort |
 |---|-------|----------|--------|
-| 1 | Layer violation (zui → game) | Medium | Low |
-| 2 | No destruction lifecycle / listener leaks | High | Medium |
+| 1 | ~~Layer violation (zui → game)~~ | ~~Medium~~ | ~~Done~~ |
+| 2 | ~~No destruction lifecycle / listener leaks~~ | ~~High~~ | ~~Done~~ |
 | 3 | Hidden lazy-creation in getObject() | Medium | Low |
 | 4 | Fragile ID counter after load | High | Low |
 | 5 | StateObject too thin / unclear serialization boundary | Medium | Medium |
@@ -16,7 +16,7 @@ Identified issues ordered by severity. Issues #2 and #4 are the most likely to c
 
 ---
 
-## 1. Layer Violation: `zui/rootObject.js` imports from `game/`
+## 1. ~~Layer Violation: `zui/rootObject.js` imports from `game/`~~ ✅ Fixed
 
 `rootObject.js` (in the `zui/` layer) imports `GameStageState`, `HandState`, and `DeckState` from the `game/` layer. According to the documented architecture (`core → rendering → zui → game`), `zui/` should not depend on `game/`.
 
@@ -28,7 +28,7 @@ This makes `RootObject` a de facto game-layer orchestrator disguised as a ZUI co
 
 ---
 
-## 2. No Object Destruction / Memory Leaks
+## 2. ~~No Object Destruction / Memory Leaks~~ ✅ Fixed
 
 Only `Card`, `Hand`, and `GameStage` have `destroy()` methods, and **nothing ever calls them**. When a game is loaded via `restoreData()`:
 

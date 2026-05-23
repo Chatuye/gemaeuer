@@ -56,8 +56,8 @@ class DataManager {
         this.objects = new Map();
         objectRegistry.numObjects = 0;
 
+        this.rootObject.destroy();
         renderer.clear();
-        this.rootObject.clearAll();
         
         this.states = data.states;
         this.rootObject = this.createObject(this.states[data.rootObject]);

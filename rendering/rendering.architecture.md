@@ -239,7 +239,7 @@ Maintained automatically by `register()`, `unregister()`, and `clear()`.
 
 ## Save/Load Integration
 
-`DataManager.restoreData()` calls `renderer.clear()` before recreating objects. This wipes stale render nodes and cancels all active transitions. The render loop keeps running (rAF is async, so no tick fires during synchronous recreation). Recreated objects register fresh render nodes.
+`DataManager.restoreData()` calls `rootObject.destroy()` to recursively clean up all objects (removing eventBus listeners, DOM listeners, and renderer registrations), then calls `renderer.clear()` to wipe any remaining render nodes. The render loop keeps running (rAF is async, so no tick fires during synchronous recreation). Recreated objects register fresh render nodes.
 
 ## Public API Summary
 

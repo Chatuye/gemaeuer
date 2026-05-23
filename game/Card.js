@@ -97,6 +97,7 @@ export class Card extends FlippableObject {
 
     destroy() {
         eventBus.off('card:droppedOnStage', this.onDroppedOnStage);
+        super.destroy();
     }
 }
 

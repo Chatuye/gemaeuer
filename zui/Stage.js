@@ -164,4 +164,11 @@ export class Stage extends ZoomableElement {
     convertDivPosToViewPortPos(x, y) {
         return renderer.localToViewport(x, y, this.state.objectId);
     }
+
+    destroy() {
+        for (const child of this.children) {
+            child.destroy();
+        }
+        super.destroy();
+    }
 }

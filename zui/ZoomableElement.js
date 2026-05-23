@@ -225,4 +225,13 @@ export class ZoomableElement {
 		let cursorYOnDiv = Math.round(y - this.div.getBoundingClientRect().top);
         return { x: cursorXOnDiv, y: cursorYOnDiv};
     }
+
+    /**
+     * Destroy this object — clean up external listeners and references.
+     * Override in subclasses to remove event subscriptions, DOM listeners, etc.
+     * Always call super.destroy() at the end of the override.
+     */
+    destroy() {
+        renderer.unregister(this.state.objectId);
+    }
 }

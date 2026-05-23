@@ -13,7 +13,7 @@ import * as svgData from './svgData/index.js';
 
 class SVGLoader {
     constructor() {
-        this.svgs = new Array();
+        this.svgs = {};
     }
 
     /** Parses all SVGs from svgData and invokes callback when done. */

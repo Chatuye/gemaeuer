@@ -34,6 +34,7 @@ export class ZoomableElementState extends StateObject {
         this.y = 0;
         this.width = 0;
         this.height = 0;
+        this.layer = 0;
         this.zIndex = 0;
     }
 }
@@ -67,7 +68,7 @@ export class ZoomableElement {
             viewportId: this.parent.viewPort?.state?.objectId ?? null
         });
 
-        this.parent.zManager.set(this);
+        this.parent.zManager.set(this, this.state.layer);
     }
 
 
@@ -120,8 +121,7 @@ export class ZoomableElement {
 
 
     moveTo(x, y) {
-        renderer.setState(this.state.objectId, 'x', x);
-        renderer.setState(this.state.objectId, 'y', y);
+        renderer.setStateMulti(this.state.objectId, { x, y });
     }
     grabbed() {
         this.parent.pickedUpChild = this;
@@ -130,9 +130,9 @@ export class ZoomableElement {
 		renderer.setState(this.state.objectId, 'filter', "drop-shadow(0px 0px 4px rgba(0, 0, 0, 1.0)) drop-shadow(0px 0px 24px rgba(255, 255, 255, 0.33))");
    
         if(this.parent.zManager) {
+            this._homeLayer = this.parent.zManager.getLayer(this);
             this.parent.zManager.remove(this);
-            this.state.zIndex = 3;
-            this.parent.zManager.set(this);
+            this.parent.zManager.set(this, 3);
         }
     }
     /**
@@ -150,8 +150,8 @@ export class ZoomableElement {
         
         if(this.parent.zManager) {
             this.parent.zManager.remove(this);
-            this.state.zIndex = 0;
-            this.parent.zManager.set(this);
+            this.parent.zManager.set(this, this._homeLayer ?? 0);
+            this._homeLayer = null;
         }
     }
     setDefaultStyle() {
@@ -224,5 +224,14 @@ export class ZoomableElement {
         let cursorXOnDiv = Math.round(x - this.div.getBoundingClientRect().left);
 		let cursorYOnDiv = Math.round(y - this.div.getBoundingClientRect().top);
         return { x: cursorXOnDiv, y: cursorYOnDiv};
+    }
+
+    /**
+     * Destroy this object — clean up external listeners and references.
+     * Override in subclasses to remove event subscriptions, DOM listeners, etc.
+     * Always call super.destroy() at the end of the override.
+     */
+    destroy() {
+        renderer.unregister(this.state.objectId);
     }
 }

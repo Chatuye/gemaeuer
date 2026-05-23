@@ -176,6 +176,7 @@ class Renderer {
     constructor() {
         this.renderNodes = new Map();  // objectId → render node
         this.childrenOf = new Map();   // parentId → Set of child objectIds
+        this.viewportChildren = new Map(); // viewportId → Set of child objectIds
         this.transitions = new Map();  // targetEl → ActiveTransition
         this.rootEl = null;
         this.running = false;
@@ -218,6 +219,13 @@ class Renderer {
         const pid = node.parentId;
         if (!this.childrenOf.has(pid)) this.childrenOf.set(pid, new Set());
         this.childrenOf.get(pid).add(objectId);
+
+        // Maintain viewport children index
+        if (node.viewportId != null) {
+            if (!this.viewportChildren.has(node.viewportId))
+                this.viewportChildren.set(node.viewportId, new Set());
+            this.viewportChildren.get(node.viewportId).add(objectId);
+        }
     }
 
     /**
@@ -236,6 +244,9 @@ class Renderer {
 
         node.div.removeAttribute('data-object-id');
         this.childrenOf.get(node.parentId)?.delete(objectId);
+        if (node.viewportId != null) {
+            this.viewportChildren.get(node.viewportId)?.delete(objectId);
+        }
         this.renderNodes.delete(objectId);
     }
 
@@ -259,6 +270,7 @@ class Renderer {
         }
         this.renderNodes.clear();
         this.childrenOf.clear();
+        this.viewportChildren.clear();
         this.dragTarget = null;
     }
 
@@ -299,6 +311,25 @@ class Renderer {
 
         node.state[field] = value;
         node.dirty = true;
+    }
+
+    /**
+     * Set multiple state fields for a registered object in one call.
+     * Single Map lookup, single dirty mark. Silently ignores unregistered objectIds.
+     * @param {number} objectId — identifier of the object
+     * @param {object} fields — object mapping field names to new values
+     */
+    setStateMulti(objectId, fields) {
+        const node = this.renderNodes.get(objectId);
+        if (!node) return;
+
+        let changed = false;
+        for (const [field, value] of Object.entries(fields)) {
+            if (node.state[field] === value) continue;
+            node.state[field] = value;
+            changed = true;
+        }
+        if (changed) node.dirty = true;
     }
 
     /**
@@ -381,8 +412,11 @@ class Renderer {
      * @param {number} viewportId — objectId of the viewport that changed
      */
     notifyViewportChanged(viewportId) {
-        for (const [, node] of this.renderNodes) {
-            if (node.viewportId !== viewportId) continue;
+        const children = this.viewportChildren.get(viewportId);
+        if (!children) return;
+        for (const objectId of children) {
+            const node = this.renderNodes.get(objectId);
+            if (!node) continue;
             if (node.layoutPreset.positionBehaviour === 'ZOOM' ||
                 node.layoutPreset.dimensionsBehaviour === 'ZOOM') {
                 node.dirty = true;

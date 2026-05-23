@@ -32,7 +32,7 @@ export class Stage extends ZoomableElement {
             this.viewPort = dataManager.createObject(viewPortState);
             this.state.viewPort = this.viewPort.state.objectId;
         } else {
-            this.viewPort = dataManager.getObject(this.state.viewPort);
+            this.viewPort = dataManager.hydrateObject(this.state.viewPort);
         }
 
         if(this.state.zManager == -1) {
@@ -40,7 +40,7 @@ export class Stage extends ZoomableElement {
             this.zManager = dataManager.createObject(stageZIndexManagerState);
             this.state.zManager = this.zManager.state.objectId;
         } else {
-            this.zManager = dataManager.getObject(this.state.zManager);
+            this.zManager = dataManager.hydrateObject(this.state.zManager);
         }
 
 
@@ -52,7 +52,7 @@ export class Stage extends ZoomableElement {
         // No per-element wheel listener — Renderer forwards wheel events via onWheel
 
         for(let i = 0; i < this.state.children.length; i++) {
-			this.children.push(dataManager.getObject(this.state.children[i]));
+			this.children.push(dataManager.hydrateObject(this.state.children[i]));
 		}
     }
 
@@ -163,5 +163,12 @@ export class Stage extends ZoomableElement {
 
     convertDivPosToViewPortPos(x, y) {
         return renderer.localToViewport(x, y, this.state.objectId);
+    }
+
+    destroy() {
+        for (const child of this.children) {
+            child.destroy();
+        }
+        super.destroy();
     }
 }

@@ -17,9 +17,6 @@ class DataManager {
         this.states = {};
         /** Runtime-only cache of live objects — never serialized. */
         this.objects = new Map();
-
-        this.createSaveButton();
-        this.createLoadButton();
     }
 
     createObject(state) {
@@ -28,7 +25,28 @@ class DataManager {
         return newObject;
     }
 
+    /**
+     * Get an already-live object by ID. Returns null if the ID is -1 or
+     * the object hasn't been created yet. Use this for runtime lookups
+     * where the object is expected to exist.
+     */
     getObject(id) {
+        if(id == -1) {
+            return null;
+        } else if(id >= 0) {
+            return this.objects.get(id) ?? null;
+        } else {
+            console.log("ERROR: Unknown object id: "+id);
+            return null;
+        }
+    }
+
+    /**
+     * Hydrate an object from saved state. If the object is already live,
+     * returns it. Otherwise constructs it from the serialized state.
+     * Use this during save/load restoration when objects may not yet exist.
+     */
+    hydrateObject(id) {
         if(id == -1) {
             return null;
         } else if(id >= 0) {
@@ -38,41 +56,14 @@ class DataManager {
                 return objectRegistry.create(this.states[id]);
             }
         } else {
-            console.log("ERROR: Unkown object id: "+id);
+            console.log("ERROR: Unknown object id: "+id);
+            return null;
         }
     }
 
     registerObject(object) {
         this.states[object.state.objectId] = object.state;
         this.objects.set(object.state.objectId, object);
-    }
-
-    createSaveButton() {
-        document.getElementById("menu-save").addEventListener("click", this.save.bind(this));
-    }
-
-    createLoadButton() {
-        this.fileInput = document.createElement("input");
-        this.fileInput.type = "file";
-        this.fileInput.addEventListener("change", this.handleFile.bind(this));
-        this.fileInput.style.display = "none";
-        this.fileInput.id = "fileInput";
-        let fileInputLabel = document.createElement("label");
-        fileInputLabel.setAttribute("for", "fileInput");
-        fileInputLabel.style.display = "block";
-        fileInputLabel.innerHTML = "Load";
-        document.getElementById("menu-load").appendChild(this.fileInput);
-        document.getElementById("menu-load").appendChild(fileInputLabel);
-    }
-
-    handleFile() {
-        const reader = new FileReader();
-        reader.addEventListener("load", (event) => {
-            const result = event.target.result;
-
-            this.restoreData(JSON.parse(result));
-        });
-        reader.readAsText(this.fileInput.files[0]);
     }
 
     /**
@@ -85,19 +76,17 @@ class DataManager {
     restoreData(data) {
         this.states = {};
         this.objects = new Map();
-        objectRegistry.numObjects = 0;
 
+        this.rootObject.destroy();
         renderer.clear();
-        this.rootObject.clearAll();
         
         this.states = data.states;
+        objectRegistry.numObjects = Math.max(...Object.keys(this.states).map(Number)) + 1;
         this.rootObject = this.createObject(this.states[data.rootObject]);
-
-        this.fileInput.value = null;
     }
 
     save() {
-        let data = this.gatherData()      
+        let data = this.gatherData();
         let json = JSON.stringify(data);
 
         this.downloadFile(json);

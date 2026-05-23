@@ -22,12 +22,14 @@ export class GameStage extends Stage {
 	constructor(state) {
         super(state);
 
-        this.hand = dataManager.getObject(this.state.hand);
+        this.hand = dataManager.hydrateObject(this.state.hand);
 
         // contextmenu is not forwarded by Renderer — keep as direct listener
-        this.div.addEventListener("contextmenu", this.onContextMenu.bind(this), { passive: false });
+        this._boundContextMenu = this.onContextMenu.bind(this);
+        this.div.addEventListener("contextmenu", this._boundContextMenu, { passive: false });
         // mousemove for hand zone detection needs bubbling from children
-        this.div.addEventListener("mousemove", this._onDivMouseMove.bind(this));
+        this._boundDivMouseMove = this._onDivMouseMove.bind(this);
+        this.div.addEventListener("mousemove", this._boundDivMouseMove);
 
         this.onCardDropped = ({ card }) => {
             // Only handle cards that belong to this stage — prevents cross-stage
@@ -127,7 +129,16 @@ export class GameStage extends Stage {
     }
 
     destroy() {
+        for (const child of this.children) {
+            child.destroy();
+        }
+        if (this.hand) this.hand.destroy();
+
         eventBus.off('card:dropped', this.onCardDropped);
+        this.div.removeEventListener("contextmenu", this._boundContextMenu);
+        this.div.removeEventListener("mousemove", this._boundDivMouseMove);
+
+        renderer.unregister(this.state.objectId);
     }
 
 }

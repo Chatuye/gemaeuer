@@ -8,7 +8,7 @@ Identified issues ordered by severity. Issues #2 and #4 are the most likely to c
 | 2 | ~~No destruction lifecycle / listener leaks~~ | ~~High~~ | ~~Done~~ |
 | 3 | ~~Hidden lazy-creation in getObject()~~ | ~~Medium~~ | ~~Done~~ |
 | 4 | ~~Fragile ID counter after load~~ | ~~High~~ | ~~Done~~ |
-| 5 | StateObject too thin / unclear serialization boundary | Medium | Medium |
+| ~~5~~ | ~~StateObject too thin / unclear serialization boundary~~ | — | Removed |
 | 6 | Children array never pruned | Medium | Low |
 | 7 | Singleton DOM access at import time | Low | Low |
 | 8 | Array used as dictionary in SVGLoader | Low | Trivial |
@@ -85,27 +85,9 @@ On `restoreData()`, the counter is reset to 0. If a loaded save file has objects
 
 ---
 
-## 5. `StateObject` Is Too Thin to Enforce Its Contract
+## ~~5. `StateObject` Is Too Thin to Enforce Its Contract~~ — Removed
 
-The architecture doc says "any mutation that affects an object's persistent state must be written to its StateObject." But `StateObject` is just:
-
-```js
-export class StateObject {
-    constructor() {
-        this.objectId = -1;
-        this.objectType = "STATEOBJECT";
-    }
-}
-```
-
-There's no validation, no change tracking, no schema. State fields are added ad-hoc in subclass constructors. The `Hand` class stores runtime-only fields like `mode`, `interactionY`, `x`, `y` directly on the live object — but `mode` arguably should be persisted (is the hand raised or lowered on reload?).
-
-**Impact:** Unclear which fields are serialized and which are transient. The save file captures everything on the state object (including `children` arrays with IDs of potentially destroyed objects).
-
-**Fix options:**
-- Add a `transientFields` set or `serialize()` method to StateObject that explicitly declares what gets saved
-- Or adopt a convention where state objects declare all fields in the constructor and runtime-only fields live exclusively on the live object
-- Document the boundary clearly per class
+Not an issue. The serialization boundary is clear by convention: each object type has its own state class (e.g., `CardState`, `DeckState`, `HandState`) that declares exactly which fields are persisted. Fields on the live class (e.g., `Card`, `Hand`) are transient. `StateObject` is simply the base class providing `objectId` and `objectType` — it's not meant to enforce a schema. The convention is consistent across the codebase.
 
 ---
 

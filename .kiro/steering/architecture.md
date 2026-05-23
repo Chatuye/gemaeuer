@@ -1,7 +1,7 @@
 # Gemäuer — Architecture
 
 - Four layers: `core/` → `rendering/` → `zui/` → `game/`
-- State/behaviour split: every object has a `StateObject` subclass (serialisable state) and a live class (behaviour). The StateObject is the single source of truth — any mutation that affects an object's persistent state must be written to its StateObject so that serialization always reflects the current state without additional synchronization. 
+- State/behaviour split: every object type has a state class (e.g., `CardState`, `DeckState`) extending `StateObject`, and a live class (e.g., `Card`, `Deck`). The state class declares all persisted fields — these are serialized to JSON on save. The live class holds transient runtime fields (e.g., `Hand.mode`, cursor positions). `StateObject` is the base class providing only `objectId` and `objectType`. Any mutation that affects persistent state must be written to the state object so that serialization always reflects the current state without additional synchronization.
 - ZUI objects (`zui/` layer) are inherently visual — they own a DOM element and cannot exist without one. Their coordinate math depends on rendered layout (bounding rects, viewport scale). The StateObject subclass holds serialisable state; the live class *is* the rendered representation.
 - Rendering separation: game objects mutate state via `renderer.setState()`, the Renderer applies DOM changes once per frame via `requestAnimationFrame`. Objects never write to `div.style.*` directly (except FlippableObject's CSS transition for flip animation).
 - Coordinate system: position and dimensions controlled by `positionBehaviour` (ZOOM/FIXED), `positionType` (ABSOLUTE/RELATIVE), `dimensionsBehaviour`, `dimensionsType`, and `scaleWithWindowSize`

@@ -232,6 +232,10 @@ export class ZoomableElement {
      * Always call super.destroy() at the end of the override.
      */
     destroy() {
+        if (this.picking) {
+            clearTimeout(this.picking);
+            this.picking = null;
+        }
         renderer.unregister(this.state.objectId);
     }
 }

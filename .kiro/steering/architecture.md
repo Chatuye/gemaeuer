@@ -7,6 +7,7 @@
 - Coordinate system: position and dimensions controlled by `positionBehaviour` (ZOOM/FIXED), `positionType` (ABSOLUTE/RELATIVE), `dimensionsBehaviour`, `dimensionsType`, and `scaleWithWindowSize`
 - Layout presets: `WORLD` (zooms with viewport), `SCREEN` (fixed, resolution-adaptive), `SCREEN_RELATIVE` (fixed, fraction of parent)
 - Singletons: `svgLoader` (from `assets/SVGLoader.js`), `dataManager` (from `core/DataManager.js`), `objectRegistry` (from `core/ObjectRegistry.js`), `eventBus` (from `core/EventBus.js`), and `renderer` (from `rendering/Renderer.js`) are module-level instances imported where needed
+- Object lookup: `dataManager.getObject(id)` returns an already-live object (or null). `dataManager.hydrateObject(id)` constructs from saved state if not yet live — use only during save/load restoration.
 - `core/registry.js` is the barrel file for object type registration — add new types there
 - `utils.js` at project root holds general-purpose utility functions
 - `assets/svgData/index.js` is the barrel file for SVG data — add new SVGs there

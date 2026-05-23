@@ -44,7 +44,7 @@ export class Hand {
 		this.calculateInteractionY();
 
         for(let i = 0; i < this.state.cards.length; i++) {
-			this.cards.push(dataManager.getObject(this.state.cards[i]));
+			this.cards.push(dataManager.hydrateObject(this.state.cards[i]));
 		}		
 		this.positionCards();
 

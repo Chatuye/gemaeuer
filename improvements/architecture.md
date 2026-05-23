@@ -6,8 +6,8 @@ Identified issues ordered by severity. Issues #2 and #4 are the most likely to c
 |---|-------|----------|--------|
 | 1 | ~~Layer violation (zui → game)~~ | ~~Medium~~ | ~~Done~~ |
 | 2 | ~~No destruction lifecycle / listener leaks~~ | ~~High~~ | ~~Done~~ |
-| 3 | Hidden lazy-creation in getObject() | Medium | Low |
-| 4 | Fragile ID counter after load | High | Low |
+| 3 | ~~Hidden lazy-creation in getObject()~~ | ~~Medium~~ | ~~Done~~ |
+| 4 | ~~Fragile ID counter after load~~ | ~~High~~ | ~~Done~~ |
 | 5 | StateObject too thin / unclear serialization boundary | Medium | Medium |
 | 6 | Children array never pruned | Medium | Low |
 | 7 | Singleton DOM access at import time | Low | Low |
@@ -44,7 +44,7 @@ Only `Card`, `Hand`, and `GameStage` have `destroy()` methods, and **nothing eve
 
 ---
 
-## 3. `DataManager.getObject()` Has Hidden Lazy-Creation Side Effect
+## 3. ~~`DataManager.getObject()` Has Hidden Lazy-Creation Side Effect~~ ✅ Fixed
 
 ```js
 getObject(id) {
@@ -64,7 +64,7 @@ If an object isn't in the live cache, it silently creates a new instance from se
 
 ---
 
-## 4. Fragile ID Counter After Load
+## 4. ~~Fragile ID Counter After Load~~ ✅ Fixed
 
 IDs are assigned by a simple incrementing counter in `ObjectRegistry`:
 

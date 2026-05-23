@@ -25,7 +25,28 @@ class DataManager {
         return newObject;
     }
 
+    /**
+     * Get an already-live object by ID. Returns null if the ID is -1 or
+     * the object hasn't been created yet. Use this for runtime lookups
+     * where the object is expected to exist.
+     */
     getObject(id) {
+        if(id == -1) {
+            return null;
+        } else if(id >= 0) {
+            return this.objects.get(id) ?? null;
+        } else {
+            console.log("ERROR: Unknown object id: "+id);
+            return null;
+        }
+    }
+
+    /**
+     * Hydrate an object from saved state. If the object is already live,
+     * returns it. Otherwise constructs it from the serialized state.
+     * Use this during save/load restoration when objects may not yet exist.
+     */
+    hydrateObject(id) {
         if(id == -1) {
             return null;
         } else if(id >= 0) {
@@ -35,7 +56,8 @@ class DataManager {
                 return objectRegistry.create(this.states[id]);
             }
         } else {
-            console.log("ERROR: Unkown object id: "+id);
+            console.log("ERROR: Unknown object id: "+id);
+            return null;
         }
     }
 
@@ -54,12 +76,12 @@ class DataManager {
     restoreData(data) {
         this.states = {};
         this.objects = new Map();
-        objectRegistry.numObjects = 0;
 
         this.rootObject.destroy();
         renderer.clear();
         
         this.states = data.states;
+        objectRegistry.numObjects = Math.max(...Object.keys(this.states).map(Number)) + 1;
         this.rootObject = this.createObject(this.states[data.rootObject]);
     }
 

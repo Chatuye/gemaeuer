@@ -22,7 +22,7 @@ export class GameStage extends Stage {
 	constructor(state) {
         super(state);
 
-        this.hand = dataManager.getObject(this.state.hand);
+        this.hand = dataManager.hydrateObject(this.state.hand);
 
         // contextmenu is not forwarded by Renderer — keep as direct listener
         this._boundContextMenu = this.onContextMenu.bind(this);

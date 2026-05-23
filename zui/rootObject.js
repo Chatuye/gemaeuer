@@ -33,7 +33,7 @@ export class RootObject {
             this.viewPort = dataManager.createObject(viewPortState);
             this.state.viewPort = this.viewPort.state.objectId;
         } else {
-            this.viewPort = dataManager.getObject(this.state.viewPort);
+            this.viewPort = dataManager.hydrateObject(this.state.viewPort);
         }
 
         if(this.state.zManager == -1) {
@@ -41,12 +41,12 @@ export class RootObject {
             this.zManager = dataManager.createObject(stageZIndexManagerState);
             this.state.zManager = this.zManager.state.objectId;
         } else {
-            this.zManager = dataManager.getObject(this.state.zManager);
+            this.zManager = dataManager.hydrateObject(this.state.zManager);
         }
         this.pickedUpChild = null;
         this.children = new Array();
         for(let i = 0; i < this.state.children.length; i++) {
-			this.children.push(dataManager.getObject(this.state.children[i]));
+			this.children.push(dataManager.hydrateObject(this.state.children[i]));
 		}
 
         this._boundUpdate = this.update.bind(this);

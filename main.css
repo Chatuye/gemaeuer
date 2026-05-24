@@ -35,9 +35,10 @@ svg {
 
 div.content {
 	left: 0px;
-	top: 24px;
+	top: 0px;
 	width: 100%;
-	height: calc(100% - 24px);
+	height: 100%;
+	z-index: 0;
 }
 
 div.Stage {
@@ -50,6 +51,7 @@ div.menu {
 	overflow: visible;
 	background: linear-gradient(#484848, #242424);
 	color:  rgba(222, 222, 222, 1.0);
+	z-index: 1;
 }
 div.menu > * {
 	position:relative;

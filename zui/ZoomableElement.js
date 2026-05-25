@@ -171,7 +171,6 @@ export class ZoomableElement {
 		renderer.setState(this.state.objectId, 'filter', "drop-shadow(0px 0px 4px rgba(0, 0, 0, 1.0)) drop-shadow(0px 0px 24px rgba(255, 255, 255, 0.33))");
    
         if(this.parent.zManager) {
-            this._homeLayer = this.parent.zManager.getLayer(this);
             this.parent.zManager.remove(this);
             this.parent.zManager.set(this, 3);
         }
@@ -191,8 +190,7 @@ export class ZoomableElement {
         
         if(this.parent.zManager) {
             this.parent.zManager.remove(this);
-            this.parent.zManager.set(this, this._homeLayer ?? 0);
-            this._homeLayer = null;
+            this.parent.zManager.set(this, 0);
         }
     }
     setDefaultStyle() {

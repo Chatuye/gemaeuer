@@ -50,8 +50,16 @@ div.menu {
 	height: 24px;
 	overflow: visible;
 	background: linear-gradient(#484848, #242424);
+	background-clip: content-box;
 	color:  rgba(222, 222, 222, 1.0);
 	z-index: 1;
+
+	padding-bottom: 12px;
+	transform: translateY(-24px);
+	transition: transform 0.2s ease;
+}
+div.menu:hover {
+	transform: translateY(0);
 }
 div.menu > * {
 	position:relative;

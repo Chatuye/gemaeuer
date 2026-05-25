@@ -30,6 +30,7 @@ export class ZoomableElementState extends StateObject {
         this.parent = { referenceId: -1 };
         
         Object.assign(this, LayoutPresets.WORLD);
+        this.inset = null;  // { top, right, bottom, left } — null values mean "not constrained"
         this.x = 0;
         this.y = 0;
         this.width = 0;
@@ -106,7 +107,31 @@ export class ZoomableElement {
                 dX /= this.parent.getViewPort().getScaleX();
                 dY /= this.parent.getViewPort().getScaleY();
             }
-            this.moveTo((this.state.x + dX), (this.state.y + dY));
+            // Inset-driven dragging: update inset values directly
+            if (this.state.inset) {
+                const ins = this.state.inset;
+                // Horizontal
+                if (ins.left != null && ins.right != null) {
+                    ins.left += dX;
+                    ins.right -= dX;
+                } else if (ins.left != null) {
+                    ins.left += dX;
+                } else if (ins.right != null) {
+                    ins.right -= dX;
+                }
+                // Vertical
+                if (ins.top != null && ins.bottom != null) {
+                    ins.top += dY;
+                    ins.bottom -= dY;
+                } else if (ins.top != null) {
+                    ins.top += dY;
+                } else if (ins.bottom != null) {
+                    ins.bottom -= dY;
+                }
+                renderer.markDirty(this.state.objectId);
+            } else {
+                this.moveTo((this.state.x + dX), (this.state.y + dY));
+            }
         }
 	}
 	onMouseUp(e) {

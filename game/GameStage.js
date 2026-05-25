@@ -1,10 +1,13 @@
 import { LayoutPresets } from '../zui/config/LayoutPresets.js';
 import { StageState, Stage } from '../zui/Stage.js';
 import { TileState } from './Tile.js';
+import { HandState } from './Hand.js';
+import { DeckState } from './Deck.js';
+import { PanelState } from '../zui/Panel.js';
 import { dataManager } from '../core/DataManager.js';
 import { objectRegistry } from '../core/ObjectRegistry.js';
 import { eventBus } from '../core/EventBus.js';
-import { renderer } from '../rendering/Renderer.js';
+import { svgLoader } from '../assets/SVGLoader.js';
 
 
 
@@ -141,3 +144,41 @@ export class GameStage extends Stage {
 }
 
 objectRegistry.register("GAMESTAGE", GameStage);
+
+export function createGameStage(rootObject) {
+	let gameStageState = new GameStageState();
+	gameStageState.parent.referenceId = rootObject.state.objectId;
+	Object.assign(gameStageState, LayoutPresets.SCREEN_RELATIVE);
+	gameStageState.x = 0;
+	gameStageState.y = 0;
+	gameStageState.width = 1;
+	gameStageState.height = 1;
+
+	let gameStage = dataManager.createObject(gameStageState);
+	rootObject.registerChild(gameStage);
+
+	let handState = new HandState();
+	handState.stage.referenceId = gameStage.state.objectId;
+	let cardDims = svgLoader.getDimensions("card");
+	handState.cardWidth = cardDims.width;
+	handState.cardHeight = cardDims.height;
+	let hand = dataManager.createObject(handState);
+	gameStage.registerHand(hand);
+
+	let deckState = new DeckState();
+	deckState.parent.referenceId = gameStage.state.objectId;
+	Object.assign(deckState, LayoutPresets.SCREEN);
+	deckState.x = 10;
+	deckState.y = 10;
+	deckState.svg01Key = "cardBack";
+	deckState.layer = 2;
+	gameStage.registerChild(dataManager.createObject(deckState));
+
+	let panelState = new PanelState();
+	panelState.parent.referenceId = gameStage.state.objectId;
+	Object.assign(panelState, LayoutPresets.SCREEN);
+	panelState.inset = { top: 20, right: 20, bottom: 20 };
+	panelState.width = 300;
+	panelState.layer = 2;
+	gameStage.registerChild(dataManager.createObject(panelState));
+}

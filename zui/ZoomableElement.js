@@ -140,10 +140,10 @@ export class ZoomableElement {
             this.picking = null;
             let responsibleSelectionManger = this.getResponsibleSelectionManager();
             if (responsibleSelectionManger) {
-                if(this.state.objectType!="GAMESTAGE")
-                    responsibleSelectionManger.select(this);
+                if(this.viewPort)
+                    responsibleSelectionManger.clear();
                 else
-                    responsibleSelectionManger.clear(this);
+                    responsibleSelectionManger.select(this);
             }
         }
         if(this.pickedUp) this.drop(e.clientX, e.clientY);

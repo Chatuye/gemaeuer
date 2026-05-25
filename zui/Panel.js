@@ -68,6 +68,10 @@ export class Panel extends ZoomableElement {
         this.add({ type: "text", value: text });
     }
 
+    addButton(label, onClick) {
+        this.add({ type: "button", label, onClick });
+    }
+
     _renderItem(item) {
         if (item.type === "text") {
             const el = document.createElement("div");
@@ -76,6 +80,21 @@ export class Panel extends ZoomableElement {
             el.style.color = "rgba(255, 255, 255, 0.9)";
             el.style.fontFamily = "Roboto, sans-serif";
             el.style.fontSize = "14px";
+            this.contentDiv.appendChild(el);
+        } else if (item.type === "button") {
+            const el = document.createElement("button");
+            el.style.position = "static";
+            el.textContent = item.label;
+            el.style.padding = "6px 12px";
+            el.style.border = "1px solid rgba(255, 255, 255, 0.3)";
+            el.style.borderRadius = "6px";
+            el.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
+            el.style.color = "rgba(255, 255, 255, 0.9)";
+            el.style.fontFamily = "Roboto, sans-serif";
+            el.style.fontSize = "14px";
+            el.style.cursor = "pointer";
+            el.addEventListener("mousedown", (e) => e.stopPropagation());
+            el.addEventListener("click", item.onClick);
             this.contentDiv.appendChild(el);
         }
     }

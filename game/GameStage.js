@@ -143,12 +143,17 @@ export class GameStage extends Stage {
 
     onSelectionChanged(selection) {
         this.settingsPanel.removeAll();
-        if (selection.length === 0) return;
-        this.settingsPanel.addText("Type: "+selection[0].state.objectType);
-        this.settingsPanel.addText("X: "+selection[0].state.x);
-        this.settingsPanel.addText("Y: "+selection[0].state.y);
-        this.settingsPanel.addText("Width: "+selection[0].state.width);
-        this.settingsPanel.addText("Height: "+selection[0].state.height);
+        if (selection.length == 0) return;
+        let obj = selection[0];
+        this.settingsPanel.addText("Type: "+obj.state.objectType);
+        this.settingsPanel.addText("X: "+obj.state.x);
+        this.settingsPanel.addText("Y: "+obj.state.y);
+        this.settingsPanel.addText("Width: "+obj.state.width);
+        this.settingsPanel.addText("Height: "+obj.state.height);
+
+        if (obj.flip) {
+            this.settingsPanel.addButton("Flip", () => obj.flip(800));
+        }
     }
 
     _onSelectionEvent({ selectionManagerId, selection }) {

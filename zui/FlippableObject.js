@@ -69,9 +69,6 @@ export class FlippableObject extends ZoomableElement {
 	}
 
 	onMouseUp(e) {
-		if(!this.pickedUp)
-			this.flip(800);
-
 		super.onMouseUp(e);
 	}
 }

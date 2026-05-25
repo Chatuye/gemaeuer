@@ -1,5 +1,6 @@
 import { LayoutPresets } from '../zui/config/LayoutPresets.js';
 import { StageState, Stage } from '../zui/Stage.js';
+import { StageSelectionManagerState } from '../zui/StageSelectionManager.js';
 import { TileState } from './Tile.js';
 import { HandState } from './Hand.js';
 import { DeckState } from './Deck.js';
@@ -46,11 +47,20 @@ export class GameStage extends Stage {
             }
         };
         eventBus.on('card:dropped', this.onCardDropped);
+
+        this._onSelectionEvent = this._onSelectionEvent.bind(this);
+        eventBus.on('selection:changed', this._onSelectionEvent);
     }
 
     registerHand(hand) {
         this.hand = hand;
         this.state.hand = hand.state.objectId;
+    }
+
+    registerSettingsPanel(panel) {
+        this.settingsPanel = panel;
+        this.state.settingsPAnel = panel.state.objectId;
+        this.registerChild(panel);
     }
 
     onMouseMove(e) {
@@ -131,10 +141,26 @@ export class GameStage extends Stage {
         eventBus.emit('layout:changed', { stage: this });
     }
 
+    onSelectionChanged(selection) {
+        this.settingsPanel.removeAll();
+        if (selection.length === 0) return;
+        this.settingsPanel.addText("Type: "+selection[0].state.objectType);
+        this.settingsPanel.addText("X: "+selection[0].state.x);
+        this.settingsPanel.addText("Y: "+selection[0].state.y);
+        this.settingsPanel.addText("Width: "+selection[0].state.width);
+        this.settingsPanel.addText("Height: "+selection[0].state.height);
+    }
+
+    _onSelectionEvent({ selectionManagerId, selection }) {
+        if (selectionManagerId !== this.state.selectionManager) return;
+        this.onSelectionChanged(selection);
+    }
+
     destroy() {
         if (this.hand) this.hand.destroy();
 
         eventBus.off('card:dropped', this.onCardDropped);
+        eventBus.off('selection:changed', this._onSelectionEvent);
         this.div.removeEventListener("contextmenu", this._boundContextMenu);
         this.div.removeEventListener("mousemove", this._boundDivMouseMove);
 
@@ -146,9 +172,13 @@ export class GameStage extends Stage {
 objectRegistry.register("GAMESTAGE", GameStage);
 
 export function createGameStage(rootObject) {
+	let selectionManagerState = new StageSelectionManagerState();
+	let selectionManager = dataManager.createObject(selectionManagerState);
+
 	let gameStageState = new GameStageState();
 	gameStageState.parent.referenceId = rootObject.state.objectId;
 	Object.assign(gameStageState, LayoutPresets.SCREEN_RELATIVE);
+	gameStageState.selectionManager = selectionManager.state.objectId;
 	gameStageState.x = 0;
 	gameStageState.y = 0;
 	gameStageState.width = 1;
@@ -180,5 +210,5 @@ export function createGameStage(rootObject) {
 	panelState.inset = { top: 20, right: 20, bottom: 20 };
 	panelState.width = 300;
 	panelState.layer = 2;
-	gameStage.registerChild(dataManager.createObject(panelState));
+	gameStage.registerSettingsPanel(dataManager.createObject(panelState));
 }

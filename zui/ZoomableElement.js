@@ -138,12 +138,27 @@ export class ZoomableElement {
         if(this.picking) {
             clearTimeout(this.picking);
             this.picking = null;
+            let responsibleSelectionManger = this.getResponsibleSelectionManager();
+            if (responsibleSelectionManger) {
+                if(this.state.objectType!="GAMESTAGE")
+                    responsibleSelectionManger.select(this);
+                else
+                    responsibleSelectionManger.clear(this);
+            }
         }
         if(this.pickedUp) this.drop(e.clientX, e.clientY);
 
         renderer.endDrag();
 	}
 
+    getResponsibleSelectionManager() {
+        let current = this.parent;
+        while (current) {
+            if (current.selectionManager) return current.selectionManager;
+            current = current.parent;
+        }
+        return this.selectionManager ?? null;
+    }
 
     moveTo(x, y) {
         renderer.setStateMulti(this.state.objectId, { x, y });

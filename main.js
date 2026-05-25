@@ -4,6 +4,7 @@ import './core/registry.js';
 import { RootObjectState } from './zui/rootObject.js';
 import { renderer } from './rendering/Renderer.js';
 import { initMenu } from './ui/MenuController.js';
+import { createGameStage } from '../game/GameStage.js';
 
 
 
@@ -17,6 +18,7 @@ function onSVGsLoaded() {
 
 	renderer.start(document.getElementById('content'));
 	initMenu();
+	createGameStage(dataManager.rootObject);
 }
 
 window.addEventListener('DOMContentLoaded', onBodyLoad);

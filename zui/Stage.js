@@ -15,6 +15,7 @@ export class StageState extends ZoomableElementState {
         
         this.viewPort = -1;
         this.zManager = -1;
+        this.selectionManager = -1;
         this.children = new Array();
     }
 }
@@ -41,6 +42,12 @@ export class Stage extends ZoomableElement {
             this.state.zManager = this.zManager.state.objectId;
         } else {
             this.zManager = dataManager.hydrateObject(this.state.zManager);
+        }
+
+        if(this.state.selectionManager == -1) {
+            this.selectionManager = null;
+        } else {
+            this.selectionManager = dataManager.hydrateObject(this.state.selectionManager);
         }
 
 

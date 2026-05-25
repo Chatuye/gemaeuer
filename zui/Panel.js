@@ -45,13 +45,27 @@ export class Panel extends ZoomableElement {
         for (const item of this.state.items) {
             this._renderItem(item);
         }
-
-        this.add({ type: "text", value: "Walls" });
     }
 
     add(item) {
         this.state.items.push(item);
         this._renderItem(item);
+    }
+
+    remove(item) {
+        let index = this.state.items.indexOf(item);
+        if (index === -1) return;
+        this.state.items.splice(index, 1);
+        this.contentDiv.removeChild(this.contentDiv.children[index]);
+    }
+
+    removeAll() {
+        this.state.items.length = 0;
+        this.contentDiv.innerHTML = "";
+    }
+
+    addText(text) {
+        this.add({ type: "text", value: text });
     }
 
     _renderItem(item) {

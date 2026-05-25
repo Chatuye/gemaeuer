@@ -12,5 +12,6 @@ import '../game/Hand.js';
 import '../game/Tile.js';
 import '../zui/Panel.js';
 import '../zui/rootObject.js';
+import '../zui/StageSelectionManager.js';
 import '../zui/StageZIndexManager.js';
 import '../zui/ViewPort.js';

@@ -38,6 +38,12 @@ should check `stage === this.stage`.
 |-------|-----------|---------|-------------|
 | `layout:changed` | GameStage | `{ stage }` | Stage dimensions or viewport changed |
 
+### Selection events
+
+| Event | Emitted by | Payload | Description |
+|-------|-----------|---------|-------------|
+| `selection:changed` | StageSelectionManager | `{ selectionManagerId, selection }` | Selection changed (select, toggle, add, remove, or clear). `selectionManagerId` is the manager's objectId; `selection` is the array of currently selected live objects. |
+
 ## Event flows
 
 How events chain together during key interactions.
@@ -68,4 +74,16 @@ Card.drop()
         → Hand listens → if card.parent === this.stage: addCard(card)
       → LOWERED: emits card:droppedOnStage { card }
         → Card listens (self-filter: card !== this) → positions itself on world
+```
+
+### Selecting an object
+
+```
+ZoomableElement.onMouseUp() [click without drag]
+  → getResponsibleSelectionManager() walks up parent chain
+  → if object is GAMESTAGE: selectionManager.clear()
+  → otherwise: selectionManager.select(this)
+    → StageSelectionManager emits selection:changed { selectionManagerId, selection }
+      → GameStage listens → if selectionManagerId !== this.state.selectionManager: skip
+        → onSelectionChanged(selection) → updates settings panel
 ```

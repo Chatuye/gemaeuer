@@ -13,14 +13,13 @@ Use this URL when testing with the Chrome DevTools MCP server. The page auto-rel
 ## Browser testing workflow
 
 1. Navigate to `http://localhost:5500`
-2. Check for console errors after page load
-3. Click "New" to create a game stage
-4. Click the deck (top-left, black card back) to draw a card
-5. Verify the card appears in the hand at the bottom
+2. Check for console errors after page load — a game stage is created automatically on load (no need to click "New")
+3. Click the deck (top-left, black card back) to draw a card
+4. Verify the card appears in the hand at the bottom
 
 ## Quick smoke test via script
 
-To draw a card programmatically after clicking "New":
+To draw a card programmatically (game stage already exists on load):
 
 ```js
 const el = document.elementFromPoint(67, 113);

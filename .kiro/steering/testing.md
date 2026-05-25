@@ -1,5 +1,7 @@
 # Testing
 
+> **Browser UI tests are opt-in.** Only run browser tests when the user explicitly asks (e.g., "test it", "check in the browser", "smoke test"). Do NOT automatically open the browser or run UI tests after code changes.
+
 ## Live Server
 
 The project runs on a local dev server at:
@@ -11,6 +13,8 @@ http://localhost:5500
 Use this URL when testing with the Chrome DevTools MCP server. The page auto-reloads on file changes.
 
 ## Browser testing workflow
+
+When requested, follow these steps:
 
 1. Navigate to `http://localhost:5500`
 2. Check for console errors after page load — a game stage is created automatically on load (no need to click "New")

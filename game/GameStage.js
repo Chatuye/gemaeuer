@@ -8,6 +8,7 @@ import { PanelState } from '../zui/Panel.js';
 import { dataManager } from '../core/DataManager.js';
 import { objectRegistry } from '../core/ObjectRegistry.js';
 import { eventBus } from '../core/EventBus.js';
+import { renderer } from '../rendering/Renderer.js';
 import { svgLoader } from '../assets/SVGLoader.js';
 
 
@@ -50,12 +51,6 @@ export class GameStage extends Stage {
 
         this._onSelectionEvent = this._onSelectionEvent.bind(this);
         eventBus.on('selection:changed', this._onSelectionEvent);
-
-        this.onTileDeleted = ({ tile }) => {
-            if (tile.parent !== this) return;
-            console.log("Tile deleted.");
-        };
-        eventBus.on('tile:deleted', this.onTileDeleted);
     }
 
     registerHand(hand) {
@@ -67,10 +62,6 @@ export class GameStage extends Stage {
         this.settingsPanel = panel;
         this.state.settingsPAnel = panel.state.objectId;
         this.registerChild(panel);
-    }
-
-    onMouseMove(e) {
-        super.onMouseMove(e);
     }
 
     _onDivMouseMove(e) {
@@ -120,9 +111,6 @@ export class GameStage extends Stage {
 
         let x = cursorOnVP.x;
         let y = cursorOnVP.y;
-
-        let vSD = this.viewPort.getScreenDimensions();
-        let q = vSD.width/vSD.height;
         
         let gameStageState = new GameStageState();
         Object.assign(gameStageState, LayoutPresets.WORLD);
@@ -152,10 +140,20 @@ export class GameStage extends Stage {
         if (selection.length == 0) return;
         let obj = selection[0];
         this.settingsPanel.addText("Type: "+obj.state.objectType);
-        this.settingsPanel.addText("X: "+obj.state.x);
-        this.settingsPanel.addText("Y: "+obj.state.y);
-        this.settingsPanel.addText("Width: "+obj.state.width);
-        this.settingsPanel.addText("Height: "+obj.state.height);
+        this.settingsPanel.addInput("X", obj.state.x, (val) => {
+            renderer.setState(obj.state.objectId, 'x', parseFloat(val));
+        });
+        this.settingsPanel.addInput("Y", obj.state.y, (val) => {
+            renderer.setState(obj.state.objectId, 'y', parseFloat(val));
+        });
+        this.settingsPanel.addInput("Width", obj.state.width, (val) => {
+            renderer.setState(obj.state.objectId, 'width', parseFloat(val));
+            this._updateViewPortAfterResize(obj, 'width', parseFloat(val));
+        });
+        this.settingsPanel.addInput("Height", obj.state.height, (val) => {
+            renderer.setState(obj.state.objectId, 'height', parseFloat(val));
+            this._updateViewPortAfterResize(obj, 'height', parseFloat(val));
+        });
 
         if (obj.flip) {
             this.settingsPanel.addButton("Flip", () => obj.flip(800));
@@ -169,6 +167,16 @@ export class GameStage extends Stage {
             }
             obj.destroy();
         });
+    }
+
+    _updateViewPortAfterResize(obj, dimension, value) {
+        if (!obj.viewPort) return;
+        if (obj.viewPort.state.type === "ABSOLUTE") {
+            obj.viewPort.state[dimension] = value;
+        }
+        obj.viewPort.calculateScale();
+        renderer.notifyViewportChanged(obj.viewPort.state.objectId);
+        if (obj.notifyChildStages) obj.notifyChildStages();
     }
 
     _onSelectionEvent({ selectionManagerId, selection }) {

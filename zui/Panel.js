@@ -72,6 +72,10 @@ export class Panel extends ZoomableElement {
         this.add({ type: "button", label, onClick });
     }
 
+    addInput(label, value, onChange) {
+        this.add({ type: "input", label, value, onChange });
+    }
+
     _renderItem(item) {
         if (item.type === "text") {
             const el = document.createElement("div");
@@ -96,6 +100,46 @@ export class Panel extends ZoomableElement {
             el.addEventListener("mousedown", (e) => e.stopPropagation());
             el.addEventListener("click", item.onClick);
             this.contentDiv.appendChild(el);
+        } else if (item.type === "input") {
+            const row = document.createElement("div");
+            row.style.position = "static";
+            row.style.display = "flex";
+            row.style.alignItems = "center";
+            row.style.gap = "8px";
+
+            const label = document.createElement("span");
+            label.style.color = "rgba(255, 255, 255, 0.9)";
+            label.style.fontFamily = "Roboto, sans-serif";
+            label.style.fontSize = "14px";
+            label.style.minWidth = "50px";
+            label.textContent = item.label;
+
+            const input = document.createElement("input");
+            input.type = "text";
+            input.value = item.value;
+            input.style.flex = "1";
+            input.style.padding = "4px 8px";
+            input.style.border = "1px solid rgba(255, 255, 255, 0.3)";
+            input.style.borderRadius = "4px";
+            input.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
+            input.style.color = "rgba(255, 255, 255, 0.9)";
+            input.style.fontFamily = "Roboto, sans-serif";
+            input.style.fontSize = "14px";
+            input.style.outline = "none";
+            input.addEventListener("mousedown", (e) => e.stopPropagation());
+            input.addEventListener("keydown", (e) => {
+                e.stopPropagation();
+                if (e.key === "Enter") {
+                    input.blur();
+                }
+            });
+            input.addEventListener("blur", () => {
+                item.onChange(input.value);
+            });
+
+            row.appendChild(label);
+            row.appendChild(input);
+            this.contentDiv.appendChild(row);
         }
     }
 }

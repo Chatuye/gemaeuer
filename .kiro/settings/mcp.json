@@ -15,7 +15,9 @@
         "click",
         "evaluate_script",
         "list_console_messages",
-        "get_console_message"
+        "get_console_message",
+        "press_key",
+        "type_text"
       ]
     }
   }

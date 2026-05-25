@@ -56,9 +56,9 @@ export class ZoomableElement {
 		
         this.cursorX = 0;
 		this.cursorY = 0;
-        this.picking = null;
-        this.pickedUp = false;
-        this.pickedUpChild = null;
+        this.grabbing = null;
+        this.isGrabbed = false;
+        this.grabbedChild = null;
 
 
         // Register with the Renderer BEFORE zManager.set (which calls setZIndex → renderer.setState)
@@ -84,17 +84,17 @@ export class ZoomableElement {
 		this.cursorX = e.clientX;
 		this.cursorY = e.clientY;
 
-        // Start drag capture immediately so mousemove/mouseup are forwarded during picking phase
+        // Start drag capture immediately so mousemove/mouseup are forwarded during grabbing phase
         renderer.startDrag(this.state.objectId);
 
         if(this.state.positionType == "ABSOLUTE")
-            this.picking = window.setTimeout(this.grabbed.bind(this), 200);
+            this.grabbing = window.setTimeout(this.grabbed.bind(this), 200);
 	}
 	onMouseMove(e) {
-        if(this.picking) {
-            clearTimeout(this.picking);
-            this.pickedUp = false;
-            this.picking = null;
+        if(this.grabbing) {
+            clearTimeout(this.grabbing);
+            this.isGrabbed = false;
+            this.grabbing = null;
         }
 
         let dX = e.clientX - this.cursorX;
@@ -102,7 +102,7 @@ export class ZoomableElement {
         this.cursorX = e.clientX;
         this.cursorY = e.clientY;
    
-        if(this.pickedUp) {
+        if(this.isGrabbed) {
             if(this.state.positionBehaviour == "ZOOM") {
                 dX /= this.parent.getViewPort().getScaleX();
                 dY /= this.parent.getViewPort().getScaleY();
@@ -135,9 +135,9 @@ export class ZoomableElement {
         }
 	}
 	onMouseUp(e) {
-        if(this.picking) {
-            clearTimeout(this.picking);
-            this.picking = null;
+        if(this.grabbing) {
+            clearTimeout(this.grabbing);
+            this.grabbing = null;
             let responsibleSelectionManger = this.getResponsibleSelectionManager();
             if (responsibleSelectionManger) {
                 if(this.parent.state.objectType == "ROOTOBJECT")
@@ -147,7 +147,7 @@ export class ZoomableElement {
                     responsibleSelectionManger.select(this);
             }
         }
-        if(this.pickedUp) this.drop(e.clientX, e.clientY);
+        if(this.isGrabbed) this.drop(e.clientX, e.clientY);
 
         renderer.endDrag();
 	}
@@ -165,9 +165,9 @@ export class ZoomableElement {
         renderer.setStateMulti(this.state.objectId, { x, y });
     }
     grabbed() {
-        this.parent.pickedUpChild = this;
-        this.picking = null;
-        this.pickedUp = true;
+        this.parent.grabbedChild = this;
+        this.grabbing = null;
+        this.isGrabbed = true;
 		renderer.setState(this.state.objectId, 'filter', "drop-shadow(0px 0px 4px rgba(0, 0, 0, 1.0)) drop-shadow(0px 0px 24px rgba(255, 255, 255, 0.33))");
    
         if(this.parent.zManager) {
@@ -176,16 +176,16 @@ export class ZoomableElement {
         }
     }
     /**
-     * Called when an object is dropped. Clears the picked-up state and resets
+     * Called when an object is dropped. Clears the grabbed state and resets
      * visual style.
      *
-     * IMPORTANT: Must clear parent.pickedUpChild so that Hand.positionCards()
+     * IMPORTANT: Must clear parent.grabbedChild so that Hand.positionCards()
      * correctly counts all cards in the fan. Without this, the fan layout
      * would miscalculate positions after a card is returned to the hand.
      */
     drop() {
-        this.pickedUp = false;
-        this.parent.pickedUpChild = null;
+        this.isGrabbed = false;
+        this.parent.grabbedChild = null;
 		this.setDefaultStyle();
         
         if(this.parent.zManager) {
@@ -271,9 +271,9 @@ export class ZoomableElement {
      * Always call super.destroy() at the end of the override.
      */
     destroy() {
-        if (this.picking) {
-            clearTimeout(this.picking);
-            this.picking = null;
+        if (this.grabbing) {
+            clearTimeout(this.grabbing);
+            this.grabbing = null;
         }
         this.div.remove();
         renderer.unregister(this.state.objectId);

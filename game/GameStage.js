@@ -103,6 +103,7 @@ export class GameStage extends Stage {
 
     _onDivMouseMove(e) {
         this._checkHandZone(e);
+        this._updatePanelInputs();
     }
 
     _checkHandZone(e) {
@@ -174,27 +175,37 @@ export class GameStage extends Stage {
 
     _renderPanel(selection) {
         this.settingsPanel.removeAll();
+        this._panelTarget = null;
+        this._panelInputs = null;
 
         if (selection.length == 0) {
             this.settingsPanel.addDiv(this._tileSpawnerDiv);
             return;
         }
         let obj = selection[0];
+        this._panelTarget = obj;
+
         this.settingsPanel.addText("Type: "+obj.state.objectType);
         this.settingsPanel.addInput("X", obj.state.x, (val) => {
             renderer.setState(obj.state.objectId, 'x', parseFloat(val));
         });
+        let xInput = this.settingsPanel.contentDiv.lastChild.querySelector("input");
         this.settingsPanel.addInput("Y", obj.state.y, (val) => {
             renderer.setState(obj.state.objectId, 'y', parseFloat(val));
         });
+        let yInput = this.settingsPanel.contentDiv.lastChild.querySelector("input");
         this.settingsPanel.addInput("Width", obj.state.width, (val) => {
             renderer.setState(obj.state.objectId, 'width', parseFloat(val));
             this._updateViewPortAfterResize(obj, 'width', parseFloat(val));
         });
+        let wInput = this.settingsPanel.contentDiv.lastChild.querySelector("input");
         this.settingsPanel.addInput("Height", obj.state.height, (val) => {
             renderer.setState(obj.state.objectId, 'height', parseFloat(val));
             this._updateViewPortAfterResize(obj, 'height', parseFloat(val));
         });
+        let hInput = this.settingsPanel.contentDiv.lastChild.querySelector("input");
+
+        this._panelInputs = { x: xInput, y: yInput, width: wInput, height: hInput };
 
         if (obj.flip) {
             this.settingsPanel.addButton("Flip", () => obj.flip(800));
@@ -212,6 +223,15 @@ export class GameStage extends Stage {
 
     onSelectionChanged(selection) {
         this._renderPanel(selection);
+    }
+
+    _updatePanelInputs() {
+        if (!this._panelTarget || !this._panelTarget.isGrabbed || !this._panelInputs) return;
+        let s = this._panelTarget.state;
+        this._panelInputs.x.value = s.x;
+        this._panelInputs.y.value = s.y;
+        this._panelInputs.width.value = s.width;
+        this._panelInputs.height.value = s.height;
     }
 
     _updateViewPortAfterResize(obj, dimension, value) {

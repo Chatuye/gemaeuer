@@ -21,7 +21,7 @@ export class Deck extends ZoomableObject {
     }
 
     onMouseUp(e) {
-        if(!this.pickedUp) {
+        if(!this.isGrabbed) {
             let cardState = new CardState();
             cardState.parent.referenceId = this.parent.state.objectId;
             Object.assign(cardState, LayoutPresets.SCREEN);

@@ -80,7 +80,7 @@ export class Stage extends ZoomableElement {
         let dX = e.clientX - cursorX;
         let dY = e.clientY - cursorY;
 
-        if(!this.pickedUp) {
+        if(!this.isGrabbed) {
             this.pan(dX, dY);
         }
 	}

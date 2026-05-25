@@ -121,7 +121,7 @@ export class Hand {
 		if(this.getCards().length > 0) {
 			let l = this.getCards().length;
 			
-            if(this.getCards().includes(this.stage.pickedUpChild))
+            if(this.getCards().includes(this.stage.grabbedChild))
 				l--;
 			
             let middle = 0;

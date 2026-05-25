@@ -1,12 +1,10 @@
 /**
- * StageSelectionManager — manages selection of WORLD objects within a Stage.
+ * StageSelectionManager — manages selection of objects within a Stage.
  *
  * Unlike StageZIndexManager (where every stage has its own instance), nested
  * stages share the parent's StageSelectionManager. This means a selection
  * spans the entire stage hierarchy rooted at the top-level stage that owns
  * the manager.
- *
- * Selection is limited to WORLD objects (positionBehaviour === "ZOOM").
  *
  * Usage:
  *   selectionManager.select(object)      — select a single object (clears previous)

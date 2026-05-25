@@ -141,7 +141,8 @@ export class ZoomableElement {
             let responsibleSelectionManger = this.getResponsibleSelectionManager();
             if (responsibleSelectionManger) {
                 if(this.viewPort)
-                    responsibleSelectionManger.clear();
+                    //responsibleSelectionManger.clear();
+                    responsibleSelectionManger.select(this);
                 else
                     responsibleSelectionManger.select(this);
             }

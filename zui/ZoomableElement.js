@@ -140,9 +140,9 @@ export class ZoomableElement {
             this.picking = null;
             let responsibleSelectionManger = this.getResponsibleSelectionManager();
             if (responsibleSelectionManger) {
-                if(this.viewPort)
-                    //responsibleSelectionManger.clear();
-                    responsibleSelectionManger.select(this);
+                if(this.parent.state.objectType == "ROOTOBJECT")
+                    responsibleSelectionManger.clear();
+                    //responsibleSelectionManger.select(this);
                 else
                     responsibleSelectionManger.select(this);
             }

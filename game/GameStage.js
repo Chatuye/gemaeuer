@@ -8,7 +8,7 @@ import { PanelState } from '../zui/Panel.js';
 import { dataManager } from '../core/DataManager.js';
 import { objectRegistry } from '../core/ObjectRegistry.js';
 import { eventBus } from '../core/EventBus.js';
-import { renderer } from '../rendering/Renderer.js';
+import { renderer, getUIScale } from '../rendering/Renderer.js';
 import { svgLoader } from '../assets/SVGLoader.js';
 
 
@@ -51,6 +51,42 @@ export class GameStage extends Stage {
 
         this._onSelectionEvent = this._onSelectionEvent.bind(this);
         eventBus.on('selection:changed', this._onSelectionEvent);
+
+        // Tile spawner div for the settings panel
+        this._tileSpawnerDiv = document.createElement("div");
+        this._tileSpawnerDiv.textContent = "🧱 Tile";
+        this._tileSpawnerDiv.style.padding = "6px 12px";
+        this._tileSpawnerDiv.style.border = "1px solid rgba(255, 255, 255, 0.3)";
+        this._tileSpawnerDiv.style.borderRadius = "6px";
+        this._tileSpawnerDiv.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
+        this._tileSpawnerDiv.style.color = "rgba(255, 255, 255, 0.9)";
+        this._tileSpawnerDiv.style.fontFamily = "Roboto, sans-serif";
+        this._tileSpawnerDiv.style.fontSize = "14px";
+        this._tileSpawnerDiv.style.cursor = "grab";
+        this._tileSpawnerDiv.style.userSelect = "none";
+        this._tileSpawnerDiv.addEventListener("mousedown", (e) => {
+            e.stopPropagation();
+
+            let tileDims = svgLoader.getDimensions("tileFront");
+            let scale = getUIScale();
+            let tileState = new TileState();
+            Object.assign(tileState, LayoutPresets.SCREEN);
+            tileState.parent.referenceId = this.state.objectId;
+            tileState.x = e.clientX - (tileDims.width * scale / 2);
+            tileState.y = e.clientY - (tileDims.height * scale / 2);
+            tileState.facing = "BACK";
+            tileState.svg01Key = "tileFront";
+            tileState.svg02Key = "tileBack";
+            tileState.value = Math.floor((Math.random() * 9)) + 1;
+
+            let tile = dataManager.createObject(tileState);
+            this.registerChild(tile);
+
+            tile.cursorX = e.clientX;
+            tile.cursorY = e.clientY;
+            renderer.startDrag(tile.state.objectId);
+            tile.grabbed();
+        });
     }
 
     registerHand(hand) {
@@ -62,6 +98,7 @@ export class GameStage extends Stage {
         this.settingsPanel = panel;
         this.state.settingsPAnel = panel.state.objectId;
         this.registerChild(panel);
+        this._renderPanel([]);
     }
 
     _onDivMouseMove(e) {
@@ -135,9 +172,13 @@ export class GameStage extends Stage {
         eventBus.emit('layout:changed', { stage: this });
     }
 
-    onSelectionChanged(selection) {
+    _renderPanel(selection) {
         this.settingsPanel.removeAll();
-        if (selection.length == 0) return;
+
+        if (selection.length == 0) {
+            this.settingsPanel.addDiv(this._tileSpawnerDiv);
+            return;
+        }
         let obj = selection[0];
         this.settingsPanel.addText("Type: "+obj.state.objectType);
         this.settingsPanel.addInput("X", obj.state.x, (val) => {
@@ -167,6 +208,10 @@ export class GameStage extends Stage {
             }
             obj.destroy();
         });
+    }
+
+    onSelectionChanged(selection) {
+        this._renderPanel(selection);
     }
 
     _updateViewPortAfterResize(obj, dimension, value) {

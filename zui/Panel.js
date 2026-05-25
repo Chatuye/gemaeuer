@@ -76,6 +76,10 @@ export class Panel extends ZoomableElement {
         this.add({ type: "input", label, value, onChange });
     }
 
+    addDiv(div) {
+        this.add({ type: "div", div });
+    }
+
     _renderItem(item) {
         if (item.type === "text") {
             const el = document.createElement("div");
@@ -100,6 +104,9 @@ export class Panel extends ZoomableElement {
             el.addEventListener("mousedown", (e) => e.stopPropagation());
             el.addEventListener("click", item.onClick);
             this.contentDiv.appendChild(el);
+        } else if (item.type === "div") {
+            item.div.style.position = "static";
+            this.contentDiv.appendChild(item.div);
         } else if (item.type === "input") {
             const row = document.createElement("div");
             row.style.position = "static";

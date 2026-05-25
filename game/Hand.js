@@ -70,6 +70,12 @@ export class Hand {
         this.onLayoutChanged = ({ stage }) => {
             if (stage === this.stage) this.onParentChange();
         };
+        this.onCardDeleted = ({ card }) => {
+            if (this.getCards().includes(card)) {
+                this.removeCard(card);
+                this.positionCards();
+            }
+        };
 
         eventBus.on('card:drawn', this.onCardDrawn);
         eventBus.on('card:grabbed', this.onCardGrabbed);
@@ -77,6 +83,7 @@ export class Hand {
         eventBus.on('cursor:enteredHandZone', this.onCursorEnteredHandZone);
         eventBus.on('cursor:leftHandZone', this.onCursorLeftHandZone);
         eventBus.on('layout:changed', this.onLayoutChanged);
+        eventBus.on('card:deleted', this.onCardDeleted);
     }
 
 	getCards() {
@@ -214,6 +221,7 @@ export class Hand {
 		eventBus.off('cursor:enteredHandZone', this.onCursorEnteredHandZone);
 		eventBus.off('cursor:leftHandZone', this.onCursorLeftHandZone);
 		eventBus.off('layout:changed', this.onLayoutChanged);
+		eventBus.off('card:deleted', this.onCardDeleted);
 	}
 }
 

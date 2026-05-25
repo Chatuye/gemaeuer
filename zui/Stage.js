@@ -109,6 +109,14 @@ export class Stage extends ZoomableElement {
         this.state.children.push(child.state.objectId);
     }
 
+    unregisterChild(child) {
+        let idx = this.children.indexOf(child);
+        if (idx !== -1) this.children.splice(idx, 1);
+        let stateIdx = this.state.children.indexOf(child.state.objectId);
+        if (stateIdx !== -1) this.state.children.splice(stateIdx, 1);
+        this.zManager.remove(child);
+    }
+
 
 
     pan(dX, dY) {

@@ -277,6 +277,7 @@ export class ZoomableElement {
             clearTimeout(this.picking);
             this.picking = null;
         }
+        this.div.remove();
         renderer.unregister(this.state.objectId);
     }
 }

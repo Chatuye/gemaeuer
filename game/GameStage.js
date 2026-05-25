@@ -50,6 +50,12 @@ export class GameStage extends Stage {
 
         this._onSelectionEvent = this._onSelectionEvent.bind(this);
         eventBus.on('selection:changed', this._onSelectionEvent);
+
+        this.onTileDeleted = ({ tile }) => {
+            if (tile.parent !== this) return;
+            console.log("Tile deleted.");
+        };
+        eventBus.on('tile:deleted', this.onTileDeleted);
     }
 
     registerHand(hand) {
@@ -154,6 +160,15 @@ export class GameStage extends Stage {
         if (obj.flip) {
             this.settingsPanel.addButton("Flip", () => obj.flip(800));
         }
+
+        this.settingsPanel.addButton("Delete", () => {
+            let selMgr = obj.getResponsibleSelectionManager();
+            if (selMgr) selMgr.clear();
+            if (obj.parent && obj.parent.unregisterChild) {
+                obj.parent.unregisterChild(obj);
+            }
+            obj.destroy();
+        });
     }
 
     _onSelectionEvent({ selectionManagerId, selection }) {

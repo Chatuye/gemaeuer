@@ -1,5 +1,6 @@
 import { FlippableObjectState, FlippableObject } from '../zui/FlippableObject.js';
 import { objectRegistry } from '../core/ObjectRegistry.js';
+import { eventBus } from '../core/EventBus.js';
 
 
 
@@ -18,6 +19,11 @@ export class Tile extends FlippableObject {
         super(state);
         
         this.svgFront.getElementById("text").firstChild.innerHTML = this.state.value;
+    }
+
+    destroy() {
+        eventBus.emit('tile:deleted', { tile: this });
+        super.destroy();
     }
 }
 

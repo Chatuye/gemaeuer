@@ -44,6 +44,13 @@ should check `stage === this.stage`.
 |-------|-----------|---------|-------------|
 | `selection:changed` | StageSelectionManager | `{ selectionManagerId, selection }` | Selection changed (select, toggle, add, remove, or clear). `selectionManagerId` is the manager's objectId; `selection` is the array of currently selected live objects. |
 
+### Object lifecycle events
+
+| Event | Emitted by | Payload | Description |
+|-------|-----------|---------|-------------|
+| `card:deleted` | Card.destroy() | `{ card }` | A card was destroyed. Emitted at the start of `destroy()`. |
+| `tile:deleted` | Tile.destroy() | `{ tile }` | A tile was destroyed. Emitted at the start of `destroy()`. |
+
 ## Event flows
 
 How events chain together during key interactions.
@@ -86,4 +93,17 @@ ZoomableElement.onMouseUp() [click without drag]
     → StageSelectionManager emits selection:changed { selectionManagerId, selection }
       → GameStage listens → if selectionManagerId !== this.state.selectionManager: skip
         → onSelectionChanged(selection) → updates settings panel
+```
+
+### Deleting an object
+
+```
+GameStage.onSelectionChanged() → Delete button clicked
+  → selectionManager.clear()
+  → parent.unregisterChild(obj) → removes from children/state arrays + zManager
+  → obj.destroy()
+    → emits <type>:deleted { <type>: obj }  (e.g. card:deleted, tile:deleted)
+      → Hand listens for card:deleted → if card is in its collection: removeCard, positionCards()
+    → removes DOM element
+    → unregisters from Renderer
 ```

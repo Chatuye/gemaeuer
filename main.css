@@ -42,6 +42,7 @@ div.content {
 }
 
 div.Stage {
+	/* background: linear-gradient(#242424, #040404); */
 	background: linear-gradient(#242424, #040404);
 }
 
@@ -99,4 +100,20 @@ div.Flippable>.Wrapper>.Back {
 	backface-visibility: hidden;
 	-webkit-backface-visibility: hidden;
 	transform: rotateY(180deg);
+}
+
+
+div.selected::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	z-index: 999999;
+	background: rgba(100, 180, 255, 0.5);
+	pointer-events: none;
+}
+div.Stage.selected {
+	isolation: isolate;
+}
+div.Stage.selected::after {
+	z-index: -1;
 }

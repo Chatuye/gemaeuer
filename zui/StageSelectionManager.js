@@ -140,17 +140,16 @@ export class StageSelectionManager {
 
     /**
      * Visual feedback when an object is selected.
-     * Override or extend as needed for different highlight styles.
      */
     _onSelected(object) {
-        // TODO: apply selection highlight via renderer
+        object.div.classList.add("selected");
     }
 
     /**
      * Visual feedback when an object is deselected.
      */
     _onDeselected(object) {
-        // TODO: remove selection highlight via renderer
+        object.div.classList.remove("selected");
     }
 }
 

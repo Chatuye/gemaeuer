@@ -24,6 +24,7 @@ export class Stage extends ZoomableElement {
 	constructor(state) {
         super(state);
 
+        this.div.classList.add("Stage");
 
         if(this.state.viewPort == -1) {
             let viewPortState = new ViewPortState();

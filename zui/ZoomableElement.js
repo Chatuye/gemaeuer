@@ -50,7 +50,7 @@ export class ZoomableElement {
 
         this.div = document.createElement("div");
         this.div.style.position = "absolute";
-		this.div.style.backgroundColor = randomHexColorCode();
+		// this.div.style.backgroundColor = randomHexColorCode();
 		this.parent.div.appendChild(this.div);
         
 		

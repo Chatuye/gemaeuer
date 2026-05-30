@@ -169,7 +169,14 @@ export class ZoomableElement {
         this.grabbing = null;
         this.isGrabbed = true;
 		renderer.setState(this.state.objectId, 'filter', "drop-shadow(0px 0px 4px rgba(0, 0, 0, 1.0)) drop-shadow(0px 0px 24px rgba(255, 255, 255, 0.33))");
-   
+
+        // Capture cursor's relative position on the object (0–1) for cross-stage drop positioning
+        let bounds = this.div.getBoundingClientRect();
+        if (bounds.width > 0 && bounds.height > 0) {
+            this._grabRelX = (this.cursorX - bounds.left) / bounds.width;
+            this._grabRelY = (this.cursorY - bounds.top) / bounds.height;
+        }
+
         if(this.parent.zManager) {
             this.parent.zManager.remove(this);
             this.parent.zManager.set(this, 3);
@@ -187,11 +194,67 @@ export class ZoomableElement {
         this.isGrabbed = false;
         this.parent.grabbedChild = null;
 		this.setDefaultStyle();
-        
-        if(this.parent.zManager) {
-            this.parent.zManager.remove(this);
-            this.parent.zManager.set(this, 0);
+
+        this._placeOnStage();
+    }
+
+    /**
+     * Determines which stage the object was dropped onto, reparents if needed,
+     * converts to WORLD layout, and positions the object in the target stage's
+     * viewport coordinates.
+     */
+    _placeOnStage() {
+        this.div.style.pointerEvents = "none";
+        let targetStage = this.getStageAtCursor(this.cursorX, this.cursorY);
+        this.div.style.pointerEvents = "";
+
+        if (!targetStage) targetStage = this.parent;
+
+        // Reparent if target differs from current parent
+        if (targetStage !== this.parent) {
+            // Use cursor position for cross-stage drops (viewport zoom differs)
+            let cursorLocal = renderer.screenToLocal(this.cursorX, this.cursorY, targetStage.state.objectId);
+            let cursorWorld = renderer.localToViewport(cursorLocal.x, cursorLocal.y, targetStage.state.objectId);
+
+            this.reparentTo(targetStage);
+            // reparentTo doesn't add to zManager
+            if (this.parent.zManager) {
+                this.parent.zManager.set(this, 0);
+            }
+
+            Object.assign(this.state, LayoutPresets.WORLD);
+            renderer.updateLayoutPreset(this.state.objectId);
+
+            // Offset by grab-relative position using intrinsic dimensions (WORLD units)
+            let relX = this._grabRelX ?? 0.5;
+            let relY = this._grabRelY ?? 0.5;
+            renderer.setStateMulti(this.state.objectId, {
+                x: cursorWorld.x - (this.state.width * relX),
+                y: cursorWorld.y - (this.state.height * relY)
+            });
+        } else {
+            // Same parent — convert cursor to world, offset by grab-relative position
+            let cursorLocal = renderer.screenToLocal(this.cursorX, this.cursorY, targetStage.state.objectId);
+            let cursorWorld = renderer.localToViewport(cursorLocal.x, cursorLocal.y, targetStage.state.objectId);
+
+            if (this.parent.zManager) {
+                this.parent.zManager.remove(this);
+                this.parent.zManager.set(this, 0);
+            }
+
+            Object.assign(this.state, LayoutPresets.WORLD);
+            renderer.updateLayoutPreset(this.state.objectId);
+
+            let relX = this._grabRelX ?? 0.5;
+            let relY = this._grabRelY ?? 0.5;
+            renderer.setStateMulti(this.state.objectId, {
+                x: cursorWorld.x - (this.state.width * relX),
+                y: cursorWorld.y - (this.state.height * relY)
+            });
         }
+
+        this._grabRelX = null;
+        this._grabRelY = null;
     }
     setDefaultStyle() {
 		renderer.setState(this.state.objectId, 'filter', "drop-shadow(0px 0px 0px rgba(0, 0, 0, 1.0))");
@@ -263,6 +326,88 @@ export class ZoomableElement {
         let cursorXOnDiv = Math.round(x - this.div.getBoundingClientRect().left);
 		let cursorYOnDiv = Math.round(y - this.div.getBoundingClientRect().top);
         return { x: cursorXOnDiv, y: cursorYOnDiv};
+    }
+
+    /**
+     * Returns the Stage (or GameStage) at the given screen coordinates.
+     * Finds the topmost object at (screenX, screenY) via elementFromPoint,
+     * then walks up the parent chain to find the nearest ancestor with a viewPort
+     * (i.e., a Stage). Returns null if no stage is found.
+     *
+     * NOTE: The caller is responsible for hiding the dragged object's div
+     * (e.g., pointer-events: none) before calling, to avoid hitting itself.
+     */
+    getStageAtCursor(screenX, screenY) {
+        let el = document.elementFromPoint(screenX, screenY);
+        let objectEl = el?.closest('[data-object-id]');
+        if (!objectEl) return null;
+
+        let objectId = Number(objectEl.getAttribute('data-object-id'));
+        let obj = dataManager.getObject(objectId);
+
+        while (obj) {
+            if (obj.viewPort) return obj;
+            obj = obj.parent;
+        }
+        return null;
+    }
+
+    /**
+     * Reparent this object to a new Stage.
+     *
+     * Transfers ownership from the current parent to newParent:
+     *   1. Unregisters from old parent (children array, state array, zManager)
+     *   2. Updates parent references (live + state)
+     *   3. Registers on new parent (children array, state array, zManager)
+     *   4. Updates the Renderer's render node (parentId, viewportId, DOM position)
+     *   5. Marks dirty so bounds are recomputed next frame
+     *
+     * Does NOT update x/y coordinates — the caller is responsible for
+     * converting position to the new parent's coordinate space.
+     */
+    reparentTo(newParent) {
+        let oldParent = this.parent;
+        if (oldParent === newParent) return;
+
+        // 1. Remove from old parent
+        oldParent.unregisterChild(this);
+
+        // 2. Update live + state references
+        this.parent = newParent;
+        this.state.parent.referenceId = newParent.state.objectId;
+
+        // 3. Register on new parent
+        newParent.registerChild(this);
+
+        // 4. Update Renderer's render node
+        let node = renderer.renderNodes.get(this.state.objectId);
+        let oldParentId = node.parentId;
+        let oldViewportId = node.viewportId;
+
+        let newParentId = newParent.state.objectId;
+        let newViewportId = newParent.viewPort?.state?.objectId ?? null;
+
+        // Update childrenOf index
+        renderer.childrenOf.get(oldParentId)?.delete(this.state.objectId);
+        if (!renderer.childrenOf.has(newParentId)) renderer.childrenOf.set(newParentId, new Set());
+        renderer.childrenOf.get(newParentId).add(this.state.objectId);
+
+        // Update viewportChildren index
+        if (oldViewportId != null) {
+            renderer.viewportChildren.get(oldViewportId)?.delete(this.state.objectId);
+        }
+        if (newViewportId != null) {
+            if (!renderer.viewportChildren.has(newViewportId))
+                renderer.viewportChildren.set(newViewportId, new Set());
+            renderer.viewportChildren.get(newViewportId).add(this.state.objectId);
+        }
+
+        node.parentId = newParentId;
+        node.viewportId = newViewportId;
+
+        // 5. Move DOM element to new parent's div and mark dirty
+        newParent.div.appendChild(this.div);
+        renderer.markDirty(this.state.objectId);
     }
 
     /**

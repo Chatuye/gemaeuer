@@ -1,4 +1,5 @@
 import { StateObject } from '../core/StateObject.js';
+import { LayoutPresets } from '../zui/config/LayoutPresets.js';
 import { dataManager } from '../core/DataManager.js';
 import { objectRegistry } from '../core/ObjectRegistry.js';
 import { eventBus } from '../core/EventBus.js';
@@ -169,6 +170,10 @@ export class Hand {
 	addCard(card) {
 		this.stage.zManager.remove(card);
 		this.stage.zManager.set(card, 1);
+
+		// Ensure card is in SCREEN layout (drop may have set WORLD)
+		Object.assign(card.state, LayoutPresets.SCREEN);
+		renderer.updateLayoutPreset(card.state.objectId);
 
 		this.getCards().push(card);
 		this.state.cards.push(card.state.objectId);

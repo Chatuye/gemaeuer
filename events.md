@@ -22,7 +22,7 @@ should check `stage === this.stage`.
 | `card:drawn` | Deck | `{ card }` | A new card was drawn from the deck |
 | `card:grabbed` | Card | `{ card }` | A card was grabbed (by the user dragging it) |
 | `card:dropped` | Card | `{ card }` | A card was released after being dragged |
-| `card:droppedOnStage` | GameStage | `{ card }` | GameStage decided the card goes onto the world |
+| `card:droppedOnStage` | GameStage | `{ card }` | GameStage decided the card goes onto the world (no active listener — positioning handled by `_placeOnStage`) |
 | `card:droppedInHand` | GameStage | `{ card }` | GameStage decided the card goes into the hand |
 
 ### Hand events
@@ -75,12 +75,17 @@ Card.grabbed()
 
 ```
 Card.drop()
+  → super.drop() → _placeOnStage()
+    → hit-tests cursor to find targetStage
+    → converts cursor to WORLD coordinates on targetStage
+    → if targetStage !== current parent: reparentTo(targetStage)
+    → sets WORLD layout, positions object
   → emits card:dropped { card }
     → GameStage listens → if card.parent !== this: skip
       → RAISED: emits card:droppedInHand { card }
         → Hand listens → if card.parent === this.stage: addCard(card)
       → LOWERED: emits card:droppedOnStage { card }
-        → Card listens (self-filter: card !== this) → positions itself on world
+        → (no listener — positioning already handled by _placeOnStage)
 ```
 
 ### Selecting an object

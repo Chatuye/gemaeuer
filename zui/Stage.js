@@ -181,6 +181,16 @@ export class Stage extends ZoomableElement {
         return renderer.localToViewport(x, y, this.state.objectId);
     }
 
+    /**
+     * Converts a div's screen position to WORLD coordinates in this stage's viewport.
+     */
+    getWorldPositionOfDiv(div) {
+        let rect = div.getBoundingClientRect();
+        let local = renderer.screenToLocal(rect.left, rect.top, this.state.objectId);
+        let world = this.convertDivPosToViewPortPos(local.x, local.y);
+        return { x: world.x, y: world.y };
+    }
+
     destroy() {
         for (const child of this.children) {
             child.destroy();

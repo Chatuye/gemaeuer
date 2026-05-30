@@ -19,33 +19,6 @@ export class Card extends FlippableObject {
         super(state);
 
         this.setDefaultStyle();
-
-        this.onDroppedOnStage = ({ card }) => {
-            if (card !== this) return;
-
-            // Capture cursor position relative to card BEFORE layout swap (SCREEN bounds)
-            let cursorOnDiv = renderer.screenToLocal(this.cursorX, this.cursorY, this.state.objectId);
-            let screenBounds = renderer.getComputedBounds(this.state.objectId);
-            let relX = cursorOnDiv.x / screenBounds.width;
-            let relY = cursorOnDiv.y / screenBounds.height;
-
-            // Swap to WORLD layout
-            Object.assign(this.state, LayoutPresets.WORLD);
-            renderer.updateLayoutPreset(this.state.objectId);
-
-            // Get new WORLD dimensions (render node is dirty, so getScreenDimensions computes fresh)
-            let newDims = this.getScreenDimensions();
-
-            // Compute card's top-left screen position using new WORLD dimensions
-            // (matches old code which called getScreenDimensions() after the swap)
-            let cardTopLeftScreenX = this.cursorX - (newDims.width * relX);
-            let cardTopLeftScreenY = this.cursorY - (newDims.height * relY);
-
-            let cursorOnParent = renderer.screenToLocal(cardTopLeftScreenX, cardTopLeftScreenY, this.parent.state.objectId);
-            let cursorOnParentVP = renderer.localToViewport(cursorOnParent.x, cursorOnParent.y, this.parent.state.objectId);
-            renderer.setStateMulti(this.state.objectId, { x: cursorOnParentVP.x, y: cursorOnParentVP.y });
-        };
-        eventBus.on('card:droppedOnStage', this.onDroppedOnStage);
     }
 
     setDefaultStyle() {
@@ -97,7 +70,6 @@ export class Card extends FlippableObject {
 
     destroy() {
         eventBus.emit('card:deleted', { card: this });
-        eventBus.off('card:droppedOnStage', this.onDroppedOnStage);
         super.destroy();
     }
 }

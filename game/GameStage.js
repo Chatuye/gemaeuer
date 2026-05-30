@@ -96,7 +96,7 @@ export class GameStage extends Stage {
 
     registerSettingsPanel(panel) {
         this.settingsPanel = panel;
-        this.state.settingsPAnel = panel.state.objectId;
+        this.state.settingsPanel = panel.state.objectId;
         this.registerChild(panel);
         this._renderPanel([]);
     }

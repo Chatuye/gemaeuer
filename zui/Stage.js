@@ -15,6 +15,7 @@ export class StageState extends ZoomableElementState {
         
         this.viewPort = -1;
         this.zManager = -1;
+        this.selectionManager = -1;
         this.children = new Array();
     }
 }
@@ -23,6 +24,7 @@ export class Stage extends ZoomableElement {
 	constructor(state) {
         super(state);
 
+        this.div.classList.add("Stage");
 
         if(this.state.viewPort == -1) {
             let viewPortState = new ViewPortState();
@@ -41,6 +43,12 @@ export class Stage extends ZoomableElement {
             this.state.zManager = this.zManager.state.objectId;
         } else {
             this.zManager = dataManager.hydrateObject(this.state.zManager);
+        }
+
+        if(this.state.selectionManager == -1) {
+            this.selectionManager = null;
+        } else {
+            this.selectionManager = dataManager.hydrateObject(this.state.selectionManager);
         }
 
 
@@ -72,7 +80,7 @@ export class Stage extends ZoomableElement {
         let dX = e.clientX - cursorX;
         let dY = e.clientY - cursorY;
 
-        if(!this.pickedUp) {
+        if(!this.isGrabbed) {
             this.pan(dX, dY);
         }
 	}
@@ -99,6 +107,14 @@ export class Stage extends ZoomableElement {
     registerChild(child) {
         this.children.push(child);
         this.state.children.push(child.state.objectId);
+    }
+
+    unregisterChild(child) {
+        let idx = this.children.indexOf(child);
+        if (idx !== -1) this.children.splice(idx, 1);
+        let stateIdx = this.state.children.indexOf(child.state.objectId);
+        if (stateIdx !== -1) this.state.children.splice(stateIdx, 1);
+        this.zManager.remove(child);
     }
 
 
@@ -163,6 +179,16 @@ export class Stage extends ZoomableElement {
 
     convertDivPosToViewPortPos(x, y) {
         return renderer.localToViewport(x, y, this.state.objectId);
+    }
+
+    /**
+     * Converts a div's screen position to WORLD coordinates in this stage's viewport.
+     */
+    getWorldPositionOfDiv(div) {
+        let rect = div.getBoundingClientRect();
+        let local = renderer.screenToLocal(rect.left, rect.top, this.state.objectId);
+        let world = this.convertDivPosToViewPortPos(local.x, local.y);
+        return { x: world.x, y: world.y };
     }
 
     destroy() {

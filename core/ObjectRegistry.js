@@ -42,8 +42,8 @@ class ObjectRegistry {
     create(state) {
         if(state.objectId == -1) {
 			state.objectId = this.numObjects;
+            this.numObjects += 1;
 		}
-        this.numObjects += 1;
 
         const Constructor = this.registry.get(state.objectType);
         if(!Constructor) {

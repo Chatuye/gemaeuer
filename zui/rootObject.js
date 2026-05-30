@@ -43,7 +43,7 @@ export class RootObject {
         } else {
             this.zManager = dataManager.hydrateObject(this.state.zManager);
         }
-        this.pickedUpChild = null;
+        this.grabbedChild = null;
         this.children = new Array();
         for(let i = 0; i < this.state.children.length; i++) {
 			this.children.push(dataManager.hydrateObject(this.state.children[i]));

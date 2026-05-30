@@ -19,7 +19,9 @@ No build step. Serve the project with any static file server (e.g. Live Server o
 | Double-click on stage | Places a tile |
 | Right-click on stage | Creates a nested stage |
 | Click on deck | Draws a card into the hand |
-| Click on card/tile | Flips it |
+| Click on card/tile | Selects it (shows properties in settings panel) |
+| Click on empty stage | Clears the selection |
+| Flip button in panel | Flips the selected card/tile |
 | Hold + drag card/tile | Picks it up and moves it |
 | Drop card near bottom | Adds it to the hand |
 | Mouse near bottom | Raises the hand |
@@ -53,6 +55,8 @@ utils.js                       ← general-purpose utility functions
 │   ├── FlippableObject.js     ← extends with front/back SVG flipping
 │   ├── ViewPort.js            ← pan/zoom state and scale calculation
 │   ├── StageZIndexManager.js  ← layered z-index management
+│   ├── StageSelectionManager.js ← shared selection state across nested stages
+│   ├── Panel.js               ← settings panel (text, buttons)
 │   ├── Stage.js               ← container with viewport, children, and recursive propagation
 │   └── rootObject.js          ← top-level container (browser window)
 └── game/
@@ -69,7 +73,7 @@ utils.js                       ← general-purpose utility functions
 
 **rendering/** — The render loop and DOM update layer. The `Renderer` singleton owns a `requestAnimationFrame` loop that batches DOM writes. Game objects call `renderer.setState()` to mutate visual state; the Renderer computes screen bounds and applies styles once per frame. Game objects can also trigger one-shot CSS transitions via `renderer.startTransition()` without directly manipulating the DOM — the Renderer guards transitioning properties from being overwritten by the dirty-flag loop. Also centralizes mouse input handling (hit testing, drag capture, wheel bubbling) and provides coordinate conversion utilities (`screenToLocal`, `localToViewport`). See `rendering/rendering.architecture.md` for detailed diagrams.
 
-**zui/** — The zoomable UI framework. `ZoomableElement` is the base for anything on a stage (positioning, drag/drop, coordinate conversion). `ZoomableObject` and `FlippableObject` extend it with SVG rendering. `Stage` is a container with its own `ViewPort` (pan/zoom) and `StageZIndexManager` (layering). `RootObject` is the top-level container wrapping the browser window. `config/` holds `LayoutPresets` and `UIDefinitions`.
+**zui/** — The zoomable UI framework. `ZoomableElement` is the base for anything on a stage (positioning, drag/drop, coordinate conversion). `ZoomableObject` and `FlippableObject` extend it with SVG rendering. `Stage` is a container with its own `ViewPort` (pan/zoom), `StageZIndexManager` (layering), and optional `StageSelectionManager` (selection). `Panel` is a generic UI container for text and buttons (used as the settings panel). `RootObject` is the top-level container wrapping the browser window. `config/` holds `LayoutPresets` and `UIDefinitions`.
 
 **game/** — Game objects built on the zui layer. `GameStage` extends `Stage` with tile/card creation and hand interaction. `Tile` and `Card` are `FlippableObjects`. `Deck` spawns cards. `Hand` manages a fan of cards at the bottom of the stage that raises/lowers on cursor proximity.
 
@@ -79,6 +83,7 @@ utils.js                       ← general-purpose utility functions
 - **Singletons** — `svgLoader` (from `assets/SVGLoader.js`), `dataManager` (from `core/DataManager.js`), `objectRegistry` (from `core/ObjectRegistry.js`), `eventBus` (from `core/EventBus.js`), and `renderer` (from `rendering/Renderer.js`) are module-level instances, imported where needed.
 - **Object registry** — each class self-registers with `objectRegistry.register("TYPE", Class)` at module level. The barrel `core/registry.js` imports all classes to ensure registration runs before any `create()` call. To add a new type: create the class, add a `register` call, and add one import to `registry.js`.
 - **Event bus** — objects communicate via named events through a global `eventBus` singleton (`core/EventBus.js`). See `events.md` for the full event vocabulary and interaction flows.
+- **Selection** — `StageSelectionManager` tracks which objects are selected. Nested stages share the parent's manager (passed via state). Clicking an object selects it; clicking empty stage space clears. The manager emits `selection:changed` via the event bus; `GameStage` listens and updates the settings panel. Selection is transient (not serialized).
 - **State/behaviour split** — every object has a `StateObject` subclass (`XxxState`) holding serialisable state, and a live class holding logic.
 - **Layout presets** — objects use `LayoutPresets.WORLD`, `.SCREEN`, or `.SCREEN_RELATIVE` to define how they position and size themselves. See `zui/config/LayoutPresets.js` for details.
 - **DataManager** — central registry and factory. Owns `rootObject`. Single entry point for creating, retrieving, saving, and loading objects.

@@ -22,7 +22,7 @@ should check `stage === this.stage`.
 | `card:drawn` | Deck | `{ card }` | A new card was drawn from the deck |
 | `card:grabbed` | Card | `{ card }` | A card was grabbed (by the user dragging it) |
 | `card:dropped` | Card | `{ card }` | A card was released after being dragged |
-| `card:droppedOnStage` | GameStage | `{ card }` | GameStage decided the card goes onto the world |
+| `card:droppedOnStage` | GameStage | `{ card }` | GameStage decided the card goes onto the world (no active listener — positioning handled by `_placeOnStage`) |
 | `card:droppedInHand` | GameStage | `{ card }` | GameStage decided the card goes into the hand |
 
 ### Hand events
@@ -37,6 +37,19 @@ should check `stage === this.stage`.
 | Event | Emitted by | Payload | Description |
 |-------|-----------|---------|-------------|
 | `layout:changed` | GameStage | `{ stage }` | Stage dimensions or viewport changed |
+
+### Selection events
+
+| Event | Emitted by | Payload | Description |
+|-------|-----------|---------|-------------|
+| `selection:changed` | StageSelectionManager | `{ selectionManagerId, selection }` | Selection changed (select, toggle, add, remove, or clear). `selectionManagerId` is the manager's objectId; `selection` is the array of currently selected live objects. |
+
+### Object lifecycle events
+
+| Event | Emitted by | Payload | Description |
+|-------|-----------|---------|-------------|
+| `card:deleted` | Card.destroy() | `{ card }` | A card was destroyed. Emitted at the start of `destroy()`. |
+| `tile:deleted` | Tile.destroy() | `{ tile }` | A tile was destroyed. Emitted at the start of `destroy()`. |
 
 ## Event flows
 
@@ -62,10 +75,40 @@ Card.grabbed()
 
 ```
 Card.drop()
+  → super.drop() → _placeOnStage()
+    → hit-tests cursor to find targetStage
+    → converts cursor to WORLD coordinates on targetStage
+    → if targetStage !== current parent: reparentTo(targetStage)
+    → sets WORLD layout, positions object
   → emits card:dropped { card }
     → GameStage listens → if card.parent !== this: skip
       → RAISED: emits card:droppedInHand { card }
         → Hand listens → if card.parent === this.stage: addCard(card)
       → LOWERED: emits card:droppedOnStage { card }
-        → Card listens (self-filter: card !== this) → positions itself on world
+        → (no listener — positioning already handled by _placeOnStage)
+```
+
+### Selecting an object
+
+```
+ZoomableElement.onMouseUp() [click without drag]
+  → getResponsibleSelectionManager() walks up parent chain
+  → if object is GAMESTAGE: selectionManager.clear()
+  → otherwise: selectionManager.select(this)
+    → StageSelectionManager emits selection:changed { selectionManagerId, selection }
+      → GameStage listens → if selectionManagerId !== this.state.selectionManager: skip
+        → onSelectionChanged(selection) → updates settings panel
+```
+
+### Deleting an object
+
+```
+GameStage.onSelectionChanged() → Delete button clicked
+  → selectionManager.clear()
+  → parent.unregisterChild(obj) → removes from children/state arrays + zManager
+  → obj.destroy()
+    → emits <type>:deleted { <type>: obj }  (e.g. card:deleted, tile:deleted)
+      → Hand listens for card:deleted → if card is in its collection: removeCard, positionCards()
+    → removes DOM element
+    → unregisters from Renderer
 ```

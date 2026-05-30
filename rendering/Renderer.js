@@ -116,6 +116,32 @@ function computeBounds(node, renderNodes) {
         }
     }
 
+    // --- Inset override ---
+    // If inset is defined, it overrides position/dimensions for constrained axes.
+    // Per axis: if both edges are set, position AND size are derived.
+    // If only one edge is set, position is derived from that edge (size from state).
+    if (s.inset) {
+        const ins = s.inset;
+        // Horizontal
+        if (ins.left != null && ins.right != null) {
+            x = ins.left;
+            width = parentBounds.width - ins.left - ins.right;
+        } else if (ins.right != null) {
+            x = parentBounds.width - ins.right - width;
+        } else if (ins.left != null) {
+            x = ins.left;
+        }
+        // Vertical
+        if (ins.top != null && ins.bottom != null) {
+            y = ins.top;
+            height = parentBounds.height - ins.top - ins.bottom;
+        } else if (ins.bottom != null) {
+            y = parentBounds.height - ins.bottom - height;
+        } else if (ins.top != null) {
+            y = ins.top;
+        }
+    }
+
     return { x, y, width, height };
 }
 

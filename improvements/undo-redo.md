@@ -806,7 +806,7 @@ need a custom `applyState()` to reconcile:
 | Stage | Reconcile `this.children` array, rebuild zManager from `state.children` |
 | StageSelectionManager | Rebuild `this.selected` map from `state.selection` IDs, reapply visual classes |
 | ViewPort | Recalculate derived viewport scale from patched state |
-| GameStage | Rebuild `this.hand`/`this.deck` references from patched state IDs |
+| GameStage | Rebuild `this.hand`/`this.settingsPanel` references from patched state IDs |
 
 Types that do NOT need `applyState()` (generic `_patchObject` + `renderer.updateLayoutPreset()` is sufficient):
 - Card, Tile, Deck, Panel, FlippableObject — all runtime state derives from the state object + Renderer.

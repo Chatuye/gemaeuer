@@ -171,12 +171,13 @@ An action is **undoable** if:
 | Zoom to fit (explicit) | Yes | Yes | Intentional preset action |
 | Pan viewport | Yes | No | Navigation, not a "decision" |
 | Scroll-wheel zoom | Yes | No | Navigation |
-| Select object | No | No | Transient, not persisted |
+| Select object | Yes | No | Persisted, but restored as side effect of other deltas |
 | Raise/lower hand | No | No | Transient UI state |
 
-**Note on selection after undo:** Selection is transient and not restored by undo.
-Example: user selects a card, deletes it, then undoes — the card reappears but is
-not selected. This is acceptable UX (matches behavior in most editors).
+**Note on selection after undo:** Selection is persisted and restored by undo/redo.
+Example: user selects a card, moves it, then undoes — the card returns to its
+original position and remains selected. If the selected object was deleted and then
+undone, it reappears and selection is restored via `StageSelectionManager.applyState()`.
 
 ### The stale-baseline problem
 
@@ -803,7 +804,7 @@ need a custom `applyState()` to reconcile:
 |------|------------------------------|
 | Hand | Rebuild `this.cards` array from `state.cards` IDs, call `positionCards()` |
 | Stage | Reconcile `this.children` array, rebuild zManager from `state.children` |
-| StageSelectionManager | Clear live selection array (selection is transient) |
+| StageSelectionManager | Rebuild `this.selected` map from `state.selection` IDs, reapply visual classes |
 | ViewPort | Recalculate derived viewport scale from patched state |
 | GameStage | Rebuild `this.hand`/`this.deck` references from patched state IDs |
 

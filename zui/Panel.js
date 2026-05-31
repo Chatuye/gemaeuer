@@ -48,7 +48,11 @@ export class Panel extends ZoomableElement {
     }
 
     add(item) {
-        this.state.items.push(item);
+        // Only persist serializable items — div/button/input items hold live
+        // DOM references or callbacks that can't survive JSON round-trips.
+        if (item.type === "text") {
+            this.state.items.push(item);
+        }
         this._renderItem(item);
     }
 

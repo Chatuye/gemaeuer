@@ -26,6 +26,7 @@ export class StageSelectionManagerState extends StateObject {
         super();
 
         this.objectType = "STAGESELECTIONMANAGER";
+        this.selection = [];
     }
 }
 
@@ -36,6 +37,22 @@ export class StageSelectionManager {
 
         /** @type {Map<number, object>} objectId → live object */
         this.selected = new Map();
+
+        // Restore selection from saved state after the full hydration tree completes.
+        // The selection manager is hydrated before children, so selected objects
+        // may not be live yet. Deferring via microtask ensures all objects exist.
+        if (this.state.selection.length > 0) {
+            queueMicrotask(() => {
+                for (const id of this.state.selection) {
+                    let obj = dataManager.getObject(id);
+                    if (obj) {
+                        this.selected.set(id, obj);
+                        this._onSelected(obj);
+                    }
+                }
+                if (this.selected.size > 0) this._notifyChanged();
+            });
+        }
     }
 
     /**
@@ -116,11 +133,14 @@ export class StageSelectionManager {
 
     _add(object) {
         this.selected.set(object.state.objectId, object);
+        this.state.selection.push(object.state.objectId);
         this._onSelected(object);
     }
 
     _remove(object) {
         this.selected.delete(object.state.objectId);
+        let idx = this.state.selection.indexOf(object.state.objectId);
+        if (idx !== -1) this.state.selection.splice(idx, 1);
         this._onDeselected(object);
     }
 
@@ -129,6 +149,7 @@ export class StageSelectionManager {
             this._onDeselected(object);
         }
         this.selected.clear();
+        this.state.selection.length = 0;
     }
 
     _notifyChanged() {

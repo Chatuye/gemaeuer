@@ -20,6 +20,7 @@ export class GameStageState extends StageState {
         this.objectType = "GAMESTAGE";
 
         this.hand = -1;
+        this.settingsPanel = -1;
     }
 }
 
@@ -87,6 +88,10 @@ export class GameStage extends Stage {
             renderer.startDrag(tile.state.objectId);
             tile.grabbed();
         });
+
+        // Hydrate settings panel after tile spawner div is ready (it's used in _renderPanel)
+        this.settingsPanel = dataManager.hydrateObject(this.state.settingsPanel);
+        if (this.settingsPanel) this._renderPanel([]);
     }
 
     registerHand(hand) {

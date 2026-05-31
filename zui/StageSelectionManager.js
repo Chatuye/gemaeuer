@@ -172,6 +172,24 @@ export class StageSelectionManager {
     _onDeselected(object) {
         object.div.classList.remove("selected");
     }
+
+    /** Reconcile live selection map after undo/redo patches state.selection. */
+    applyState() {
+        // Remove visual class from previously selected objects
+        for (const obj of this.selected.values()) {
+            if (obj.div) obj.div.classList.remove("selected");
+        }
+        this.selected.clear();
+
+        // Rebuild from state
+        for (const id of this.state.selection) {
+            const obj = dataManager.getObject(id);
+            if (obj) {
+                this.selected.set(id, obj);
+                this._onSelected(obj);
+            }
+        }
+    }
 }
 
 objectRegistry.register("STAGESELECTIONMANAGER", StageSelectionManager);

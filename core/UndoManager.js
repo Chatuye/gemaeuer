@@ -1,17 +1,16 @@
 /**
- * UndoManager — event-triggered delta-snapshot undo/redo.
+ * UndoManager — event-triggered delta-snapshot undo/redo with surgical apply.
  *
  * Listens to `action:` events on the eventBus. When an action completes,
  * diffs current state against the last baseline to produce a delta.
- * Undo/redo applies deltas via dataManager.restoreData() (full rebuild).
- *
- * Step 6 implementation: delta capture (low memory), full restore on undo.
- * Step 7 will replace restoreData() with surgical _applyReverse/_applyForward.
+ * Undo/redo applies deltas surgically (patch/destroy/recreate individual objects).
+ * Falls back to full restoreData() if surgical apply throws.
  */
 
 import { dataManager } from './DataManager.js';
 import { eventBus } from './EventBus.js';
 import { renderer } from '../rendering/Renderer.js';
+import { objectRegistry } from './ObjectRegistry.js';
 
 
 
@@ -64,7 +63,6 @@ class UndoManager {
         const current = dataManager.states;
         const delta = { modified: {}, created: {}, destroyed: {} };
 
-        // Detect modified and created objects
         for (const id in current) {
             if (!(id in this.lastSnapshot)) {
                 delta.created[id] = structuredClone(current[id]);
@@ -76,14 +74,12 @@ class UndoManager {
             }
         }
 
-        // Detect destroyed objects
         for (const id in this.lastSnapshot) {
             if (!(id in current)) {
                 delta.destroyed[id] = structuredClone(this.lastSnapshot[id]);
             }
         }
 
-        // Only push if something actually changed
         if (Object.keys(delta.modified).length === 0 &&
             Object.keys(delta.created).length === 0 &&
             Object.keys(delta.destroyed).length === 0) return;
@@ -106,10 +102,17 @@ class UndoManager {
         const delta = this.undoStack.pop();
         this.redoStack.push(delta);
 
-        // Reconstruct target state by applying reverse delta to current states
-        const targetStates = this._applyReverseToStates(structuredClone(dataManager.states), delta);
-        const targetData = { version: 0, rootObject: dataManager.rootObject.state.objectId, states: targetStates };
-        dataManager.restoreData(targetData);
+        try {
+            eventBus.mute();
+            this._applyReverse(delta);
+            eventBus.unmute();
+        } catch (e) {
+            eventBus.unmute();
+            console.warn('[UndoManager] Surgical undo failed, falling back to restoreData:', e);
+            const targetStates = this._applyReverseToStates(structuredClone(dataManager.states), delta);
+            const targetData = { version: 0, rootObject: dataManager.rootObject.state.objectId, states: targetStates };
+            dataManager.restoreData(targetData);
+        }
         this.lastSnapshot = this._cloneStates();
     }
 
@@ -120,54 +123,173 @@ class UndoManager {
         const delta = this.redoStack.pop();
         this.undoStack.push(delta);
 
-        // Reconstruct target state by applying forward delta to current states
-        const targetStates = this._applyForwardToStates(structuredClone(dataManager.states), delta);
-        const targetData = { version: 0, rootObject: dataManager.rootObject.state.objectId, states: targetStates };
-        dataManager.restoreData(targetData);
+        try {
+            eventBus.mute();
+            this._applyForward(delta);
+            eventBus.unmute();
+        } catch (e) {
+            eventBus.unmute();
+            console.warn('[UndoManager] Surgical redo failed, falling back to restoreData:', e);
+            const targetStates = this._applyForwardToStates(structuredClone(dataManager.states), delta);
+            const targetData = { version: 0, rootObject: dataManager.rootObject.state.objectId, states: targetStates };
+            dataManager.restoreData(targetData);
+        }
         this.lastSnapshot = this._cloneStates();
     }
 
-    /**
-     * Apply a delta in reverse to a states object (for undo).
-     * - Created objects → remove them
-     * - Destroyed objects → restore them
-     * - Modified objects → apply "before" state
-     */
-    _applyReverseToStates(states, delta) {
-        // Remove created objects
-        for (const id in delta.created) {
-            delete states[id];
-        }
-        // Restore destroyed objects
-        for (const id in delta.destroyed) {
-            states[id] = structuredClone(delta.destroyed[id]);
-        }
-        // Revert modified objects to "before"
-        for (const id in delta.modified) {
-            states[id] = structuredClone(delta.modified[id].before);
-        }
-        return states;
+    // ─── Surgical Apply ──────────────────────────────────────────────────
+
+    _applyReverse(delta) {
+        this._destroyObjects(delta.created);
+        this._recreateObjects(delta.destroyed);
+        this._patchModified(delta.modified, 'before');
+    }
+
+    _applyForward(delta) {
+        this._destroyObjects(delta.destroyed);
+        this._recreateObjects(delta.created);
+        this._patchModified(delta.modified, 'after');
     }
 
     /**
-     * Apply a delta forward to a states object (for redo).
-     * - Destroyed objects → remove them
-     * - Created objects → restore them
-     * - Modified objects → apply "after" state
+     * Two-pass patch:
+     * 1. Apply state values, reconcile parent/renderer for all objects
+     * 2. Call applyState() hooks (depend on other objects being settled)
      */
+    _patchModified(modifiedMap, key) {
+        const deferred = [];
+
+        // Pass 1: patch state + renderer
+        for (const id in modifiedMap) {
+            const numId = Number(id);
+            const newState = modifiedMap[id][key];
+            const obj = dataManager.getObject(numId);
+            if (!obj) continue;
+
+            // Replace state (remove stale keys, apply new values)
+            for (const k of Object.keys(obj.state)) {
+                if (k === 'objectId' || k === 'objectType') continue;
+                if (!(k in newState)) delete obj.state[k];
+            }
+            Object.assign(obj.state, newState);
+            dataManager.states[numId] = obj.state;
+
+            // Reconcile renderer (reparent, layout, dirty)
+            if (renderer.renderNodes.has(numId)) {
+                this._reconcileParent(numId, obj);
+                renderer.updateLayoutPreset(numId);
+                renderer.markDirty(numId);
+            }
+
+            if (obj.applyState) deferred.push(obj);
+        }
+
+        // Pass 2: custom reconciliation hooks
+        for (const obj of deferred) obj.applyState();
+    }
+
+    /** Reparent a rendered object if state.parent.referenceId changed. */
+    _reconcileParent(id, obj) {
+        if (!obj.parent || obj.state.parent?.referenceId == null) return;
+        const newParent = dataManager.getObject(obj.state.parent.referenceId);
+        if (!newParent || newParent === obj.parent) return;
+
+        const node = renderer.renderNodes.get(id);
+        const oldParentId = node.parentId;
+        const newParentId = newParent.state.objectId;
+        const newViewportId = newParent.viewPort?.state?.objectId ?? null;
+
+        // Update renderer indexes
+        renderer.childrenOf.get(oldParentId)?.delete(id);
+        if (!renderer.childrenOf.has(newParentId)) renderer.childrenOf.set(newParentId, new Set());
+        renderer.childrenOf.get(newParentId).add(id);
+
+        if (node.viewportId != null) renderer.viewportChildren.get(node.viewportId)?.delete(id);
+        if (newViewportId != null) {
+            if (!renderer.viewportChildren.has(newViewportId)) renderer.viewportChildren.set(newViewportId, new Set());
+            renderer.viewportChildren.get(newViewportId).add(id);
+        }
+
+        node.parentId = newParentId;
+        node.viewportId = newViewportId;
+        newParent.div.appendChild(obj.div);
+        obj.parent = newParent;
+    }
+
+    _destroyObject(id) {
+        const obj = dataManager.getObject(id);
+        if (obj) {
+            const parent = dataManager.getObject(obj.state.parent?.referenceId);
+            if (parent?.unregisterChild) parent.unregisterChild(obj);
+            if (obj.destroy) obj.destroy();
+        }
+        delete dataManager.states[id];
+        dataManager.objects.delete(id);
+    }
+
+    /** Destroy multiple objects in child-before-parent order. */
+    _destroyObjects(objectMap) {
+        const ids = Object.keys(objectMap).map(Number);
+        if (ids.length === 0) return;
+
+        const order = [];
+        const visited = new Set();
+
+        const visit = (id) => {
+            if (visited.has(id)) return;
+            visited.add(id);
+            for (const otherId of ids) {
+                if (objectMap[otherId].parent?.referenceId === id) {
+                    visit(otherId);
+                }
+            }
+            order.push(id);
+        };
+
+        for (const id of ids) visit(id);
+        for (const id of order) this._destroyObject(id);
+    }
+
+    _recreateObject(id, state) {
+        dataManager.createObject(structuredClone(state));
+    }
+
+    /** Recreate multiple objects in parent-before-child order. */
+    _recreateObjects(objectMap) {
+        const ids = Object.keys(objectMap).map(Number);
+        if (ids.length === 0) return;
+
+        const idSet = new Set(ids);
+        const order = [];
+        const visited = new Set();
+
+        const visit = (id) => {
+            if (visited.has(id)) return;
+            visited.add(id);
+            const parentId = objectMap[id].parent?.referenceId;
+            if (parentId != null && idSet.has(parentId)) {
+                visit(parentId);
+            }
+            order.push(id);
+        };
+
+        for (const id of ids) visit(id);
+        for (const id of order) this._recreateObject(id, objectMap[id]);
+    }
+
+    // ─── Fallback: state-level apply (Step 6 approach) ───────────────────
+
+    _applyReverseToStates(states, delta) {
+        for (const id in delta.created) delete states[id];
+        for (const id in delta.destroyed) states[id] = structuredClone(delta.destroyed[id]);
+        for (const id in delta.modified) states[id] = structuredClone(delta.modified[id].before);
+        return states;
+    }
+
     _applyForwardToStates(states, delta) {
-        // Remove destroyed objects
-        for (const id in delta.destroyed) {
-            delete states[id];
-        }
-        // Restore created objects
-        for (const id in delta.created) {
-            states[id] = structuredClone(delta.created[id]);
-        }
-        // Apply modified objects to "after"
-        for (const id in delta.modified) {
-            states[id] = structuredClone(delta.modified[id].after);
-        }
+        for (const id in delta.destroyed) delete states[id];
+        for (const id in delta.created) states[id] = structuredClone(delta.created[id]);
+        for (const id in delta.modified) states[id] = structuredClone(delta.modified[id].after);
         return states;
     }
 
@@ -184,11 +306,21 @@ UNDOABLE_EVENTS.forEach(evt => eventBus.on(evt, scheduleCapture));
 
 // Wire baseline events — advance baseline without creating an undo entry
 BASELINE_EVENTS.forEach(evt => eventBus.on(evt, () => {
-    queueMicrotask(() => {
+    if (evt === 'object:grabbed') {
+        // Grabbed must advance baseline synchronously — coordination events
+        // (card:grabbed → Hand removes card) fire in the same synchronous block
+        // AFTER object:grabbed. If we defer, the baseline would include those
+        // mutations, making them invisible to the next delta.
         if (!undoManager._captureScheduled) {
             undoManager.updateBaseline();
         }
-    });
+    } else {
+        queueMicrotask(() => {
+            if (!undoManager._captureScheduled) {
+                undoManager.updateBaseline();
+            }
+        });
+    }
 }));
 
 // Keyboard shortcuts

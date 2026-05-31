@@ -200,4 +200,18 @@ export class Stage extends ZoomableElement {
         }
         super.destroy();
     }
+
+    /** Reconcile live children array after undo/redo patches state.children. */
+    applyState() {
+        this.children = this.state.children
+            .map(id => dataManager.getObject(id))
+            .filter(obj => obj != null);
+
+        // Reconcile zManager: ensure all children are tracked
+        for (const child of this.children) {
+            if (!this.zManager.objectLayers.has(child.state.objectId)) {
+                this.zManager.set(child, child.state.layer ?? 0);
+            }
+        }
+    }
 }

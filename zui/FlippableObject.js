@@ -74,4 +74,11 @@ export class FlippableObject extends ZoomableElement {
 	onMouseUp(e) {
 		super.onMouseUp(e);
 	}
+
+	/** Reconcile visual state after undo/redo patches the state object. */
+	applyState() {
+		// Apply correct wrapper transform without transition
+		this.wrapper.style.transitionDuration = '0ms';
+		this.wrapper.style.transform = this.state.facing === "BACK" ? "rotateY(180deg)" : "none";
+	}
 }

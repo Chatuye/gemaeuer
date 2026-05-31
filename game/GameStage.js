@@ -270,6 +270,18 @@ export class GameStage extends Stage {
         super.destroy();
     }
 
+    /** Reconcile live references after undo/redo patches state. */
+    applyState() {
+        super.applyState();
+        this.hand = dataManager.getObject(this.state.hand);
+        this.settingsPanel = dataManager.getObject(this.state.settingsPanel);
+        if (this.settingsPanel) {
+            const selMgr = this.selectionManager;
+            const selection = selMgr ? selMgr.getSelection() : [];
+            this._renderPanel(selection);
+        }
+    }
+
 }
 
 objectRegistry.register("GAMESTAGE", GameStage);

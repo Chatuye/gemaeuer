@@ -820,7 +820,7 @@ to rebuild the DOM. External API unchanged.
 **Test:** Same manual tests as step 2. If anything breaks, revert to full snapshots
 for that case (fallback strategy).
 
-### Step 7: Surgical object reconciliation
+### Step 7: Surgical object reconciliation ✅
 
 Replace `restoreData()` in undo/redo with direct object manipulation. Broken into
 sub-steps, each independently testable:

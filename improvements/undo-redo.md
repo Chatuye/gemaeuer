@@ -822,54 +822,107 @@ for that case (fallback strategy).
 
 ### Step 7: Surgical object reconciliation
 
-Implement `_patchObject`, `_destroyObject`, `_recreateObject`. Add `applyState()`
-to object types one at a time, starting with simple ones (Card, Tile) then
-containers (Stage, Hand).
+Replace `restoreData()` in undo/redo with direct object manipulation. Broken into
+sub-steps, each independently testable:
 
-**Which types need `applyState()`?** The generic `_patchObject` updates `obj.state`
-and marks the Renderer dirty — this is sufficient for ZoomableElement subclasses
-whose runtime state is derived entirely from their state object + Renderer. Types
-that maintain *additional* live state (arrays, cached references, derived values)
-need a custom `applyState()` to reconcile:
+#### Step 7a: Infrastructure
 
-| Type | Why `applyState()` is needed |
-|------|------------------------------|
-| Hand | Rebuild `this.cards` array from `state.cards` IDs, call `positionCards()` |
-| Stage | Reconcile `this.children` array, rebuild zManager from `state.children` |
-| StageSelectionManager | Rebuild `this.selected` map from `state.selection` IDs, reapply visual classes |
-| ViewPort | Recalculate derived viewport scale from patched state |
-| GameStage | Rebuild `this.hand`/`this.settingsPanel` references from patched state IDs |
+Core plumbing — no visual correctness yet, just the mechanical framework.
 
-Types that do NOT need `applyState()` (generic `_patchObject` + `renderer.updateLayoutPreset()` is sufficient):
-- Card, Tile, Deck, Panel, FlippableObject — all runtime state derives from the state object + Renderer.
+- Add `mute()`/`unmute()` to EventBus (guard `emit()` with a `this.muted` flag)
+- Guard `_destroyObject` against types without a `destroy()` method (ViewPort,
+  StageSelectionManager have none — call `obj.destroy?.()` or add no-op stubs)
+- Replace `restoreData()` calls in undo/redo with `_applyReverse`/`_applyForward`
+- Implement `_patchObject` (generic: key deletion + assign + `applyState()` hook,
+  with fallback to `renderer.updateLayoutPreset()` + mark dirty for registered objects)
+- Implement `_destroyObject` / `_destroyObjects` (child-before-parent ordering)
+- Implement `_recreateObject` / `_recreateObjects` (parent-before-child ordering)
+- No `applyState()` on any type yet — objects get patched but may be visually stale
 
-**Compound object problem:** Some objects (Hand, Deck, Panel) don't exist
-independently — they're created and wired by a parent (GameStage). Hand has no div,
-no Renderer registration, and its constructor re-subscribes to events and hydrates
-cards. If a GameStage is destroyed and recreated, the Hand, Deck, and Panel must
-also be recreated in the right order, and GameStage's internal references
-(`this.hand`, `this.deck`, etc.) must be re-established.
+**Test:** Verify via console that undo/redo doesn't throw. State values revert
+correctly (inspect `dataManager.states[id]`), but visual may be stale. Specifically:
+flip a card, Ctrl+Z, check `dataManager.getObject(cardId).state.facing` reverted.
 
-**Strategy: treat compound objects as atomic subtrees.** If a delta's
-`destroyed`/`created` set includes a compound root (e.g., GameStage), don't
-recreate individual children separately. Instead, recreate the root via its factory
-function (e.g., `createGameStage()`), which handles all internal wiring — the same
-way `restoreData()` works today, just scoped to a subtree.
+#### Step 7b: Positional types + FlippableObject
 
-In practice:
-- Deltas that involve only simple objects (Card moved, Tile repositioned) use
-  granular `_patchObject`.
-- Deltas that involve compound object creation/destruction (entire GameStage
-  deleted/recreated) use the factory path.
-- Detection: if a delta's `created` or `destroyed` set contains an object whose
-  type has a registered factory (e.g., `GAMESTAGE`), use the factory instead of
-  generic `_recreateObject`.
+Make simple state patches produce correct visuals.
 
-**Test per type:**
-- Card: draw → undo → card gone → redo → card back
-- Tile: move tile → undo → tile returns to original position
-- Delete card: delete → undo → card reappears in hand at correct position
-- Delete GameStage (if supported): delete → undo → entire stage with hand/deck restored
+- Add generic renderer update in `_patchObject` fallback: if the object has a
+  render node (`renderer.renderNodes.has(id)`), call `renderer.updateLayoutPreset(id)`.
+  This handles x/y/width/height and layout preset changes for all ZoomableElements.
+- Add `applyState()` to FlippableObject: re-apply the correct wrapper transform
+  based on `state.facing` (set `this.wrapper.style.transform` directly — no
+  transition during undo). Without this, undoing a flip reverts the state field
+  but the CSS `rotateY(180deg)` on the wrapper stays stale.
+- Add `applyState()` to ViewPort: call `this.calculateScale()` to recompute
+  derived `scaleX`/`scaleY` from the patched width/height/type fields. Then
+  trigger `renderer.notifyViewportChanged(this.state.objectId)` and
+  `this.parent.notifyChildStages()` so children re-layout.
+
+**Test:** Move a tile → Ctrl+Z → tile returns to original position (no DOM rebuild).
+Flip a card → Ctrl+Z → card visually flips back (wrapper transform updated).
+
+#### Step 7c: Container types
+
+Reconcile parent-child relationships after patching.
+
+- Add `applyState()` to Stage: rebuild `this.children` array from `state.children`
+  by resolving each ID via `dataManager.getObject(id)`, filtering out nulls (a child
+  may have been destroyed in the same delta — `_destroyObjects` runs first).
+- Add `applyState()` to GameStage: call `super.applyState()`, then rebuild
+  `this.hand = dataManager.getObject(this.state.hand)` and
+  `this.settingsPanel = dataManager.getObject(this.state.settingsPanel)`.
+  If the settings panel exists, call `this._renderPanel([])` to reset its content.
+- Add `applyState()` to StageSelectionManager: clear `this.selected` map, rebuild
+  from `state.selection` (skip IDs where `dataManager.getObject(id)` returns null —
+  the selected object may have been destroyed). Reapply/remove `.selected` CSS class
+  on each object's div. Emit `selection:changed` after unmute so the panel updates.
+
+**Note on emission after unmute:** StageSelectionManager's `applyState()` should
+NOT emit `selection:changed` itself (eventBus is muted during apply). Instead,
+after `eventBus.unmute()` in `undo()`/`redo()`, emit a synthetic
+`selection:changed` for any patched selection manager so GameStage re-renders
+the panel. Alternatively, call `gameStage._renderPanel(selMgr.getSelection())`
+directly from `applyState()` — simpler, no event needed.
+
+**Test:** Draw a card → Ctrl+Z → card destroyed, stage's `this.children` array
+no longer contains it, no stale references.
+
+#### Step 7d: Hand
+
+Hand is the most complex reconciliation because it manages card positioning.
+
+- Add `applyState()` to Hand:
+  1. Rebuild `this.cards` from `state.cards` (resolve IDs, filter nulls)
+  2. Recalculate `this.stage` reference (`dataManager.getObject(this.state.stage.referenceId)`)
+  3. Recalculate coordinates and card dimensions (`calculateCoordinates()`,
+     `getCardScreenDimensions()`, `calculateInteractionY()`)
+  4. Call `positionCards()` to reposition all cards in the fan
+
+**Ordering note:** `_recreateObjects` runs before `_patchObject` on the parent.
+Cards are recreated first (they register in `dataManager.objects`), then Hand is
+patched — `applyState()` resolves card IDs and finds them alive. This ordering is
+guaranteed by the `_applyReverse`/`_applyForward` sequence: destroy → recreate → patch.
+
+**Single-frame visual note:** `positionCards()` calls `card.getScreenDimensions()`
+which reads from the Renderer's cached bounds. A just-recreated card has `dirty: true`
+bounds (not yet ticked). The first render frame corrects this — a brief single-frame
+layout jump is possible but acceptable.
+
+**Test:** Draw card → Ctrl+Z → card gone from hand, remaining cards reposition
+correctly. Draw 3 cards → Ctrl+Z → only last card removed, fan re-centers.
+
+#### Step 7e: Fallback safety net
+
+- Wrap `_applyReverse`/`_applyForward` in try/catch
+- On failure: log a warning with the error and delta summary
+- Fall back to the Step 6 approach: reconstruct target states from the delta
+  (using `_applyReverseToStates`/`_applyForwardToStates` which still exist),
+  then call `dataManager.restoreData()` for a full rebuild
+- This ensures no undo operation ever crashes the app — worst case is a flicker
+
+**Test:** All previous tests still pass. Intentionally break one `applyState()`
+(e.g., throw in Hand.applyState), verify fallback fires and state is still correct.
 
 Steps 1–5 deliver a fully working undo/redo feature. Steps 6–7 are performance
 optimizations — add them when object count makes full snapshots noticeably slow.

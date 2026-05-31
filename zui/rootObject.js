@@ -69,7 +69,6 @@ export class RootObject {
     destroy() {
         for (let i = 0; i < this.children.length; i++) {
             this.children[i].destroy();
-            this.div.removeChild(this.children[i].div);
         }
         window.removeEventListener("resize", this._boundUpdate);
     }

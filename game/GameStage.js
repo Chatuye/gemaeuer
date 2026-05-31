@@ -175,6 +175,7 @@ export class GameStage extends Stage {
         gameStage.viewPort.calculateScale();
 
         this.registerChild(gameStage);
+        eventBus.emit('action:objectCreated', { object: gameStage });
     }
 
     onParentChange() {

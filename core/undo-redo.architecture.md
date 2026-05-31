@@ -111,16 +111,18 @@ When an object's `state.parent.referenceId` changed, `_reconcileParent` handles:
 
 ```mermaid
 flowchart LR
-    subgraph "Destroy (child-first)"
-        C[Child] --> P[Parent]
+    subgraph "Destroy"
+        TL[Top-level objects<br/>parent survives] -->|"unregisterChild + destroy()"| DONE[Removed]
+        INT[Internal objects<br/>parent also in delta] -->|"remove from dataManager only"| DONE
     end
     subgraph "Recreate (parent-first)"
         P2[Parent] --> C2[Child]
     end
 ```
 
-- **Destroy**: children before parents (child's `destroy()` accesses parent's DOM)
-- **Recreate**: parents before children (child's constructor calls `dataManager.getObject(parentId)`)
+- **Top-level objects**: their parent is NOT in the delta — destroyed normally (`unregisterChild` + `destroy()`)
+- **Internal objects**: their parent IS in the delta (or they have no parent, e.g., zManager) — just removed from `dataManager.states`/`objects`. The parent's `destroy()` handles DOM/renderer cleanup for its own internals.
+- **Recreate**: parents before children. States are pre-populated in `dataManager.states` before any constructor runs, so `hydrateObject()` can find internal objects (ViewPort, zManager) during parent construction. Objects already hydrated by a parent's constructor are skipped.
 
 ## Baseline Management
 

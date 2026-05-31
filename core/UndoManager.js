@@ -219,35 +219,45 @@ class UndoManager {
     _destroyObject(id) {
         const obj = dataManager.getObject(id);
         if (obj) {
-            const parent = dataManager.getObject(obj.state.parent?.referenceId);
-            if (parent?.unregisterChild) parent.unregisterChild(obj);
+            const parentId = obj.state.parent?.referenceId;
+            const parent = dataManager.getObject(parentId);
+            if (parent?.unregisterChild && parent.state.children?.includes(id)) {
+                parent.unregisterChild(obj);
+            }
             if (obj.destroy) obj.destroy();
         }
         delete dataManager.states[id];
         dataManager.objects.delete(id);
     }
 
-    /** Destroy multiple objects in child-before-parent order. */
+    /** Destroy multiple objects. Top-level objects (whose parent survives) are
+     *  destroyed normally. Internal objects (whose parent is also in the delta)
+     *  are just removed from dataManager — their parent's destroy() handles cleanup. */
     _destroyObjects(objectMap) {
         const ids = Object.keys(objectMap).map(Number);
         if (ids.length === 0) return;
 
-        const order = [];
-        const visited = new Set();
+        const idSet = new Set(ids);
+        const topLevel = [];
+        const internal = [];
 
-        const visit = (id) => {
-            if (visited.has(id)) return;
-            visited.add(id);
-            for (const otherId of ids) {
-                if (objectMap[otherId].parent?.referenceId === id) {
-                    visit(otherId);
-                }
+        for (const id of ids) {
+            const parentId = objectMap[id].parent?.referenceId;
+            if (parentId != null && !idSet.has(parentId)) {
+                topLevel.push(id);
+            } else {
+                internal.push(id);
             }
-            order.push(id);
-        };
+        }
 
-        for (const id of ids) visit(id);
-        for (const id of order) this._destroyObject(id);
+        // Destroy top-level objects (unregister from parent + destroy())
+        for (const id of topLevel) this._destroyObject(id);
+
+        // Clean up internal objects from dataManager only
+        for (const id of internal) {
+            delete dataManager.states[id];
+            dataManager.objects.delete(id);
+        }
     }
 
     _recreateObject(id, state) {
@@ -258,6 +268,12 @@ class UndoManager {
     _recreateObjects(objectMap) {
         const ids = Object.keys(objectMap).map(Number);
         if (ids.length === 0) return;
+
+        // Pre-populate dataManager.states so hydrateObject() can find them
+        // during construction (e.g., Stage constructor hydrates its ViewPort)
+        for (const id of ids) {
+            dataManager.states[id] = structuredClone(objectMap[id]);
+        }
 
         const idSet = new Set(ids);
         const order = [];
@@ -274,7 +290,14 @@ class UndoManager {
         };
 
         for (const id of ids) visit(id);
-        for (const id of order) this._recreateObject(id, objectMap[id]);
+
+        // Only recreate objects not already hydrated (constructor may have
+        // hydrated internal objects like ViewPort/zManager via hydrateObject)
+        for (const id of order) {
+            if (!dataManager.objects.has(id)) {
+                this._recreateObject(id, objectMap[id]);
+            }
+        }
     }
 
     // ─── Fallback: state-level apply (Step 6 approach) ───────────────────

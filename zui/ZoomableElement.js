@@ -249,6 +249,7 @@ export class ZoomableElement {
         } else {
             // Same parent — convert cursor to world, offset by grab-relative position
             let cursorLocal = renderer.screenToLocal(this.cursorX, this.cursorY, targetStage.state.objectId);
+            if (!cursorLocal) return;
             let cursorWorld = renderer.localToViewport(cursorLocal.x, cursorLocal.y, targetStage.state.objectId);
 
             if (this.parent.zManager) {

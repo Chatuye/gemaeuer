@@ -785,12 +785,11 @@ everything from scratch. Even undoing a single card draw rebuilds the full game.
 This may cause a visible flash/flicker. Acceptable as a working baseline — Steps
 6–7 replace this with surgical patching that only touches affected objects.
 
-### Step 3: Add baseline events
+### Step 3: Add baseline events ✅
 
-Emit `object:grabbed` from `ZoomableElement.grabbed()`. Add a new `viewport:changed`
-event — this doesn't exist yet and needs to be emitted after scroll-wheel pan/zoom
-completes (likely in the Renderer's wheel/drag handler or ViewPort). Wire both to
-`updateBaseline()`.
+Emit `object:grabbed` from `ZoomableElement.grabbed()` (skipped for newly spawned
+objects via `_isNewlySpawned` guard). Emit `viewport:changed` from `Stage.pan()`
+and `Stage.zoom()`. Both are wired to baseline advancement in the UndoManager.
 
 **Test:** Pan the viewport, draw a card, Ctrl+Z. Only the card draw is undone —
 viewport stays where it is.

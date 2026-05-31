@@ -4,6 +4,7 @@ import { ViewPortState } from './ViewPort.js';
 import { StageZIndexManagerState } from './StageZIndexManager.js';
 import { dataManager } from '../core/DataManager.js';
 import { renderer } from '../rendering/Renderer.js';
+import { eventBus } from '../core/EventBus.js';
 
 
 
@@ -126,6 +127,7 @@ export class Stage extends ZoomableElement {
         this.viewPort.pan(dX, dY);
         renderer.notifyViewportChanged(this.viewPort.state.objectId);
         this.notifyChildStages();
+        eventBus.emit('viewport:changed', { stage: this });
 	}
     zoom(z, x, y) {
 		let cursorOnDiv = this.convertScreenPosToDivPos(x, y);
@@ -144,6 +146,7 @@ export class Stage extends ZoomableElement {
         this.viewPort.zoom(zoomIncX*relX, zoomIncY*relY, zoomIncX, zoomIncY);
         renderer.notifyViewportChanged(this.viewPort.state.objectId);
         this.notifyChildStages();
+        eventBus.emit('viewport:changed', { stage: this });
     }
 
     /**

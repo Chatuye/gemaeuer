@@ -169,6 +169,13 @@ export class ZoomableElement {
         this.parent.grabbedChild = this;
         this.grabbing = null;
         this.isGrabbed = true;
+
+        // Emit object:grabbed for baseline advancement — skip for newly spawned
+        // objects so the baseline stays at pre-spawn state (undo destroys the tile)
+        if (!this._isNewlySpawned) {
+            eventBus.emit('object:grabbed', { object: this });
+        }
+
 		renderer.setState(this.state.objectId, 'filter', "drop-shadow(0px 0px 4px rgba(0, 0, 0, 1.0)) drop-shadow(0px 0px 24px rgba(255, 255, 255, 0.33))");
 
         // Capture cursor's relative position on the object (0–1) for cross-stage drop positioning

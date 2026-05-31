@@ -28,7 +28,9 @@ const UNDOABLE_EVENTS = [
 // Non-undoable events that mutate persistent state — advance the baseline
 // so the next capture doesn't accidentally revert them.
 const BASELINE_EVENTS = [
-    'selection:changed',
+    'object:grabbed',     // freeze pre-drag state
+    'viewport:changed',   // scroll-wheel pan/zoom
+    'selection:changed',  // selection is persisted but not independently undoable
 ];
 
 class UndoManager {

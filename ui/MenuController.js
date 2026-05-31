@@ -27,4 +27,12 @@ export function initMenu() {
 		});
 		reader.readAsText(file);
 	});
+
+	document.getElementById("menu-undo").addEventListener("click", () => {
+		undoManager.undo();
+	});
+
+	document.getElementById("menu-redo").addEventListener("click", () => {
+		undoManager.redo();
+	});
 }

@@ -794,7 +794,7 @@ and `Stage.zoom()`. Both are wired to baseline advancement in the UndoManager.
 **Test:** Pan the viewport, draw a card, Ctrl+Z. Only the card draw is undone —
 viewport stays where it is.
 
-### Step 4: UI buttons
+### Step 4: UI buttons ✅
 
 Add Undo/Redo buttons in `MenuController.js` alongside New, Save, Load.
 Wire to `undoManager.undo()` / `undoManager.redo()`.

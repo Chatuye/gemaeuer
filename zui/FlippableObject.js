@@ -1,6 +1,7 @@
 import { ZoomableElementState, ZoomableElement } from './ZoomableElement.js';
 import { svgLoader } from '../assets/SVGLoader.js';
 import { renderer } from '../rendering/Renderer.js';
+import { eventBus } from '../core/EventBus.js';
 
 
 
@@ -66,6 +67,8 @@ export class FlippableObject extends ZoomableElement {
 			properties: { transform: targetTransform },
 			onComplete: null
 		});
+
+		if (d > 0) eventBus.emit('action:objectFlipped', { object: this });
 	}
 
 	onMouseUp(e) {

@@ -34,6 +34,7 @@ export class Deck extends ZoomableObject {
             let card = dataManager.createObject(cardState);
             this.parent.registerChild(card);
             eventBus.emit('card:drawn', { card });
+            eventBus.emit('action:cardDrawn', { card });
         }
 
         super.onMouseUp(e);

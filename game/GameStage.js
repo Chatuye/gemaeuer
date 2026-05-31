@@ -44,8 +44,10 @@ export class GameStage extends Stage {
             if (card.parent !== this) return;
             if (this.hand && this.hand.mode === "RAISED") {
                 eventBus.emit('card:droppedInHand', { card });
+                eventBus.emit('action:cardReturnedToHand', { card });
             } else {
                 eventBus.emit('card:droppedOnStage', { card });
+                eventBus.emit('action:cardPlaced', { card });
             }
         };
         eventBus.on('card:dropped', this.onCardDropped);
@@ -85,6 +87,7 @@ export class GameStage extends Stage {
 
             tile.cursorX = e.clientX;
             tile.cursorY = e.clientY;
+            tile._isNewlySpawned = true;
             renderer.startDrag(tile.state.objectId);
             tile.grabbed();
         });
@@ -144,6 +147,7 @@ export class GameStage extends Stage {
 
         let tile = dataManager.createObject(tileState);
         this.registerChild(tile);
+        eventBus.emit('action:objectCreated', { object: tile });
     }
     onContextMenu(e) {
         e.stopPropagation();
@@ -223,6 +227,7 @@ export class GameStage extends Stage {
                 obj.parent.unregisterChild(obj);
             }
             obj.destroy();
+            eventBus.emit('action:objectDeleted', { object: obj });
         });
     }
 

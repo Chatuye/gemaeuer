@@ -18,6 +18,7 @@ import { LayoutPresets } from './config/LayoutPresets.js';
 import { randomHexColorCode } from '../utils.js';
 import { dataManager } from '../core/DataManager.js';
 import { renderer } from '../rendering/Renderer.js';
+import { eventBus } from '../core/EventBus.js';
 
 
 
@@ -196,6 +197,12 @@ export class ZoomableElement {
 		this.setDefaultStyle();
 
         this._placeOnStage();
+        if (this._isNewlySpawned) {
+            this._isNewlySpawned = false;
+            eventBus.emit('action:objectCreated', { object: this });
+        } else {
+            eventBus.emit('action:objectMoved', { object: this });
+        }
     }
 
     /**

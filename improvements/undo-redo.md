@@ -42,8 +42,10 @@ and all state mutations are complete.
 | `action:cardDrawn` | Card created + Hand added + positioned | A card was drawn from the deck |
 | `action:cardPlaced` | Drop + reparent + WORLD layout set | A card was placed on the world stage |
 | `action:cardReturnedToHand` | Drop + Hand added + positioned | A card was returned to the hand |
-| `action:objectMoved` | Drop + reparent + positioned | An object was dropped (covers moves and spawns) |
+| `action:objectCreated` | Object created + placed (spawner drop or double-click) | A new object was placed on the stage |
+| `action:objectMoved` | Drop + reparent + positioned | An existing object was moved |
 | `action:objectDeleted` | Destroy + parent cleanup + Hand update | An object was destroyed |
+| `action:objectFlipped` | Facing state toggled + transition started | A flippable object was flipped |
 | `action:zoomAction` | Viewport updated | An explicit zoom preset was applied |
 
 Coordination events keep their current names unchanged — they remain on the same
@@ -69,11 +71,13 @@ eventBus.emit('action:cardPlaced', { card });
 Since coordination events dispatch synchronously, by the time the originating
 function emits the `action:` event, all state is settled.
 
-**`action:objectMoved` — generic drop event:**
+**`action:objectMoved` vs `action:objectCreated` — drop event logic:**
 
-`ZoomableElement.drop()` emits `action:objectMoved` unconditionally at the end of
-`_placeOnStage()`. This fires for *all* draggable objects — tiles, cards, and any
-future types.
+`ZoomableElement.drop()` checks `_isNewlySpawned` to decide which event to emit.
+Objects created by the spawner have `_isNewlySpawned = true` set at creation time;
+on drop they emit `action:objectCreated` and clear the flag. Existing objects emit
+`action:objectMoved`. This distinction ensures undo correctly destroys newly spawned
+objects vs. reverting position for existing ones.
 
 For Cards, the GameStage drop handler additionally emits a more specific action
 event (`action:cardPlaced` or `action:cardReturnedToHand`) after `action:objectMoved`
@@ -81,23 +85,29 @@ has already fired. This is fine — the `captureScheduled` deduplication flag co
 multiple action events within the same synchronous call stack into a single undo step.
 
 ```js
-// ZoomableElement.drop() — base class, fires for all draggable objects:
+// ZoomableElement.drop() — base class:
 drop() {
     this._placeOnStage();
-    eventBus.emit('action:objectMoved', { object: this });
+    if (this._isNewlySpawned) {
+        this._isNewlySpawned = false;
+        eventBus.emit('action:objectCreated', { object: this });
+    } else {
+        eventBus.emit('action:objectMoved', { object: this });
+    }
 }
 
 // Card.drop() — override, emits coordination event that triggers GameStage:
 drop() {
-    super.drop();  // ← fires action:objectMoved
+    super.drop();  // ← fires action:objectMoved (cards are never _isNewlySpawned)
     eventBus.emit('card:dropped', { card: this });
     // → GameStage handler fires action:cardPlaced or action:cardReturnedToHand
     // → captureScheduled deduplicates into one undo step
 }
 ```
 
-No special-casing needed. Tiles get `action:objectMoved` from the base class.
-Cards get both `action:objectMoved` and a specific action event — deduplicated
+Tiles spawned via the spawner get `action:objectCreated` from the base class.
+Tiles dragged after placement get `action:objectMoved`.
+Cards always get `action:objectMoved` plus a specific action event — deduplicated
 automatically.
 
 **Note on emission timing:** `action:objectMoved` fires from `super.drop()` before
@@ -106,6 +116,10 @@ automatically.
 `state.cards` hasn't been updated yet. This is safe because `capture()` runs in a
 microtask — by the time it executes, the entire synchronous chain has completed and
 all state is settled. Correctness depends on the microtask deferral, not emission order.
+
+**Double-click creation:** `GameStage.onDoubleClick()` creates a tile and emits
+`action:objectCreated` directly — no drag involved. Same event, same undo behavior
+as the spawner path.
 
 ### Migration path
 
@@ -166,9 +180,11 @@ An action is **undoable** if:
 | Action | Persistent? | Undoable? | Reason |
 |--------|-------------|-----------|--------|
 | Draw card | Yes | Yes | Discrete game action |
+| Create object | Yes | Yes | Discrete creation (spawner drop or double-click) |
 | Drop card/tile | Yes | Yes | Intentional placement |
 | Delete object | Yes | Yes | Destructive, user expects to undo |
 | Zoom to fit (explicit) | Yes | Yes | Intentional preset action |
+| Flip object | Yes | Yes | Discrete user decision, changes facing |
 | Pan viewport | Yes | No | Navigation, not a "decision" |
 | Scroll-wheel zoom | Yes | No | Navigation |
 | Select object | Yes | No | Persisted, but restored as side effect of other deltas |
@@ -225,16 +241,19 @@ between the grab-start state and the final settled state.
 This also covers the case where non-undoable mutations (like a pan) happened
 *before* the grab — the baseline advancement at grab-start absorbs them.
 
-**Spawner exception:** The tile spawner creates a tile and immediately starts a
-drag in the same synchronous block. The baseline must NOT advance at this grab —
-otherwise the baseline would include the newly created tile, and the delta on drop
-would only show a position change (not a creation). Undoing would revert position
-but leave the tile alive.
+**Spawner and `_isNewlySpawned`:** The tile spawner creates a tile and immediately
+starts a drag in the same synchronous block. The tile is marked with
+`_isNewlySpawned = true`. On drop, `ZoomableElement.drop()` checks this flag and
+emits `action:objectCreated` instead of `action:objectMoved`. The capture sees the
+full delta from "no tile" to "tile at final position." Undo destroys the tile entirely.
+
+The baseline must NOT advance at this grab — otherwise the baseline would include
+the newly created tile, and the delta on drop would only show a position change
+(not a creation). Undoing would revert position but leave the tile alive.
 
 Rule: the spawner does not emit `object:grabbed`. It calls `renderer.startDrag()`
 and `tile.grabbed()` directly, bypassing the baseline event. The baseline stays at
-pre-spawn state. On drop, `action:objectMoved` fires, the delta captures both the
-tile creation and its final position. Undo destroys the tile entirely.
+pre-spawn state.
 
 Implementation: emit `object:grabbed` from the Renderer's input handler (the code
 path that initiates a user-driven grab via mousedown hit-testing), NOT from inside
@@ -282,6 +301,7 @@ The flow for a drag operation:
 - `object:grabbed` → baseline advances (freezes pre-drag state)
 - During drag → position changes, no events in either list fire
 - Drop settles → `action:objectMoved` (or `action:cardPlaced`, etc.) → capture records net delta from grab to final position
+- For spawned objects: no `object:grabbed` (baseline stays at pre-spawn) → drop emits `action:objectCreated` → capture records full creation + placement
 
 ---
 
@@ -511,8 +531,10 @@ const UNDOABLE_EVENTS = [
     'action:cardDrawn',
     'action:cardPlaced',
     'action:cardReturnedToHand',
+    'action:objectCreated',
     'action:objectMoved',
     'action:objectDeleted',
+    'action:objectFlipped',
     'action:tileSpawned',
     'action:zoomAction',
 ];
@@ -537,6 +559,7 @@ UNDOABLE_EVENTS.forEach(evt => eventBus.on(evt, scheduleCapture));
 const BASELINE_EVENTS = [
     'object:grabbed',     // freeze pre-drag state
     'viewport:changed',   // scroll-wheel pan/zoom
+    'selection:changed',  // selection is persisted but not independently undoable
 ];
 
 BASELINE_EVENTS.forEach(evt => eventBus.on(evt, () => {
@@ -725,7 +748,7 @@ which resolves card IDs via `dataManager.getObject(id)` — the cards exist by t
 
 Each step is independently testable and doesn't break existing behavior.
 
-### Step 1: Add `action:` events
+### Step 1: Add `action:` events ✅
 
 Add `eventBus.emit('action:...')` calls at the end of existing action chains.
 No new modules, no behavioral changes.
@@ -734,19 +757,26 @@ Where to emit:
 - `Deck.onMouseUp()` → `action:cardDrawn` (after `card:drawn` and all listeners settle)
 - `GameStage` drop handler → `action:cardPlaced` or `action:cardReturnedToHand`
 - `GameStage` delete handler → `action:objectDeleted`
-- `ZoomableElement.drop()` → `action:objectMoved` (fires for all draggable objects, including spawned tiles)
+- `GameStage.onDoubleClick()` → `action:objectCreated` (after tile is created and registered)
+- `ZoomableElement.drop()` → `action:objectCreated` (if `_isNewlySpawned`) or `action:objectMoved` (existing objects)
+- `FlippableObject.flip()` → `action:objectFlipped` (only when `d > 0`, skips constructor's initial flip)
 
 **Test:** Open console, run `eventBus.on('action:cardDrawn', (e) => console.log('action', e))`.
 Draw a card. Verify the event fires once, after the card is in the hand.
 
-### Step 2: UndoManager with full snapshots
+### Step 2: UndoManager with full snapshots ✅
 
-Create `core/UndoManager.js` with `capture()`, `undo()`, `redo()`, `init()`,
-`updateBaseline()`. Internally use `gatherData()`/`restoreData()` — simple and
-correct, optimization comes later.
+Create `core/UndoManager.js` with `scheduleCapture()`, `undo()`, `redo()`, `init()`.
+Internally use `gatherData()`/`restoreData()` — simple and correct, optimization
+comes later.
 
 Wire to `action:` events via `queueMicrotask`. Add Ctrl+Z / Ctrl+Y keyboard
 shortcuts. Call `undoManager.init()` after `createGameStage()` in `main.js`.
+Also call `init()` after `restoreData()` in the load handler and after "New".
+
+Baseline events (`selection:changed`) advance the top of the undo stack without
+creating a new entry, preventing non-undoable persistent mutations from being
+accidentally reverted by the next undo.
 
 **Test:** Draw a card → Ctrl+Z → card disappears → Ctrl+Y → card reappears.
 
@@ -772,7 +802,7 @@ Wire to `undoManager.undo()` / `undoManager.redo()`.
 
 **Test:** Click Undo button — same behavior as Ctrl+Z.
 
-### Step 5: Save/Load integration
+### Step 5: Save/Load integration ✅
 
 Call `undoManager.init()` after `dataManager.restoreData()` in the load handler.
 Save does not touch the undo stacks.

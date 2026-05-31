@@ -1,12 +1,12 @@
 /**
- * UndoManager — event-triggered full-snapshot undo/redo.
+ * UndoManager — event-triggered delta-snapshot undo/redo.
  *
  * Listens to `action:` events on the eventBus. When an action completes,
- * captures a full snapshot of all states. Undo/redo restores from snapshots
- * using dataManager.restoreData().
+ * diffs current state against the last baseline to produce a delta.
+ * Undo/redo applies deltas via dataManager.restoreData() (full rebuild).
  *
- * This is the Step 2 implementation (full snapshots). Steps 6–7 will replace
- * internals with delta snapshots for better performance.
+ * Step 6 implementation: delta capture (low memory), full restore on undo.
+ * Step 7 will replace restoreData() with surgical _applyReverse/_applyForward.
  */
 
 import { dataManager } from './DataManager.js';
@@ -39,6 +39,7 @@ class UndoManager {
         this.redoStack = [];
         this.maxHistory = 50;
         this._captureScheduled = false;
+        this.lastSnapshot = null;
     }
 
     /** Take initial baseline after game setup or load */
@@ -46,8 +47,7 @@ class UndoManager {
         this.undoStack = [];
         this.redoStack = [];
         this._captureScheduled = false;
-        // Push initial snapshot so first undo has something to restore to
-        this.undoStack.push(this._snapshot());
+        this.lastSnapshot = this._cloneStates();
     }
 
     /** Schedule a capture via microtask (deduplicates multiple action events in one tick) */
@@ -61,38 +61,118 @@ class UndoManager {
     }
 
     _capture() {
-        const snapshot = this._snapshot();
-        this.undoStack.push(snapshot);
+        const current = dataManager.states;
+        const delta = { modified: {}, created: {}, destroyed: {} };
+
+        // Detect modified and created objects
+        for (const id in current) {
+            if (!(id in this.lastSnapshot)) {
+                delta.created[id] = structuredClone(current[id]);
+            } else if (JSON.stringify(current[id]) !== JSON.stringify(this.lastSnapshot[id])) {
+                delta.modified[id] = {
+                    before: structuredClone(this.lastSnapshot[id]),
+                    after: structuredClone(current[id])
+                };
+            }
+        }
+
+        // Detect destroyed objects
+        for (const id in this.lastSnapshot) {
+            if (!(id in current)) {
+                delta.destroyed[id] = structuredClone(this.lastSnapshot[id]);
+            }
+        }
+
+        // Only push if something actually changed
+        if (Object.keys(delta.modified).length === 0 &&
+            Object.keys(delta.created).length === 0 &&
+            Object.keys(delta.destroyed).length === 0) return;
+
+        this.undoStack.push(delta);
         if (this.undoStack.length > this.maxHistory) this.undoStack.shift();
         this.redoStack = [];
+        this.lastSnapshot = this._cloneStates();
+    }
+
+    /** Advance baseline without creating an undo entry */
+    updateBaseline() {
+        this.lastSnapshot = this._cloneStates();
     }
 
     undo() {
-        if (this.undoStack.length <= 1) return; // need at least 2: current + previous
+        if (this.undoStack.length === 0) return;
         if (renderer.isDragging()) return;
 
-        const current = this.undoStack.pop();
-        this.redoStack.push(current);
+        const delta = this.undoStack.pop();
+        this.redoStack.push(delta);
 
-        const previous = this.undoStack[this.undoStack.length - 1];
-        this._restore(previous);
+        // Reconstruct target state by applying reverse delta to current states
+        const targetStates = this._applyReverseToStates(structuredClone(dataManager.states), delta);
+        const targetData = { version: 0, rootObject: dataManager.rootObject.state.objectId, states: targetStates };
+        dataManager.restoreData(targetData);
+        this.lastSnapshot = this._cloneStates();
     }
 
     redo() {
         if (this.redoStack.length === 0) return;
         if (renderer.isDragging()) return;
 
-        const snapshot = this.redoStack.pop();
-        this.undoStack.push(snapshot);
-        this._restore(snapshot);
+        const delta = this.redoStack.pop();
+        this.undoStack.push(delta);
+
+        // Reconstruct target state by applying forward delta to current states
+        const targetStates = this._applyForwardToStates(structuredClone(dataManager.states), delta);
+        const targetData = { version: 0, rootObject: dataManager.rootObject.state.objectId, states: targetStates };
+        dataManager.restoreData(targetData);
+        this.lastSnapshot = this._cloneStates();
     }
 
-    _snapshot() {
-        return structuredClone(dataManager.gatherData());
+    /**
+     * Apply a delta in reverse to a states object (for undo).
+     * - Created objects → remove them
+     * - Destroyed objects → restore them
+     * - Modified objects → apply "before" state
+     */
+    _applyReverseToStates(states, delta) {
+        // Remove created objects
+        for (const id in delta.created) {
+            delete states[id];
+        }
+        // Restore destroyed objects
+        for (const id in delta.destroyed) {
+            states[id] = structuredClone(delta.destroyed[id]);
+        }
+        // Revert modified objects to "before"
+        for (const id in delta.modified) {
+            states[id] = structuredClone(delta.modified[id].before);
+        }
+        return states;
     }
 
-    _restore(snapshot) {
-        dataManager.restoreData(structuredClone(snapshot));
+    /**
+     * Apply a delta forward to a states object (for redo).
+     * - Destroyed objects → remove them
+     * - Created objects → restore them
+     * - Modified objects → apply "after" state
+     */
+    _applyForwardToStates(states, delta) {
+        // Remove destroyed objects
+        for (const id in delta.destroyed) {
+            delete states[id];
+        }
+        // Restore created objects
+        for (const id in delta.created) {
+            states[id] = structuredClone(delta.created[id]);
+        }
+        // Apply modified objects to "after"
+        for (const id in delta.modified) {
+            states[id] = structuredClone(delta.modified[id].after);
+        }
+        return states;
+    }
+
+    _cloneStates() {
+        return structuredClone(dataManager.states);
     }
 }
 
@@ -102,13 +182,11 @@ export const undoManager = new UndoManager();
 const scheduleCapture = () => undoManager.scheduleCapture();
 UNDOABLE_EVENTS.forEach(evt => eventBus.on(evt, scheduleCapture));
 
-// Wire baseline events — advance snapshot without creating an undo entry
+// Wire baseline events — advance baseline without creating an undo entry
 BASELINE_EVENTS.forEach(evt => eventBus.on(evt, () => {
     queueMicrotask(() => {
         if (!undoManager._captureScheduled) {
-            // Replace the top of the undo stack with current state
-            // so the next undo restores to post-selection state
-            undoManager.undoStack[undoManager.undoStack.length - 1] = undoManager._snapshot();
+            undoManager.updateBaseline();
         }
     });
 }));

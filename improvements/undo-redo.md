@@ -809,12 +809,15 @@ Save does not touch the undo stacks.
 **Test:** Draw cards, save, draw more, load. Undo stack is empty after load —
 Ctrl+Z does nothing.
 
-### Step 6: Replace internals with delta snapshots
+### Step 6: Replace internals with delta snapshots ✅
 
-Swap `capture()` internals from full-state cloning to diffing. Swap `undo()`/`redo()`
-from `restoreData()` to `_applyReverse()`/`_applyForward()`. External API unchanged.
+Swap `capture()` internals from full-state cloning to diffing against `lastSnapshot`.
+Each undo entry now stores only the delta (created/destroyed/modified objects with
+before/after values). Undo/redo reconstructs the target state by applying the delta
+in reverse/forward to the current `dataManager.states`, then calls `restoreData()`
+to rebuild the DOM. External API unchanged.
 
-**Test:** Same manual tests as step 2. If anything breaks, revert to `restoreData()`
+**Test:** Same manual tests as step 2. If anything breaks, revert to full snapshots
 for that case (fallback strategy).
 
 ### Step 7: Surgical object reconciliation

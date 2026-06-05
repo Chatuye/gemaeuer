@@ -4,7 +4,7 @@ import './core/registry.js';
 import { RootObjectState } from './zui/rootObject.js';
 import { renderer } from './rendering/Renderer.js';
 import { initMenu } from './ui/MenuController.js';
-import { createGameStage } from '../game/GameStage.js';
+import { createGameStage } from './game/GameStage.js';
 import { undoManager } from './core/UndoManager.js';
 
 

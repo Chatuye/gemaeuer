@@ -17,7 +17,8 @@
         "list_console_messages",
         "get_console_message",
         "press_key",
-        "type_text"
+        "type_text",
+        "list_network_requests"
       ]
     }
   }

@@ -1,6 +1,7 @@
 import { StateObject } from '../core/StateObject.js';
 import { dataManager } from '../core/DataManager.js';
 import { objectRegistry } from '../core/ObjectRegistry.js';
+import { renderer } from '../rendering/Renderer.js';
 
 
 
@@ -108,6 +109,13 @@ export class ViewPort {
     }
     getY() {
         return this.state.y;
+    }
+
+    /** Reconcile derived state after undo/redo patches the state object. */
+    applyState() {
+        this.parent = dataManager.getObject(this.state.parent.referenceId);
+        this.calculateScale();
+        renderer.notifyViewportChanged(this.state.objectId);
     }
 }
 

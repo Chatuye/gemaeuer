@@ -15,8 +15,6 @@ export class PanelState extends ZoomableElementState {
         // Default dimensions
         this.width = 300;
         this.height = 300;
-
-        this.items = [];
     }
 }
 
@@ -40,31 +38,13 @@ export class Panel extends ZoomableElement {
         this.contentDiv.style.width = "100%";
         this.contentDiv.style.height = "100%";
         this.div.appendChild(this.contentDiv);
-
-        // Render any items already in state (e.g. from a save file)
-        for (const item of this.state.items) {
-            this._renderItem(item);
-        }
     }
 
     add(item) {
-        // Only persist serializable items — div/button/input items hold live
-        // DOM references or callbacks that can't survive JSON round-trips.
-        if (item.type === "text") {
-            this.state.items.push(item);
-        }
         this._renderItem(item);
     }
 
-    remove(item) {
-        let index = this.state.items.indexOf(item);
-        if (index === -1) return;
-        this.state.items.splice(index, 1);
-        this.contentDiv.removeChild(this.contentDiv.children[index]);
-    }
-
     removeAll() {
-        this.state.items.length = 0;
         this.contentDiv.innerHTML = "";
     }
 

@@ -42,8 +42,10 @@ and all state mutations are complete.
 | `action:cardDrawn` | Card created + Hand added + positioned | A card was drawn from the deck |
 | `action:cardPlaced` | Drop + reparent + WORLD layout set | A card was placed on the world stage |
 | `action:cardReturnedToHand` | Drop + Hand added + positioned | A card was returned to the hand |
-| `action:objectMoved` | Drop + reparent + positioned | An object was dropped (covers moves and spawns) |
+| `action:objectCreated` | Object created + placed (spawner drop or double-click) | A new object was placed on the stage |
+| `action:objectMoved` | Drop + reparent + positioned | An existing object was moved |
 | `action:objectDeleted` | Destroy + parent cleanup + Hand update | An object was destroyed |
+| `action:objectFlipped` | Facing state toggled + transition started | A flippable object was flipped |
 | `action:zoomAction` | Viewport updated | An explicit zoom preset was applied |
 
 Coordination events keep their current names unchanged — they remain on the same
@@ -69,11 +71,13 @@ eventBus.emit('action:cardPlaced', { card });
 Since coordination events dispatch synchronously, by the time the originating
 function emits the `action:` event, all state is settled.
 
-**`action:objectMoved` — generic drop event:**
+**`action:objectMoved` vs `action:objectCreated` — drop event logic:**
 
-`ZoomableElement.drop()` emits `action:objectMoved` unconditionally at the end of
-`_placeOnStage()`. This fires for *all* draggable objects — tiles, cards, and any
-future types.
+`ZoomableElement.drop()` checks `_isNewlySpawned` to decide which event to emit.
+Objects created by the spawner have `_isNewlySpawned = true` set at creation time;
+on drop they emit `action:objectCreated` and clear the flag. Existing objects emit
+`action:objectMoved`. This distinction ensures undo correctly destroys newly spawned
+objects vs. reverting position for existing ones.
 
 For Cards, the GameStage drop handler additionally emits a more specific action
 event (`action:cardPlaced` or `action:cardReturnedToHand`) after `action:objectMoved`
@@ -81,23 +85,29 @@ has already fired. This is fine — the `captureScheduled` deduplication flag co
 multiple action events within the same synchronous call stack into a single undo step.
 
 ```js
-// ZoomableElement.drop() — base class, fires for all draggable objects:
+// ZoomableElement.drop() — base class:
 drop() {
     this._placeOnStage();
-    eventBus.emit('action:objectMoved', { object: this });
+    if (this._isNewlySpawned) {
+        this._isNewlySpawned = false;
+        eventBus.emit('action:objectCreated', { object: this });
+    } else {
+        eventBus.emit('action:objectMoved', { object: this });
+    }
 }
 
 // Card.drop() — override, emits coordination event that triggers GameStage:
 drop() {
-    super.drop();  // ← fires action:objectMoved
+    super.drop();  // ← fires action:objectMoved (cards are never _isNewlySpawned)
     eventBus.emit('card:dropped', { card: this });
     // → GameStage handler fires action:cardPlaced or action:cardReturnedToHand
     // → captureScheduled deduplicates into one undo step
 }
 ```
 
-No special-casing needed. Tiles get `action:objectMoved` from the base class.
-Cards get both `action:objectMoved` and a specific action event — deduplicated
+Tiles spawned via the spawner get `action:objectCreated` from the base class.
+Tiles dragged after placement get `action:objectMoved`.
+Cards always get `action:objectMoved` plus a specific action event — deduplicated
 automatically.
 
 **Note on emission timing:** `action:objectMoved` fires from `super.drop()` before
@@ -106,6 +116,10 @@ automatically.
 `state.cards` hasn't been updated yet. This is safe because `capture()` runs in a
 microtask — by the time it executes, the entire synchronous chain has completed and
 all state is settled. Correctness depends on the microtask deferral, not emission order.
+
+**Double-click creation:** `GameStage.onDoubleClick()` creates a tile and emits
+`action:objectCreated` directly — no drag involved. Same event, same undo behavior
+as the spawner path.
 
 ### Migration path
 
@@ -166,9 +180,11 @@ An action is **undoable** if:
 | Action | Persistent? | Undoable? | Reason |
 |--------|-------------|-----------|--------|
 | Draw card | Yes | Yes | Discrete game action |
+| Create object | Yes | Yes | Discrete creation (spawner drop or double-click) |
 | Drop card/tile | Yes | Yes | Intentional placement |
 | Delete object | Yes | Yes | Destructive, user expects to undo |
 | Zoom to fit (explicit) | Yes | Yes | Intentional preset action |
+| Flip object | Yes | Yes | Discrete user decision, changes facing |
 | Pan viewport | Yes | No | Navigation, not a "decision" |
 | Scroll-wheel zoom | Yes | No | Navigation |
 | Select object | Yes | No | Persisted, but restored as side effect of other deltas |
@@ -225,16 +241,19 @@ between the grab-start state and the final settled state.
 This also covers the case where non-undoable mutations (like a pan) happened
 *before* the grab — the baseline advancement at grab-start absorbs them.
 
-**Spawner exception:** The tile spawner creates a tile and immediately starts a
-drag in the same synchronous block. The baseline must NOT advance at this grab —
-otherwise the baseline would include the newly created tile, and the delta on drop
-would only show a position change (not a creation). Undoing would revert position
-but leave the tile alive.
+**Spawner and `_isNewlySpawned`:** The tile spawner creates a tile and immediately
+starts a drag in the same synchronous block. The tile is marked with
+`_isNewlySpawned = true`. On drop, `ZoomableElement.drop()` checks this flag and
+emits `action:objectCreated` instead of `action:objectMoved`. The capture sees the
+full delta from "no tile" to "tile at final position." Undo destroys the tile entirely.
+
+The baseline must NOT advance at this grab — otherwise the baseline would include
+the newly created tile, and the delta on drop would only show a position change
+(not a creation). Undoing would revert position but leave the tile alive.
 
 Rule: the spawner does not emit `object:grabbed`. It calls `renderer.startDrag()`
 and `tile.grabbed()` directly, bypassing the baseline event. The baseline stays at
-pre-spawn state. On drop, `action:objectMoved` fires, the delta captures both the
-tile creation and its final position. Undo destroys the tile entirely.
+pre-spawn state.
 
 Implementation: emit `object:grabbed` from the Renderer's input handler (the code
 path that initiates a user-driven grab via mousedown hit-testing), NOT from inside
@@ -282,6 +301,7 @@ The flow for a drag operation:
 - `object:grabbed` → baseline advances (freezes pre-drag state)
 - During drag → position changes, no events in either list fire
 - Drop settles → `action:objectMoved` (or `action:cardPlaced`, etc.) → capture records net delta from grab to final position
+- For spawned objects: no `object:grabbed` (baseline stays at pre-spawn) → drop emits `action:objectCreated` → capture records full creation + placement
 
 ---
 
@@ -511,8 +531,10 @@ const UNDOABLE_EVENTS = [
     'action:cardDrawn',
     'action:cardPlaced',
     'action:cardReturnedToHand',
+    'action:objectCreated',
     'action:objectMoved',
     'action:objectDeleted',
+    'action:objectFlipped',
     'action:tileSpawned',
     'action:zoomAction',
 ];
@@ -537,6 +559,7 @@ UNDOABLE_EVENTS.forEach(evt => eventBus.on(evt, scheduleCapture));
 const BASELINE_EVENTS = [
     'object:grabbed',     // freeze pre-drag state
     'viewport:changed',   // scroll-wheel pan/zoom
+    'selection:changed',  // selection is persisted but not independently undoable
 ];
 
 BASELINE_EVENTS.forEach(evt => eventBus.on(evt, () => {
@@ -725,7 +748,7 @@ which resolves card IDs via `dataManager.getObject(id)` — the cards exist by t
 
 Each step is independently testable and doesn't break existing behavior.
 
-### Step 1: Add `action:` events
+### Step 1: Add `action:` events ✅
 
 Add `eventBus.emit('action:...')` calls at the end of existing action chains.
 No new modules, no behavioral changes.
@@ -734,19 +757,26 @@ Where to emit:
 - `Deck.onMouseUp()` → `action:cardDrawn` (after `card:drawn` and all listeners settle)
 - `GameStage` drop handler → `action:cardPlaced` or `action:cardReturnedToHand`
 - `GameStage` delete handler → `action:objectDeleted`
-- `ZoomableElement.drop()` → `action:objectMoved` (fires for all draggable objects, including spawned tiles)
+- `GameStage.onDoubleClick()` → `action:objectCreated` (after tile is created and registered)
+- `ZoomableElement.drop()` → `action:objectCreated` (if `_isNewlySpawned`) or `action:objectMoved` (existing objects)
+- `FlippableObject.flip()` → `action:objectFlipped` (only when `d > 0`, skips constructor's initial flip)
 
 **Test:** Open console, run `eventBus.on('action:cardDrawn', (e) => console.log('action', e))`.
 Draw a card. Verify the event fires once, after the card is in the hand.
 
-### Step 2: UndoManager with full snapshots
+### Step 2: UndoManager with full snapshots ✅
 
-Create `core/UndoManager.js` with `capture()`, `undo()`, `redo()`, `init()`,
-`updateBaseline()`. Internally use `gatherData()`/`restoreData()` — simple and
-correct, optimization comes later.
+Create `core/UndoManager.js` with `scheduleCapture()`, `undo()`, `redo()`, `init()`.
+Internally use `gatherData()`/`restoreData()` — simple and correct, optimization
+comes later.
 
 Wire to `action:` events via `queueMicrotask`. Add Ctrl+Z / Ctrl+Y keyboard
 shortcuts. Call `undoManager.init()` after `createGameStage()` in `main.js`.
+Also call `init()` after `restoreData()` in the load handler and after "New".
+
+Baseline events (`selection:changed`) advance the top of the undo stack without
+creating a new entry, preventing non-undoable persistent mutations from being
+accidentally reverted by the next undo.
 
 **Test:** Draw a card → Ctrl+Z → card disappears → Ctrl+Y → card reappears.
 
@@ -755,24 +785,23 @@ everything from scratch. Even undoing a single card draw rebuilds the full game.
 This may cause a visible flash/flicker. Acceptable as a working baseline — Steps
 6–7 replace this with surgical patching that only touches affected objects.
 
-### Step 3: Add baseline events
+### Step 3: Add baseline events ✅
 
-Emit `object:grabbed` from `ZoomableElement.grabbed()`. Add a new `viewport:changed`
-event — this doesn't exist yet and needs to be emitted after scroll-wheel pan/zoom
-completes (likely in the Renderer's wheel/drag handler or ViewPort). Wire both to
-`updateBaseline()`.
+Emit `object:grabbed` from `ZoomableElement.grabbed()` (skipped for newly spawned
+objects via `_isNewlySpawned` guard). Emit `viewport:changed` from `Stage.pan()`
+and `Stage.zoom()`. Both are wired to baseline advancement in the UndoManager.
 
 **Test:** Pan the viewport, draw a card, Ctrl+Z. Only the card draw is undone —
 viewport stays where it is.
 
-### Step 4: UI buttons
+### Step 4: UI buttons ✅
 
 Add Undo/Redo buttons in `MenuController.js` alongside New, Save, Load.
 Wire to `undoManager.undo()` / `undoManager.redo()`.
 
 **Test:** Click Undo button — same behavior as Ctrl+Z.
 
-### Step 5: Save/Load integration
+### Step 5: Save/Load integration ✅
 
 Call `undoManager.init()` after `dataManager.restoreData()` in the load handler.
 Save does not touch the undo stacks.
@@ -780,64 +809,120 @@ Save does not touch the undo stacks.
 **Test:** Draw cards, save, draw more, load. Undo stack is empty after load —
 Ctrl+Z does nothing.
 
-### Step 6: Replace internals with delta snapshots
+### Step 6: Replace internals with delta snapshots ✅
 
-Swap `capture()` internals from full-state cloning to diffing. Swap `undo()`/`redo()`
-from `restoreData()` to `_applyReverse()`/`_applyForward()`. External API unchanged.
+Swap `capture()` internals from full-state cloning to diffing against `lastSnapshot`.
+Each undo entry now stores only the delta (created/destroyed/modified objects with
+before/after values). Undo/redo reconstructs the target state by applying the delta
+in reverse/forward to the current `dataManager.states`, then calls `restoreData()`
+to rebuild the DOM. External API unchanged.
 
-**Test:** Same manual tests as step 2. If anything breaks, revert to `restoreData()`
+**Test:** Same manual tests as step 2. If anything breaks, revert to full snapshots
 for that case (fallback strategy).
 
-### Step 7: Surgical object reconciliation
+### Step 7: Surgical object reconciliation ✅
 
-Implement `_patchObject`, `_destroyObject`, `_recreateObject`. Add `applyState()`
-to object types one at a time, starting with simple ones (Card, Tile) then
-containers (Stage, Hand).
+Replace `restoreData()` in undo/redo with direct object manipulation. Broken into
+sub-steps, each independently testable:
 
-**Which types need `applyState()`?** The generic `_patchObject` updates `obj.state`
-and marks the Renderer dirty — this is sufficient for ZoomableElement subclasses
-whose runtime state is derived entirely from their state object + Renderer. Types
-that maintain *additional* live state (arrays, cached references, derived values)
-need a custom `applyState()` to reconcile:
+#### Step 7a: Infrastructure
 
-| Type | Why `applyState()` is needed |
-|------|------------------------------|
-| Hand | Rebuild `this.cards` array from `state.cards` IDs, call `positionCards()` |
-| Stage | Reconcile `this.children` array, rebuild zManager from `state.children` |
-| StageSelectionManager | Rebuild `this.selected` map from `state.selection` IDs, reapply visual classes |
-| ViewPort | Recalculate derived viewport scale from patched state |
-| GameStage | Rebuild `this.hand`/`this.deck` references from patched state IDs |
+Core plumbing — no visual correctness yet, just the mechanical framework.
 
-Types that do NOT need `applyState()` (generic `_patchObject` + `renderer.updateLayoutPreset()` is sufficient):
-- Card, Tile, Deck, Panel, FlippableObject — all runtime state derives from the state object + Renderer.
+- Add `mute()`/`unmute()` to EventBus (guard `emit()` with a `this.muted` flag)
+- Guard `_destroyObject` against types without a `destroy()` method (ViewPort,
+  StageSelectionManager have none — call `obj.destroy?.()` or add no-op stubs)
+- Replace `restoreData()` calls in undo/redo with `_applyReverse`/`_applyForward`
+- Implement `_patchObject` (generic: key deletion + assign + `applyState()` hook,
+  with fallback to `renderer.updateLayoutPreset()` + mark dirty for registered objects)
+- Implement `_destroyObject` / `_destroyObjects` (child-before-parent ordering)
+- Implement `_recreateObject` / `_recreateObjects` (parent-before-child ordering)
+- No `applyState()` on any type yet — objects get patched but may be visually stale
 
-**Compound object problem:** Some objects (Hand, Deck, Panel) don't exist
-independently — they're created and wired by a parent (GameStage). Hand has no div,
-no Renderer registration, and its constructor re-subscribes to events and hydrates
-cards. If a GameStage is destroyed and recreated, the Hand, Deck, and Panel must
-also be recreated in the right order, and GameStage's internal references
-(`this.hand`, `this.deck`, etc.) must be re-established.
+**Test:** Verify via console that undo/redo doesn't throw. State values revert
+correctly (inspect `dataManager.states[id]`), but visual may be stale. Specifically:
+flip a card, Ctrl+Z, check `dataManager.getObject(cardId).state.facing` reverted.
 
-**Strategy: treat compound objects as atomic subtrees.** If a delta's
-`destroyed`/`created` set includes a compound root (e.g., GameStage), don't
-recreate individual children separately. Instead, recreate the root via its factory
-function (e.g., `createGameStage()`), which handles all internal wiring — the same
-way `restoreData()` works today, just scoped to a subtree.
+#### Step 7b: Positional types + FlippableObject
 
-In practice:
-- Deltas that involve only simple objects (Card moved, Tile repositioned) use
-  granular `_patchObject`.
-- Deltas that involve compound object creation/destruction (entire GameStage
-  deleted/recreated) use the factory path.
-- Detection: if a delta's `created` or `destroyed` set contains an object whose
-  type has a registered factory (e.g., `GAMESTAGE`), use the factory instead of
-  generic `_recreateObject`.
+Make simple state patches produce correct visuals.
 
-**Test per type:**
-- Card: draw → undo → card gone → redo → card back
-- Tile: move tile → undo → tile returns to original position
-- Delete card: delete → undo → card reappears in hand at correct position
-- Delete GameStage (if supported): delete → undo → entire stage with hand/deck restored
+- Add generic renderer update in `_patchObject` fallback: if the object has a
+  render node (`renderer.renderNodes.has(id)`), call `renderer.updateLayoutPreset(id)`.
+  This handles x/y/width/height and layout preset changes for all ZoomableElements.
+- Add `applyState()` to FlippableObject: re-apply the correct wrapper transform
+  based on `state.facing` (set `this.wrapper.style.transform` directly — no
+  transition during undo). Without this, undoing a flip reverts the state field
+  but the CSS `rotateY(180deg)` on the wrapper stays stale.
+- Add `applyState()` to ViewPort: call `this.calculateScale()` to recompute
+  derived `scaleX`/`scaleY` from the patched width/height/type fields. Then
+  trigger `renderer.notifyViewportChanged(this.state.objectId)` and
+  `this.parent.notifyChildStages()` so children re-layout.
+
+**Test:** Move a tile → Ctrl+Z → tile returns to original position (no DOM rebuild).
+Flip a card → Ctrl+Z → card visually flips back (wrapper transform updated).
+
+#### Step 7c: Container types
+
+Reconcile parent-child relationships after patching.
+
+- Add `applyState()` to Stage: rebuild `this.children` array from `state.children`
+  by resolving each ID via `dataManager.getObject(id)`, filtering out nulls (a child
+  may have been destroyed in the same delta — `_destroyObjects` runs first).
+- Add `applyState()` to GameStage: call `super.applyState()`, then rebuild
+  `this.hand = dataManager.getObject(this.state.hand)` and
+  `this.settingsPanel = dataManager.getObject(this.state.settingsPanel)`.
+  If the settings panel exists, call `this._renderPanel([])` to reset its content.
+- Add `applyState()` to StageSelectionManager: clear `this.selected` map, rebuild
+  from `state.selection` (skip IDs where `dataManager.getObject(id)` returns null —
+  the selected object may have been destroyed). Reapply/remove `.selected` CSS class
+  on each object's div. Emit `selection:changed` after unmute so the panel updates.
+
+**Note on emission after unmute:** StageSelectionManager's `applyState()` should
+NOT emit `selection:changed` itself (eventBus is muted during apply). Instead,
+after `eventBus.unmute()` in `undo()`/`redo()`, emit a synthetic
+`selection:changed` for any patched selection manager so GameStage re-renders
+the panel. Alternatively, call `gameStage._renderPanel(selMgr.getSelection())`
+directly from `applyState()` — simpler, no event needed.
+
+**Test:** Draw a card → Ctrl+Z → card destroyed, stage's `this.children` array
+no longer contains it, no stale references.
+
+#### Step 7d: Hand
+
+Hand is the most complex reconciliation because it manages card positioning.
+
+- Add `applyState()` to Hand:
+  1. Rebuild `this.cards` from `state.cards` (resolve IDs, filter nulls)
+  2. Recalculate `this.stage` reference (`dataManager.getObject(this.state.stage.referenceId)`)
+  3. Recalculate coordinates and card dimensions (`calculateCoordinates()`,
+     `getCardScreenDimensions()`, `calculateInteractionY()`)
+  4. Call `positionCards()` to reposition all cards in the fan
+
+**Ordering note:** `_recreateObjects` runs before `_patchObject` on the parent.
+Cards are recreated first (they register in `dataManager.objects`), then Hand is
+patched — `applyState()` resolves card IDs and finds them alive. This ordering is
+guaranteed by the `_applyReverse`/`_applyForward` sequence: destroy → recreate → patch.
+
+**Single-frame visual note:** `positionCards()` calls `card.getScreenDimensions()`
+which reads from the Renderer's cached bounds. A just-recreated card has `dirty: true`
+bounds (not yet ticked). The first render frame corrects this — a brief single-frame
+layout jump is possible but acceptable.
+
+**Test:** Draw card → Ctrl+Z → card gone from hand, remaining cards reposition
+correctly. Draw 3 cards → Ctrl+Z → only last card removed, fan re-centers.
+
+#### Step 7e: Fallback safety net
+
+- Wrap `_applyReverse`/`_applyForward` in try/catch
+- On failure: log a warning with the error and delta summary
+- Fall back to the Step 6 approach: reconstruct target states from the delta
+  (using `_applyReverseToStates`/`_applyForwardToStates` which still exist),
+  then call `dataManager.restoreData()` for a full rebuild
+- This ensures no undo operation ever crashes the app — worst case is a flicker
+
+**Test:** All previous tests still pass. Intentionally break one `applyState()`
+(e.g., throw in Hand.applyState), verify fallback fires and state is still correct.
 
 Steps 1–5 deliver a fully working undo/redo feature. Steps 6–7 are performance
 optimizations — add them when object count makes full snapshots noticeably slow.

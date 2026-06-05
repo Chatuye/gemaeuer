@@ -1,9 +1,11 @@
 import { dataManager } from '../core/DataManager.js';
+import { undoManager } from '../core/UndoManager.js';
 import { createGameStage } from '../game/GameStage.js';
 
 export function initMenu() {
 	document.getElementById("menu-new").addEventListener("click", () => {
 		createGameStage(dataManager.rootObject);
+		undoManager.init();
 	});
 
 	document.getElementById("menu-save").addEventListener("click", () => {
@@ -20,8 +22,17 @@ export function initMenu() {
 		const reader = new FileReader();
 		reader.addEventListener("load", (event) => {
 			dataManager.restoreData(JSON.parse(event.target.result));
+			undoManager.init();
 			fileInput.value = null;
 		});
 		reader.readAsText(file);
+	});
+
+	document.getElementById("menu-undo").addEventListener("click", () => {
+		undoManager.undo();
+	});
+
+	document.getElementById("menu-redo").addEventListener("click", () => {
+		undoManager.redo();
 	});
 }

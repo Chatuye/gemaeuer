@@ -2,6 +2,8 @@
 
 All events emitted via the global `eventBus` singleton (`core/EventBus.js`).
 
+The eventBus supports `mute()`/`unmute()` — when muted, `emit()` is a no-op. The UndoManager mutes during surgical undo/redo apply to prevent coordination events from firing and causing double-mutations.
+
 ## Multi-Stage Filtering Rule
 
 **CRITICAL:** When multiple GameStages exist simultaneously, all event handlers
@@ -50,6 +52,22 @@ should check `stage === this.stage`.
 |-------|-----------|---------|-------------|
 | `card:deleted` | Card.destroy() | `{ card }` | A card was destroyed. Emitted at the start of `destroy()`. |
 | `tile:deleted` | Tile.destroy() | `{ tile }` | A tile was destroyed. Emitted at the start of `destroy()`. |
+| `object:grabbed` | ZoomableElement.grabbed() | `{ object }` | An existing object was grabbed for dragging. Not emitted for newly spawned objects (`_isNewlySpawned` guard). Used by UndoManager for baseline advancement. |
+| `viewport:changed` | Stage.pan() / Stage.zoom() | `{ stage }` | A stage's viewport was panned or zoomed. Used by UndoManager for baseline advancement. |
+
+### Action events (undo/redo timing)
+
+Action events use the `action:` prefix and fire at the end of a completed user action, after all coordination events have settled. The UndoManager subscribes to these for delta capture.
+
+| Event | Emitted by | Payload | Description |
+|-------|-----------|---------|-------------|
+| `action:cardDrawn` | Deck.onMouseUp() | `{ card }` | A card was drawn from the deck |
+| `action:cardPlaced` | GameStage drop handler | `{ card }` | A card was placed on the world stage |
+| `action:cardReturnedToHand` | GameStage drop handler | `{ card }` | A card was returned to the hand |
+| `action:objectCreated` | ZoomableElement.drop() / GameStage.onDoubleClick() | `{ object }` | A new object was placed (spawner drop or double-click) |
+| `action:objectMoved` | ZoomableElement.drop() | `{ object }` | An existing object was moved to a new position |
+| `action:objectDeleted` | GameStage delete handler | `{ object }` | An object was destroyed via the settings panel |
+| `action:objectFlipped` | FlippableObject.flip() | `{ object }` | A flippable object was flipped (only when animated, not on load) |
 
 ## Event flows
 

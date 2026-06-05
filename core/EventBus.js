@@ -17,6 +17,7 @@
 export class EventBus {
     constructor() {
         this.listeners = {};
+        this.muted = false;
     }
 
     /**
@@ -48,12 +49,19 @@ export class EventBus {
      * @param {*} data — payload passed to each listener
      */
     emit(eventName, data) {
+        if (this.muted) return;
         const callbacks = this.listeners[eventName];
         if (!callbacks) return;
         for (const cb of callbacks) {
             cb(data);
         }
     }
+
+    /** Suppress all event emission. Used during undo/redo apply. */
+    mute() { this.muted = true; }
+
+    /** Resume event emission. */
+    unmute() { this.muted = false; }
 }
 
 export const eventBus = new EventBus();

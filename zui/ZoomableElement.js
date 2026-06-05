@@ -18,6 +18,7 @@ import { LayoutPresets } from './config/LayoutPresets.js';
 import { randomHexColorCode } from '../utils.js';
 import { dataManager } from '../core/DataManager.js';
 import { renderer } from '../rendering/Renderer.js';
+import { eventBus } from '../core/EventBus.js';
 
 
 
@@ -168,6 +169,13 @@ export class ZoomableElement {
         this.parent.grabbedChild = this;
         this.grabbing = null;
         this.isGrabbed = true;
+
+        // Emit object:grabbed for baseline advancement — skip for newly spawned
+        // objects so the baseline stays at pre-spawn state (undo destroys the tile)
+        if (!this._isNewlySpawned) {
+            eventBus.emit('object:grabbed', { object: this });
+        }
+
 		renderer.setState(this.state.objectId, 'filter', "drop-shadow(0px 0px 4px rgba(0, 0, 0, 1.0)) drop-shadow(0px 0px 24px rgba(255, 255, 255, 0.33))");
 
         // Capture cursor's relative position on the object (0–1) for cross-stage drop positioning
@@ -196,6 +204,12 @@ export class ZoomableElement {
 		this.setDefaultStyle();
 
         this._placeOnStage();
+        if (this._isNewlySpawned) {
+            this._isNewlySpawned = false;
+            eventBus.emit('action:objectCreated', { object: this });
+        } else {
+            eventBus.emit('action:objectMoved', { object: this });
+        }
     }
 
     /**
@@ -235,6 +249,7 @@ export class ZoomableElement {
         } else {
             // Same parent — convert cursor to world, offset by grab-relative position
             let cursorLocal = renderer.screenToLocal(this.cursorX, this.cursorY, targetStage.state.objectId);
+            if (!cursorLocal) return;
             let cursorWorld = renderer.localToViewport(cursorLocal.x, cursorLocal.y, targetStage.state.objectId);
 
             if (this.parent.zManager) {

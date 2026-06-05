@@ -44,8 +44,10 @@ export class GameStage extends Stage {
             if (card.parent !== this) return;
             if (this.hand && this.hand.mode === "RAISED") {
                 eventBus.emit('card:droppedInHand', { card });
+                eventBus.emit('action:cardReturnedToHand', { card });
             } else {
                 eventBus.emit('card:droppedOnStage', { card });
+                eventBus.emit('action:cardPlaced', { card });
             }
         };
         eventBus.on('card:dropped', this.onCardDropped);
@@ -85,6 +87,7 @@ export class GameStage extends Stage {
 
             tile.cursorX = e.clientX;
             tile.cursorY = e.clientY;
+            tile._isNewlySpawned = true;
             renderer.startDrag(tile.state.objectId);
             tile.grabbed();
         });
@@ -144,6 +147,7 @@ export class GameStage extends Stage {
 
         let tile = dataManager.createObject(tileState);
         this.registerChild(tile);
+        eventBus.emit('action:objectCreated', { object: tile });
     }
     onContextMenu(e) {
         e.stopPropagation();
@@ -171,6 +175,7 @@ export class GameStage extends Stage {
         gameStage.viewPort.calculateScale();
 
         this.registerChild(gameStage);
+        eventBus.emit('action:objectCreated', { object: gameStage });
     }
 
     onParentChange() {
@@ -223,6 +228,7 @@ export class GameStage extends Stage {
                 obj.parent.unregisterChild(obj);
             }
             obj.destroy();
+            eventBus.emit('action:objectDeleted', { object: obj });
         });
     }
 
@@ -263,6 +269,18 @@ export class GameStage extends Stage {
         this.div.removeEventListener("mousemove", this._boundDivMouseMove);
 
         super.destroy();
+    }
+
+    /** Reconcile live references after undo/redo patches state. */
+    applyState() {
+        super.applyState();
+        this.hand = dataManager.getObject(this.state.hand);
+        this.settingsPanel = dataManager.getObject(this.state.settingsPanel);
+        if (this.settingsPanel) {
+            const selMgr = this.selectionManager;
+            const selection = selMgr ? selMgr.getSelection() : [];
+            this._renderPanel(selection);
+        }
     }
 
 }

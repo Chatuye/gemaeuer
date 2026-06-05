@@ -228,6 +228,30 @@ export class Hand {
 		eventBus.off('layout:changed', this.onLayoutChanged);
 		eventBus.off('card:deleted', this.onCardDeleted);
 	}
+
+	/** Reconcile live state after undo/redo patches the state object. */
+	applyState() {
+		this.stage = dataManager.getObject(this.state.stage.referenceId);
+		this.cards = this.state.cards
+			.map(id => dataManager.getObject(id))
+			.filter(obj => obj != null);
+
+		// Re-register cards on layer 1 (hand layer)
+		for (const card of this.cards) {
+			const currentLayer = this.stage.zManager.objectLayers.get(card.state.objectId);
+			if (currentLayer !== 1) {
+				if (currentLayer != null) this.stage.zManager.remove(card);
+				this.stage.zManager.set(card, 1);
+			}
+		}
+
+		let d = this.calculateCoordinates();
+		this.x = d.x;
+		this.y = d.y;
+		this.cardDimensions = this.getCardScreenDimensions();
+		this.calculateInteractionY();
+		this.positionCards();
+	}
 }
 
 objectRegistry.register("HAND", Hand);

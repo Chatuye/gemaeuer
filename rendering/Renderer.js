@@ -648,6 +648,13 @@ class Renderer {
         this.dragTarget = null;
     }
 
+    /**
+     * Returns true if an object is currently being dragged.
+     */
+    isDragging() {
+        return this.dragTarget != null;
+    }
+
     // --- Transition API ---
 
     /**

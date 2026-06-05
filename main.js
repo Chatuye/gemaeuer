@@ -5,6 +5,7 @@ import { RootObjectState } from './zui/rootObject.js';
 import { renderer } from './rendering/Renderer.js';
 import { initMenu } from './ui/MenuController.js';
 import { createGameStage } from '../game/GameStage.js';
+import { undoManager } from './core/UndoManager.js';
 
 
 
@@ -19,6 +20,7 @@ function onSVGsLoaded() {
 	renderer.start(document.getElementById('content'));
 	initMenu();
 	createGameStage(dataManager.rootObject);
+	undoManager.init();
 }
 
 window.addEventListener('DOMContentLoaded', onBodyLoad);

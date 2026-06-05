@@ -4,6 +4,7 @@ import { ViewPortState } from './ViewPort.js';
 import { StageZIndexManagerState } from './StageZIndexManager.js';
 import { dataManager } from '../core/DataManager.js';
 import { renderer } from '../rendering/Renderer.js';
+import { eventBus } from '../core/EventBus.js';
 
 
 
@@ -126,6 +127,7 @@ export class Stage extends ZoomableElement {
         this.viewPort.pan(dX, dY);
         renderer.notifyViewportChanged(this.viewPort.state.objectId);
         this.notifyChildStages();
+        eventBus.emit('viewport:changed', { stage: this });
 	}
     zoom(z, x, y) {
 		let cursorOnDiv = this.convertScreenPosToDivPos(x, y);
@@ -144,6 +146,7 @@ export class Stage extends ZoomableElement {
         this.viewPort.zoom(zoomIncX*relX, zoomIncY*relY, zoomIncX, zoomIncY);
         renderer.notifyViewportChanged(this.viewPort.state.objectId);
         this.notifyChildStages();
+        eventBus.emit('viewport:changed', { stage: this });
     }
 
     /**
@@ -196,5 +199,19 @@ export class Stage extends ZoomableElement {
             child.destroy();
         }
         super.destroy();
+    }
+
+    /** Reconcile live children array after undo/redo patches state.children. */
+    applyState() {
+        this.children = this.state.children
+            .map(id => dataManager.getObject(id))
+            .filter(obj => obj != null);
+
+        // Reconcile zManager: ensure all children are tracked
+        for (const child of this.children) {
+            if (!this.zManager.objectLayers.has(child.state.objectId)) {
+                this.zManager.set(child, child.state.layer ?? 0);
+            }
+        }
     }
 }
